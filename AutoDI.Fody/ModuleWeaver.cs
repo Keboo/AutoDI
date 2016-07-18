@@ -119,6 +119,14 @@ public class ModuleWeaver
 
                     foreach ( ParameterDefinition parameter in dependencyParameters )
                     {
+                        if (!parameter.IsOptional)
+                        {
+                            LogInfo($"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {nameof(DependencyAttribute)} but is not an optional parameter. In {type.FullName}.");
+                        }
+                        if (parameter.Constant != null)
+                        {
+                            LogWarning($"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
+                        }
                         TypeReference parameterType = ModuleDefinition.ImportReference( parameter.ParameterType );
                         var afterParam = Instruction.Create( OpCodes.Nop );
                         //Push dependency parameter onto the stack
