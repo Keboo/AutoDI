@@ -76,5 +76,7 @@
     <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\AutoDI.Fody.1.0.0" />
     <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\NuGet\build" />
     <Copy SourceFiles="$(TargetDir)AutoDI.dll" DestinationFolder="$(SolutionDir)\NuGet\build\lib\net45" />
+    
+    <Exec Condition="'$(Configuration)' == 'Release'" WorkingDirectory="$(SolutionDir)" Command="&quot;$(SolutionDir)\NuGet\nuget.exe&quot; pack &quot;$(SolutionDir)\NuGet\build\AutoDI.Fody.nuspec&quot;" />
   </Target>
 </Project>
