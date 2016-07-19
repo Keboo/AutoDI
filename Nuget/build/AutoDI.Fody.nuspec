@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>AutoDI.Fody</id>
+    <version>1.0.0</version>
+    <title>AutoDI.Fody</title>
+    <authors>Keboo</authors>
+    <owners>Keboo</owners>
+    <licenseUrl>http://LICENSE_URL_HERE_OR_DELETE_THIS_LINE</licenseUrl>
+    <projectUrl>http://PROJECT_URL_HERE_OR_DELETE_THIS_LINE</projectUrl>
+    <iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Fody extension for simplifying the creation of objects from your favorite DI container</description>
+    <releaseNotes>Initial release</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>AutoDI, Fody</tags>
+	<dependencies>
+      <dependency id="Fody" version ="1.29"/>
+    </dependencies>
+  </metadata>
+</package>

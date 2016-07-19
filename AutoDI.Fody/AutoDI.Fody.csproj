@@ -73,6 +73,8 @@
       <None Include="$(TargetDir)AutoDI*.dll" />
     </ItemGroup>
     
-    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\AutoDI.Fody" />
+    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\AutoDI.Fody.1.0.0" />
+    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\NuGet\build" />
+    <Copy SourceFiles="$(TargetDir)AutoDI.dll" DestinationFolder="$(SolutionDir)\NuGet\build\lib\net45" />
   </Target>
 </Project>
