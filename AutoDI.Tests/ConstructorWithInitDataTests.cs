@@ -20,14 +20,14 @@ namespace AutoDI.Tests
             {
                 DependencyResolver.Set( dr.Object );
 
-                var sut = new ClassWithInitData(initData);
+                var sut = new ClassWithInitData( initData );
                 Assert.AreEqual( service1, sut.Service );
                 Assert.AreEqual( initData, sut.Data );
                 dr.Verify();
             }
             finally
             {
-                DependencyResolver.Set( null );
+                DependencyResolver.Set( (IDependencyResolver)null );
             }
         }
     }

@@ -80,79 +80,109 @@ public class ModuleWeaver
 
     public void Execute()
     {
-        foreach ( TypeDefinition type in ModuleDefinition.Types )
+        var dependencyAttributeType = ModuleDefinition.ImportReference( typeof( DependencyAttribute ) );
+        var resolverType = ModuleDefinition.ImportReference( typeof( IDependencyResolver ) );
+        var dependencyResolverType = ModuleDefinition.ImportReference( typeof( DependencyResolver ) );
+        var typeReference = ModuleDefinition.ImportReference(typeof(Type));
+        var getTypeMethod = new MethodReference(nameof(Type.GetTypeFromHandle), typeReference, typeReference);
+        try
         {
-            foreach ( var ctor in type.Methods.Where( x => x.IsConstructor ) )
+            foreach ( TypeDefinition type in ModuleDefinition.Types )
             {
-                var dependencyParameters = ctor.Parameters.Where(
-                        p => p.CustomAttributes.Any( a => a.AttributeType.FullName == typeof( DependencyAttribute ).FullName ) ).ToList();
-
-                if ( dependencyParameters.Any() )
+                foreach ( var ctor in type.Methods.Where( x => x.IsConstructor ) )
                 {
-                    var resolverType = ModuleDefinition.ImportReference( typeof( IDependencyResolver ) );
-                    var dependencyResolverType = ModuleDefinition.ImportReference( typeof( DependencyResolver ) );
-                    
-                    var instructions = ctor.Body.Instructions;
-                    bool seenBaseCall = false;
-                    int insertionPoint = instructions.IndexOf( instructions.SkipWhile( x =>
-                     {
-                         if ( x.OpCode != OpCodes.Nop && seenBaseCall )
-                             return false;
-                         if ( x.OpCode == OpCodes.Call )
-                             seenBaseCall = true;
-                         return true;
-                     } ).First() );
-                    
-                    var end = Instruction.Create( OpCodes.Nop );
+                    var dependencyParameters = ctor.Parameters.Where(
+                        p => p.CustomAttributes.Any( a => IsSubclassOf<DependencyAttribute>( a.AttributeType ) ) ).ToList();
 
-                    var resolverVariable = new VariableDefinition( resolverType );
-                    ctor.Body.Variables.Add( resolverVariable );
-
-                    instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Call,
-                        new MethodReference( nameof( DependencyResolver.Get ), resolverType, dependencyResolverType ) ) );
-                    //Store the resolver in our local variable
-                    instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Stloc, resolverVariable ) );
-                    //Push the resolver on top of the stack
-                    instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldloc, resolverVariable ) );
-                    //Branch to the end if the resolver is null
-                    instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Brfalse, end ) );
-
-                    foreach ( ParameterDefinition parameter in dependencyParameters )
+                    if ( dependencyParameters.Any() )
                     {
-                        if (!parameter.IsOptional)
-                        {
-                            LogInfo($"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {nameof(DependencyAttribute)} but is not an optional parameter. In {type.FullName}.");
-                        }
-                        if (parameter.Constant != null)
-                        {
-                            LogWarning($"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
-                        }
-                        TypeReference parameterType = ModuleDefinition.ImportReference( parameter.ParameterType );
-                        var afterParam = Instruction.Create( OpCodes.Nop );
-                        //Push dependency parameter onto the stack
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldarg, parameter ) );
-                        //Push null onto the stack - TODO check type and push default value?
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldnull ) );
-                        //Push 1 if the values are equal, 0 if they are not equal
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ceq ) );
-                        //Branch if the value is false (0), the dependency was set by the caller we wont replace it
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Brfalse_S, afterParam ) );
-                        //Push the dependency resolver onto the stack
+                        var instructions = ctor.Body.Instructions;
+                        bool seenBaseCall = false;
+                        int insertionPoint = instructions.IndexOf( instructions.SkipWhile( x =>
+                          {
+                              if ( x.OpCode != OpCodes.Nop && seenBaseCall )
+                                  return false;
+                              if ( x.OpCode == OpCodes.Call )
+                                  seenBaseCall = true;
+                              return true;
+                          } ).First() );
+
+                        var end = Instruction.Create( OpCodes.Nop );
+
+                        var resolverVariable = new VariableDefinition( resolverType );
+                        ctor.Body.Variables.Add( resolverVariable );
+                        
+                        //Get the calling type
+                        instructions.Insert(insertionPoint++, Instruction.Create(OpCodes.Ldtoken, type));
+                        instructions.Insert(insertionPoint++, Instruction.Create(OpCodes.Call, new MethodReference()));
+
+                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Call,
+                            new MethodReference( nameof( DependencyResolver.Get ), resolverType, dependencyResolverType ) ) );
+                        //Store the resolver in our local variable
+                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Stloc, resolverVariable ) );
+                        //Push the resolver on top of the stack
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldloc, resolverVariable ) );
-                        //Call the resolve method
-                        var resolveMethod = ModuleDefinition.ImportReference(typeof(IDependencyResolver).GetMethod(nameof(IDependencyResolver.Resolve)));
-                        resolveMethod = new GenericInstanceMethod(resolveMethod){ GenericArguments = { parameterType }};
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Callvirt, resolveMethod ) );
-                        //Store the return from the resolve method in the method parameter
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Starg, parameter ) );
-                        instructions.Insert( insertionPoint++, afterParam );
+                        //Branch to the end if the resolver is null
+                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Brfalse, end ) );
+
+                        foreach ( ParameterDefinition parameter in dependencyParameters )
+                        {
+                            if ( !parameter.IsOptional )
+                            {
+                                LogInfo(
+                                    $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {nameof( DependencyAttribute )} but is not an optional parameter. In {type.FullName}." );
+                            }
+                            if ( parameter.Constant != null )
+                            {
+                                LogWarning(
+                                    $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null" );
+                            }
+                            TypeReference parameterType = ModuleDefinition.ImportReference( parameter.ParameterType );
+                            var afterParam = Instruction.Create( OpCodes.Nop );
+                            //Push dependency parameter onto the stack
+                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldarg, parameter ) );
+                            //Push null onto the stack - TODO check type and push default value?
+                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldnull ) );
+                            //Push 1 if the values are equal, 0 if they are not equal
+                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ceq ) );
+                            //Branch if the value is false (0), the dependency was set by the caller we wont replace it
+                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Brfalse_S, afterParam ) );
+                            //Push the dependency resolver onto the stack
+                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldloc, resolverVariable ) );
+                            //Call the resolve method
+                            var resolveMethod =
+                                ModuleDefinition.ImportReference(
+                                    typeof( IDependencyResolver ).GetMethod( nameof( IDependencyResolver.Resolve ) ) );
+                            resolveMethod = new GenericInstanceMethod( resolveMethod )
+                            {
+                                GenericArguments = { parameterType }
+                            };
+                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Callvirt, resolveMethod ) );
+                            //Store the return from the resolve method in the method parameter
+                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Starg, parameter ) );
+                            instructions.Insert( insertionPoint++, afterParam );
+                        }
+                        instructions.Insert( insertionPoint, end );
+                        ctor.Body.OptimizeMacros();
                     }
-                    instructions.Insert( insertionPoint, end );
-                    ctor.Body.OptimizeMacros();
                 }
             }
+            ModuleDefinition.Write( AssemblyFilePath );
         }
-        ModuleDefinition.Write( AssemblyFilePath );
+        catch ( Exception ex )
+        {
+            LogError( ex.ToString() );
+        }
+    }
+
+    private static bool IsSubclassOf<T>( TypeReference reference )
+    {
+        for ( TypeDefinition def = reference.Resolve(); def != null; def = def.BaseType?.Resolve() )
+        {
+            if ( def.FullName == typeof( T ).FullName )
+                return true;
+        }
+        return false;
     }
 
     // Will be called when a request to cancel the build occurs. OPTIONAL

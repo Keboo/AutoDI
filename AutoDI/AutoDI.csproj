@@ -45,7 +45,10 @@
     <Compile Include="DependencyAttribute.cs" />
     <Compile Include="DependencyResolver.cs" />
     <Compile Include="IDependencyResolver.cs" />
+    <Compile Include="IGetResolverBehavior.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResolverRequest.cs" />
+    <Compile Include="StaticInstanceBehavior.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
