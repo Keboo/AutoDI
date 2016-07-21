@@ -45,7 +45,7 @@
   <ItemGroup>
     <Compile Include="ClassWithDependencies.cs" />
     <Compile Include="ClassWithInitData.cs" />
-    <Compile Include="ClassWithCustomResolver.cs" />
+    <Compile Include="ClassWithSingleDependency.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="IService2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

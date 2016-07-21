@@ -9,7 +9,7 @@ namespace AutoDI.Tests
     public class ConstructorWithCustomResolver
     {
         [TestMethod]
-        public void GettingResolverPassesData()
+        public void CanUseResolverBehaviorToCustomizeResolverInstanceReturned()
         {
             var mocker = new AutoMocker( MockBehavior.Strict );
             var service = mocker.Get<IService>();
@@ -18,25 +18,22 @@ namespace AutoDI.Tests
             dr.Setup( x => x.Resolve<IService>() ).Returns( service ).Verifiable();
 
             var behavior = mocker.GetMock<IGetResolverBehavior>();
-            behavior.Setup( b => b.Get( It.Is<ResolverRequest>( x => x.CallerType == typeof( ClassWithCustomResolver ) ) ) )
+            behavior.Setup( b => b.Get( It.Is<ResolverRequest>( x => x.CallerType == typeof( ClassWithSingleDependency ) && x.Dependencies.Length == 1 && x.Dependencies[0] == typeof(IService) ) ) )
                 .Returns( dr.Object ).Verifiable();
 
             try
             {
-                DependencyResolver.Set( dr.Object );
+                DependencyResolver.Set( behavior.Object );
 
-                var sut = new ClassWithDependencies();
+                var sut = new ClassWithSingleDependency();
 
                 Assert.AreEqual( service, sut.Service );
                 mocker.VerifyAll();
             }
             finally
             {
-                DependencyResolver.Set( (IDependencyResolver)null );
+                DependencyResolver.Set( (IGetResolverBehavior)null );
             }
-
-
-
         }
     }
 }
