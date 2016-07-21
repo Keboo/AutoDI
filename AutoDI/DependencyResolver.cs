@@ -2,16 +2,21 @@
 {
     public static class DependencyResolver
     {
-        private static IDependencyResolver _resolver;
+        private static IGetResolverBehavior _behavior;
 
-        public static IDependencyResolver Get()
+        public static IDependencyResolver Get( ResolverRequest request )
         {
-            return _resolver;
+            return _behavior?.Get( request );
         }
 
-        public static void Set(IDependencyResolver resolver)
+        public static void Set( IDependencyResolver resolver )
         {
-            _resolver = resolver;
+            Set( new StaticInstanceBehavior( resolver ) );
+        }
+
+        public static void Set( IGetResolverBehavior behavior )
+        {
+            _behavior = behavior;
         }
     }
 }
