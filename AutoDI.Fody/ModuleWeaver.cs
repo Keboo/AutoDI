@@ -80,7 +80,6 @@ public class ModuleWeaver
 
     public void Execute()
     {
-        var dependencyAttributeType = ModuleDefinition.ImportReference( typeof( DependencyAttribute ) );
         var resolverType = ModuleDefinition.ImportReference( typeof( IDependencyResolver ) );
         var dependencyResolverType = ModuleDefinition.ImportReference( typeof( DependencyResolver ) );
         var typeReference = ModuleDefinition.ImportReference( typeof( Type ) );
@@ -119,13 +118,16 @@ public class ModuleWeaver
                         var resolverRequestVariable = new VariableDefinition( resolverRequestType );
                         ctor.Body.Variables.Add( resolverRequestVariable );
 
+                        //Create the ResolverRequest
                         //Get the calling type
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldtoken, type ) );
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Call, getTypeMethod ) );
+                        //Create a new array for to hold the dependency types
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldc_I4, dependencyParameters.Count ) );
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Newarr, typeReference ) );
                         for ( int i = 0; i < dependencyParameters.Count; ++i )
                         {
+                            //Load the dependency type into the array
                             instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Dup ) );
                             instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldc_I4, i ) );
                             TypeReference parameterType = ModuleDefinition.ImportReference( dependencyParameters[i].ParameterType );
@@ -133,11 +135,14 @@ public class ModuleWeaver
                             instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Call, getTypeMethod ) );
                             instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Stelem_Ref ) );
                         }
-
+                        //Call the ResolverRequest constructor
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Newobj, resolverRequestCtor ) );
+                        //Store the resolver request in the variable
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Stloc, resolverRequestVariable ) );
+                        //Load the resolver request from the variable
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldloc, resolverRequestVariable ) );
 
+                        //Get the IDependencyResolver by calling DependencyResolver.Get(ResolverRequest)
                         instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Call,
                             new MethodReference( nameof( DependencyResolver.Get ), resolverType, dependencyResolverType )
                             {
