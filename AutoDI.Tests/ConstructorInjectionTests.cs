@@ -26,8 +26,8 @@ namespace AutoDI.Tests
             var service1 = mocker.Get<IService>();
             var service2 = mocker.Get<IService2>();
             var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup( x => x.Resolve<IService>() ).Returns( service1 ).Verifiable();
-            dr.Setup( x => x.Resolve<IService2>() ).Returns( service2 ).Verifiable();
+            dr.Setup( x => x.Resolve<IService>( It.IsAny<object[]>() ) ).Returns( service1 ).Verifiable();
+            dr.Setup( x => x.Resolve<IService2>( It.IsAny<object[]>() ) ).Returns( service2 ).Verifiable();
 
             try
             {
@@ -51,10 +51,10 @@ namespace AutoDI.Tests
             var service1 = mocker.Get<IService>();
             var service2 = mocker.Get<IService2>();
             var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup( x => x.Resolve<IService>() ).Returns( service1 ).Verifiable();
-            dr.Setup( x => x.Resolve<IService2>() ).Returns( service2 ).Verifiable();
+            dr.Setup( x => x.Resolve<IService>( It.IsAny<object[]>() ) ).Returns( service1 ).Verifiable();
+            dr.Setup( x => x.Resolve<IService2>( It.IsAny<object[]>() ) ).Returns( service2 ).Verifiable();
             var behavior = mocker.GetMock<IGetResolverBehavior>();
-            behavior.Setup(x => x.Get(It.IsAny<ResolverRequest>())).Returns(dr.Object);
+            behavior.Setup( x => x.Get( It.IsAny<ResolverRequest>() ) ).Returns( dr.Object );
 
             try
             {
@@ -71,12 +71,12 @@ namespace AutoDI.Tests
             }
         }
 
-        [TestMethod, ExpectedException(typeof(ArgumentNullException))]
+        [TestMethod, ExpectedException( typeof( ArgumentNullException ) )]
         public void WhenFirstServiceIsNotSpecifiedItThrows()
         {
             var mocker = new AutoMocker();
-            
-            new ClassWithDependencies(null, mocker.Get<IService2>());
+
+            new ClassWithDependencies( null, mocker.Get<IService2>() );
         }
 
         [TestMethod, ExpectedException( typeof( ArgumentNullException ) )]
@@ -87,5 +87,21 @@ namespace AutoDI.Tests
             new ClassWithDependencies( mocker.Get<IService>(), null );
         }
 
+        private void Test()
+        {
+            var resolver = new Resolver();
+            
+            resolver.Resolve<IService>(0, "Kevin");
+            resolver.Resolve<IService2>();
+        }
+
+
+        private class Resolver : IDependencyResolver
+        {
+            public T Resolve<T>(params object[] parameters)
+            {
+                return default(T);
+            }
+        }
     }
 }

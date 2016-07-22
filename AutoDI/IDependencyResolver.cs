@@ -1,9 +1,7 @@
-﻿using System.Runtime.InteropServices.ComTypes;
-
-namespace AutoDI
+﻿namespace AutoDI
 {
     public interface IDependencyResolver
     {
-        T Resolve<T>();
+        T Resolve<T>(params object[] parameters);
     }
 }

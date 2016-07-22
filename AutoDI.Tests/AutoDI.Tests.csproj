@@ -63,7 +63,8 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ConstructorInjectionTests.cs" />
-    <Compile Include="ConstructorWithCustomResolver.cs" />
+    <Compile Include="ConstructorWithDependencyParametersTests.cs" />
+    <Compile Include="CustomResolverResolutionTests.cs" />
     <Compile Include="ConstructorWithInitDataTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

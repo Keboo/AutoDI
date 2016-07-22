@@ -6,25 +6,25 @@ using Moq.AutoMock;
 namespace AutoDI.Tests
 {
     [TestClass]
-    public class ConstructorWithInitDataTests
+    public class ConstructorWithDependencyParametersTests
     {
         [TestMethod]
-        public void CanCreateObjectWithInitData()
+        public void WhenDependencyHasCustomAttributeWithPropertyItResolves()
         {
             var mocker = new AutoMocker();
-            var service1 = mocker.Get<IService>();
+            var service = mocker.Get<IService>();
+
             var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup( x => x.Resolve<IService>( It.IsAny<object[]>() ) ).Returns( service1 ).Verifiable();
-            var initData = new InitData();
+            dr.Setup( x => x.Resolve<IService>( It.Is<object[]>( p => p.Length == 2 && p[0].Equals( 4 ) && p[1].Equals( "Test" ) ) ) ).Returns( service ).Verifiable();
 
             try
             {
                 DependencyResolver.Set( dr.Object );
 
-                var sut = new ClassWithInitData( initData );
-                Assert.AreEqual( service1, sut.Service );
-                Assert.AreEqual( initData, sut.Data );
-                dr.Verify();
+                var sut = new ClassWithTwoDependencyParams();
+
+                Assert.AreEqual( service, sut.Service );
+                mocker.VerifyAll();
             }
             finally
             {

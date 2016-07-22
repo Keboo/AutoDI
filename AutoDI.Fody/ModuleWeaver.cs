@@ -1,14 +1,12 @@
-﻿using Mono.Cecil;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Xml.Linq;
-using AutoDI;
+﻿using AutoDI;
 using Microsoft.Build.Framework;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Linq;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 // ReSharper disable once CheckNamespace
@@ -111,6 +109,11 @@ public class ModuleWeaver
                               return true;
                           } ).First() );
 
+                        Action<Instruction> insertInstruction = code =>
+                        {
+                            instructions.Insert( insertionPoint++, code );
+                        };
+
                         var end = Instruction.Create( OpCodes.Nop );
 
                         var resolverVariable = new VariableDefinition( resolverType );
@@ -120,40 +123,40 @@ public class ModuleWeaver
 
                         //Create the ResolverRequest
                         //Get the calling type
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldtoken, type ) );
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Call, getTypeMethod ) );
-                        //Create a new array for to hold the dependency types
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldc_I4, dependencyParameters.Count ) );
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Newarr, typeReference ) );
+                        insertInstruction( Instruction.Create( OpCodes.Ldtoken, type ) );
+                        insertInstruction( Instruction.Create( OpCodes.Call, getTypeMethod ) );
+                        //Create a new array to hold the dependency types
+                        insertInstruction( Instruction.Create( OpCodes.Ldc_I4, dependencyParameters.Count ) );
+                        insertInstruction( Instruction.Create( OpCodes.Newarr, typeReference ) );
                         for ( int i = 0; i < dependencyParameters.Count; ++i )
                         {
                             //Load the dependency type into the array
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Dup ) );
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldc_I4, i ) );
+                            insertInstruction( Instruction.Create( OpCodes.Dup ) );
+                            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, i ) );
                             TypeReference parameterType = ModuleDefinition.ImportReference( dependencyParameters[i].ParameterType );
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldtoken, parameterType ) );
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Call, getTypeMethod ) );
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Stelem_Ref ) );
+                            insertInstruction( Instruction.Create( OpCodes.Ldtoken, parameterType ) );
+                            insertInstruction( Instruction.Create( OpCodes.Call, getTypeMethod ) );
+                            insertInstruction( Instruction.Create( OpCodes.Stelem_Ref ) );
                         }
                         //Call the ResolverRequest constructor
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Newobj, resolverRequestCtor ) );
+                        insertInstruction( Instruction.Create( OpCodes.Newobj, resolverRequestCtor ) );
                         //Store the resolver request in the variable
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Stloc, resolverRequestVariable ) );
+                        insertInstruction( Instruction.Create( OpCodes.Stloc, resolverRequestVariable ) );
                         //Load the resolver request from the variable
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldloc, resolverRequestVariable ) );
+                        insertInstruction( Instruction.Create( OpCodes.Ldloc, resolverRequestVariable ) );
 
                         //Get the IDependencyResolver by calling DependencyResolver.Get(ResolverRequest)
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Call,
+                        insertInstruction( Instruction.Create( OpCodes.Call,
                             new MethodReference( nameof( DependencyResolver.Get ), resolverType, dependencyResolverType )
                             {
                                 Parameters = { new ParameterDefinition( resolverRequestType ) }
                             } ) );
                         //Store the resolver in our local variable
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Stloc, resolverVariable ) );
+                        insertInstruction( Instruction.Create( OpCodes.Stloc, resolverVariable ) );
                         //Push the resolver on top of the stack
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldloc, resolverVariable ) );
+                        insertInstruction( Instruction.Create( OpCodes.Ldloc, resolverVariable ) );
                         //Branch to the end if the resolver is null
-                        instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Brfalse, end ) );
+                        insertInstruction( Instruction.Create( OpCodes.Brfalse, end ) );
 
                         foreach ( ParameterDefinition parameter in dependencyParameters )
                         {
@@ -167,18 +170,62 @@ public class ModuleWeaver
                                 LogWarning(
                                     $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null" );
                             }
+
                             TypeReference parameterType = ModuleDefinition.ImportReference( parameter.ParameterType );
                             var afterParam = Instruction.Create( OpCodes.Nop );
                             //Push dependency parameter onto the stack
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldarg, parameter ) );
-                            //Push null onto the stack - TODO check type and push default value?
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldnull ) );
+                            insertInstruction( Instruction.Create( OpCodes.Ldarg, parameter ) );
+                            //Push null onto the stack
+                            insertInstruction( Instruction.Create( OpCodes.Ldnull ) );
                             //Push 1 if the values are equal, 0 if they are not equal
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ceq ) );
+                            insertInstruction( Instruction.Create( OpCodes.Ceq ) );
                             //Branch if the value is false (0), the dependency was set by the caller we wont replace it
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Brfalse_S, afterParam ) );
+                            insertInstruction( Instruction.Create( OpCodes.Brfalse_S, afterParam ) );
                             //Push the dependency resolver onto the stack
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Ldloc, resolverVariable ) );
+                            insertInstruction( Instruction.Create( OpCodes.Ldloc, resolverVariable ) );
+
+                            //Create parameters array
+                            var dependencyAttribute = parameter.CustomAttributes.First( x => IsSubclassOf<DependencyAttribute>( x.AttributeType ) );
+                            //var attributeVariable = new VariableDefinition( dependencyAttribute.AttributeType );
+                            //ctor.Body.Variables.Add( attributeVariable );
+                            //insertInstruction( Instruction.Create( OpCodes.Newobj, dependencyAttribute.Constructor ) );
+                            //insertInstruction( Instruction.Create( OpCodes.Stloc, attributeVariable ) );
+                            //insertInstruction( Instruction.Create( OpCodes.Ldloc, attributeVariable ) );
+
+                            var values =
+                                ( dependencyAttribute.ConstructorArguments?.FirstOrDefault().Value as CustomAttributeArgument[] )
+                                    ?.Select( x => x.Value )
+                                    .OfType<CustomAttributeArgument>()
+                                    .Select( x => x.Value )
+                                    .ToArray();
+                            if ( ( values?.Length ?? 0 ) == 0 )
+                            {
+                                insertInstruction( Instruction.Create( OpCodes.Call, new GenericInstanceMethod(
+                                    ModuleDefinition.ImportReference( typeof( Array ).GetMethod( nameof( Array.Empty ) ) ) )
+                                {
+                                    GenericArguments = { ModuleDefinition.ImportReference( typeof( object ) ) }
+                                } ) );
+                            }
+                            else
+                            {
+                                insertInstruction( Instruction.Create( OpCodes.Ldc_I4, values?.Length ?? 0 ) );
+                                insertInstruction( Instruction.Create( OpCodes.Newarr, ModuleDefinition.ImportReference( typeof( object ) ) ) );
+                                if ( values?.Length > 0 )
+                                {
+                                    for ( int i = 0; i < values.Length; ++i )
+                                    {
+                                        insertInstruction( Instruction.Create( OpCodes.Dup ) );
+                                        //Push the array index to insert
+                                        insertInstruction( Instruction.Create( OpCodes.Ldc_I4, i ) );
+                                        //Insert constant value with any boxing/conversion needed
+                                        InsertObjectConstant( insertInstruction, values[i] );
+                                        //Push the object into the array at index
+                                        insertInstruction( Instruction.Create( OpCodes.Stelem_Ref ) );
+                                    }
+                                }
+                            }
+
+
                             //Call the resolve method
                             var resolveMethod = ModuleDefinition.ImportReference(
                                     typeof( IDependencyResolver ).GetMethod( nameof( IDependencyResolver.Resolve ) ) );
@@ -186,12 +233,13 @@ public class ModuleWeaver
                             {
                                 GenericArguments = { parameterType }
                             };
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Callvirt, resolveMethod ) );
+                            insertInstruction( Instruction.Create( OpCodes.Callvirt, resolveMethod ) );
                             //Store the return from the resolve method in the method parameter
-                            instructions.Insert( insertionPoint++, Instruction.Create( OpCodes.Starg, parameter ) );
-                            instructions.Insert( insertionPoint++, afterParam );
+                            insertInstruction( Instruction.Create( OpCodes.Starg, parameter ) );
+                            insertInstruction( afterParam );
                         }
-                        instructions.Insert( insertionPoint, end );
+                        insertInstruction( end );
+
                         ctor.Body.OptimizeMacros();
                     }
                 }
@@ -212,6 +260,65 @@ public class ModuleWeaver
                 return true;
         }
         return false;
+    }
+
+    private void InsertObjectConstant( Action<Instruction> insertInstruction, object constant )
+    {
+        if ( ReferenceEquals( constant, null ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldnull ) );
+            return;
+        }
+        if ( constant is string )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldstr, (string)constant ) );
+            return;
+        }
+        if ( constant is int )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
+            insertInstruction( Instruction.Create( OpCodes.Box, ModuleDefinition.ImportReference( typeof( int ) ) ) );
+            return;
+        }
+        if ( constant is long )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I8, (long)constant ) );
+            return;
+        }
+        if ( constant is double )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_R8, (double)constant ) );
+            return;
+        }
+        if ( constant is float )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_R4, (float)constant ) );
+            return;
+        }
+        if ( constant is short )
+        {
+            //insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
+            //return;
+        }
+        if ( constant is byte )
+        {
+            //insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
+            //return;
+        }
+        if ( constant is uint )
+        {
+            //insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
+            //return;
+        }
+        if ( constant is ulong )
+        {
+
+        }
+        if ( constant is ushort )
+        {
+            //insertInstruction( Instruction.Create( OpCodes.Lde ) );
+
+        }
     }
 
     // Will be called when a request to cancel the build occurs. OPTIONAL

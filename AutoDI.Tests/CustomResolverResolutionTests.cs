@@ -6,7 +6,7 @@ using Moq.AutoMock;
 namespace AutoDI.Tests
 {
     [TestClass]
-    public class ConstructorWithCustomResolver
+    public class CustomResolverResolutionTests
     {
         [TestMethod]
         public void CanUseResolverBehaviorToCustomizeResolverInstanceReturned()
@@ -15,7 +15,7 @@ namespace AutoDI.Tests
             var service = mocker.Get<IService>();
 
             var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup( x => x.Resolve<IService>() ).Returns( service ).Verifiable();
+            dr.Setup( x => x.Resolve<IService>( It.IsAny<object[]>() ) ).Returns( service ).Verifiable();
 
             var behavior = mocker.GetMock<IGetResolverBehavior>();
             behavior.Setup( b => b.Get( It.Is<ResolverRequest>( x => x.CallerType == typeof( ClassWithSingleDependency ) && x.Dependencies.Length == 1 && x.Dependencies[0] == typeof(IService) ) ) )
