@@ -86,22 +86,5 @@ namespace AutoDI.Tests
 
             new ClassWithDependencies( mocker.Get<IService>(), null );
         }
-
-        private void Test()
-        {
-            var resolver = new Resolver();
-            
-            resolver.Resolve<IService>(0, "Kevin");
-            resolver.Resolve<IService2>();
-        }
-
-
-        private class Resolver : IDependencyResolver
-        {
-            public T Resolve<T>(params object[] parameters)
-            {
-                return default(T);
-            }
-        }
     }
 }

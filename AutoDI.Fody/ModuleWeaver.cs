@@ -6,6 +6,7 @@ using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Xml.Linq;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
@@ -94,7 +95,7 @@ public class ModuleWeaver
                 foreach ( var ctor in type.Methods.Where( x => x.IsConstructor ) )
                 {
                     var dependencyParameters = ctor.Parameters.Where(
-                        p => p.CustomAttributes.Any( a => IsSubclassOf<DependencyAttribute>( a.AttributeType ) ) ).ToList();
+                        p => p.CustomAttributes.Any( a => IsType<DependencyAttribute>( a.AttributeType ) ) ).ToList();
 
                     if ( dependencyParameters.Any() )
                     {
@@ -185,21 +186,15 @@ public class ModuleWeaver
                             insertInstruction( Instruction.Create( OpCodes.Ldloc, resolverVariable ) );
 
                             //Create parameters array
-                            var dependencyAttribute = parameter.CustomAttributes.First( x => IsSubclassOf<DependencyAttribute>( x.AttributeType ) );
-                            //var attributeVariable = new VariableDefinition( dependencyAttribute.AttributeType );
-                            //ctor.Body.Variables.Add( attributeVariable );
-                            //insertInstruction( Instruction.Create( OpCodes.Newobj, dependencyAttribute.Constructor ) );
-                            //insertInstruction( Instruction.Create( OpCodes.Stloc, attributeVariable ) );
-                            //insertInstruction( Instruction.Create( OpCodes.Ldloc, attributeVariable ) );
-
+                            var dependencyAttribute = parameter.CustomAttributes.First( x => IsType<DependencyAttribute>( x.AttributeType ) );
                             var values =
                                 ( dependencyAttribute.ConstructorArguments?.FirstOrDefault().Value as CustomAttributeArgument[] )
                                     ?.Select( x => x.Value )
                                     .OfType<CustomAttributeArgument>()
-                                    .Select( x => x.Value )
                                     .ToArray();
                             if ( ( values?.Length ?? 0 ) == 0 )
                             {
+                                //Push empty array onto the stack
                                 insertInstruction( Instruction.Create( OpCodes.Call, new GenericInstanceMethod(
                                     ModuleDefinition.ImportReference( typeof( Array ).GetMethod( nameof( Array.Empty ) ) ) )
                                 {
@@ -208,6 +203,7 @@ public class ModuleWeaver
                             }
                             else
                             {
+                                //Create array of appropriate length
                                 insertInstruction( Instruction.Create( OpCodes.Ldc_I4, values?.Length ?? 0 ) );
                                 insertInstruction( Instruction.Create( OpCodes.Newarr, ModuleDefinition.ImportReference( typeof( object ) ) ) );
                                 if ( values?.Length > 0 )
@@ -218,7 +214,7 @@ public class ModuleWeaver
                                         //Push the array index to insert
                                         insertInstruction( Instruction.Create( OpCodes.Ldc_I4, i ) );
                                         //Insert constant value with any boxing/conversion needed
-                                        InsertObjectConstant( insertInstruction, values[i] );
+                                        InsertObjectConstant( insertInstruction, values[i].Value, values[i].Type.Resolve() );
                                         //Push the object into the array at index
                                         insertInstruction( Instruction.Create( OpCodes.Stelem_Ref ) );
                                     }
@@ -248,78 +244,94 @@ public class ModuleWeaver
         }
         catch ( Exception ex )
         {
-            LogError( ex.ToString() );
+            var sb = new StringBuilder();
+            for ( Exception e = ex; e != null; e = e.InnerException )
+                sb.AppendLine( e.ToString() );
+            LogError( sb.ToString() );
         }
     }
 
-    private static bool IsSubclassOf<T>( TypeReference reference )
+    private static bool IsType<T>( TypeReference reference )
     {
-        for ( TypeDefinition def = reference.Resolve(); def != null; def = def.BaseType?.Resolve() )
-        {
-            if ( def.FullName == typeof( T ).FullName )
-                return true;
-        }
-        return false;
+        return IsType( reference, typeof( T ) );
     }
 
-    private void InsertObjectConstant( Action<Instruction> insertInstruction, object constant )
+    private static bool IsType( TypeReference reference, Type type )
+    {
+        return string.Equals( reference.FullName, type.FullName, StringComparison.Ordinal );
+    }
+
+    private void InsertObjectConstant( Action<Instruction> insertInstruction, object constant, TypeDefinition type )
     {
         if ( ReferenceEquals( constant, null ) )
         {
             insertInstruction( Instruction.Create( OpCodes.Ldnull ) );
             return;
         }
-        if ( constant is string )
+        if ( type.IsEnum )
         {
-            insertInstruction( Instruction.Create( OpCodes.Ldstr, (string)constant ) );
-            return;
+            InsertAndBoxConstant( insertInstruction, constant, type.GetEnumUnderlyingType(), type );
         }
-        if ( constant is int )
+        else
         {
-            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
-            insertInstruction( Instruction.Create( OpCodes.Box, ModuleDefinition.ImportReference( typeof( int ) ) ) );
-            return;
-        }
-        if ( constant is long )
-        {
-            insertInstruction( Instruction.Create( OpCodes.Ldc_I8, (long)constant ) );
-            return;
-        }
-        if ( constant is double )
-        {
-            insertInstruction( Instruction.Create( OpCodes.Ldc_R8, (double)constant ) );
-            return;
-        }
-        if ( constant is float )
-        {
-            insertInstruction( Instruction.Create( OpCodes.Ldc_R4, (float)constant ) );
-            return;
-        }
-        if ( constant is short )
-        {
-            //insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
-            //return;
-        }
-        if ( constant is byte )
-        {
-            //insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
-            //return;
-        }
-        if ( constant is uint )
-        {
-            //insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
-            //return;
-        }
-        if ( constant is ulong )
-        {
-
-        }
-        if ( constant is ushort )
-        {
-            //insertInstruction( Instruction.Create( OpCodes.Lde ) );
-
+            var typeDef = ModuleDefinition.ImportReference( constant.GetType() );
+            InsertAndBoxConstant( insertInstruction, constant, typeDef, constant is string ? null : typeDef );
         }
     }
+
+    private void InsertAndBoxConstant( Action<Instruction> insertInstruction, object constant, TypeReference type, TypeReference boxType = null )
+    {
+        if ( IsType( type, typeof( string ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldstr, (string)constant ) );
+        }
+        else if ( IsType( type, typeof( int ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)constant ) );
+        }
+        else if ( IsType( type, typeof( long ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I8, (long)constant ) );
+        }
+        else if ( IsType( type, typeof( double ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_R8, (double)constant ) );
+        }
+        else if ( IsType( type, typeof( float ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_R4, (float)constant ) );
+        }
+        else if ( IsType( type, typeof( short ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (short)constant ) );
+        }
+        else if ( IsType( type, typeof( byte ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)(byte)constant ) );
+        }
+        else if ( IsType( type, typeof( uint ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)(uint)constant ) );
+        }
+        else if ( IsType( type, typeof( ulong ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I8, (long)(ulong)constant ) );
+        }
+        else if ( IsType( type, typeof( ushort ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (ushort)constant ) );
+        }
+        else if ( IsType( type, typeof( sbyte ) ) )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Ldc_I4, (int)(sbyte)constant ) );
+        }
+        if ( boxType != null )
+        {
+            insertInstruction( Instruction.Create( OpCodes.Box, boxType ) );
+        }
+        LogWarning( $"Unknown constant type {constant.GetType().FullName}" );
+    }
+
 
     // Will be called when a request to cancel the build occurs. OPTIONAL
     public void Cancel()
