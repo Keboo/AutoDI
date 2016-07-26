@@ -61,7 +61,10 @@ public class MyClass
     AutoDI.IDependencyResolver resolver = AutoDI.DependencyResolver.Get(resolverRequest);
     if (resolver != null)
     {
-      service = resolver.Resolve<IService>("Extra Data");
+      if (service == null)
+      {
+        service = resolver.Resolve<IService>("Extra Data");
+      }
     }
     _service = service;
   }
