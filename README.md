@@ -1,7 +1,7 @@
 # AutoDI
 A framework for simplifying the creation of objects that only partially depend on resources in your favorite DI container.
 
-It is availible on [Nuget](https://www.nuget.org/packages/AutoDI.Fody/)
+It is availible on [NuGet](https://www.nuget.org/packages/AutoDI.Fody/)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ybmv50xxi3lb086o?svg=true)](https://ci.appveyor.com/project/Keboo/autodi)
 
