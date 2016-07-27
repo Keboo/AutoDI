@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle( "CastleWindsorExample" )]
+[assembly: AssemblyTitle( "CastleWindsor.Example" )]
 [assembly: AssemblyDescription( "" )]
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "" )]
-[assembly: AssemblyProduct( "CastleWindsorExample" )]
+[assembly: AssemblyProduct( "CastleWindsor.Example" )]
 [assembly: AssemblyCopyright( "Copyright ©  2016" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible( false )]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid( "8e5fe7d6-299e-43e4-bd6b-26ac8031d80f" )]
+[assembly: Guid( "cfa3d232-116c-4118-9825-d1892544ef06" )]
 
 // Version information for an assembly consists of the following four values:
 //

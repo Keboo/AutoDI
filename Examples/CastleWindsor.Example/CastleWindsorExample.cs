@@ -4,7 +4,7 @@ using Castle.Windsor;
 using ExampleClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace CastleWindsorExample
+namespace CastleWindsor.Example
 {
     [TestClass]
     public class CastleWindsorExample

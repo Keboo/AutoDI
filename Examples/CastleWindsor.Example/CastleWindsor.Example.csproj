@@ -3,11 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{8E5FE7D6-299E-43E4-BD6B-26AC8031D80F}</ProjectGuid>
+    <ProjectGuid>{CFA3D232-116C-4118-9825-D1892544EF06}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CastleWindsorExample</RootNamespace>
-    <AssemblyName>CastleWindsorExample</AssemblyName>
+    <RootNamespace>CastleWindsor.Example</RootNamespace>
+    <AssemblyName>CastleWindsor.Example</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>

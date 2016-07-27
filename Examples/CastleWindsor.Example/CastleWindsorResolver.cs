@@ -2,7 +2,7 @@
 using AutoDI;
 using Castle.Windsor;
 
-namespace CastleWindsorExample
+namespace CastleWindsor.Example
 {
     public class CastleWindsorResolver : IDependencyResolver
     {
