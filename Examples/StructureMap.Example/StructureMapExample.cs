@@ -14,7 +14,7 @@ namespace StructureMap.Example
             {
                 x.For<IService>().Use<Service>();
             } );
-
+            
             try
             {
                 DependencyResolver.Set( new StructureMapResolver( container ) );
