@@ -10,10 +10,10 @@
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Fody extension for simplifying the creation of objects from your favorite DI container</description>
-    <releaseNotes>Initial release</releaseNotes>
+    <releaseNotes>Adding parameters to the IDependencyResolver.Resolve method and DependencyResolver.Get methods.</releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>AutoDI, Fody</tags>
-	<dependencies>
+    <dependencies>
       <dependency id="Fody" version ="1.29"/>
     </dependencies>
   </metadata>
