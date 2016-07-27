@@ -14,10 +14,10 @@ namespace CastleWindsor.Example
         {
             using ( var container = new WindsorContainer() )
             {
-                container.Register(Component.For<IService>().ImplementedBy<Service>());
+                container.Register( Component.For<IService>().ImplementedBy<Service>() );
                 try
                 {
-                    DependencyResolver.Set( new CastleWindsorResolver(container) );
+                    DependencyResolver.Set( new CastleWindsorResolver( container ) );
 
                     var @class = new Class();
 

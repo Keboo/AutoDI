@@ -12,19 +12,20 @@ namespace Autofac.Example
         {
             var builder = new ContainerBuilder();
             builder.RegisterType<Service>().As<IService>();
-            IContainer container = builder.Build();
-
-            try
+            using ( IContainer container = builder.Build() )
             {
-                DependencyResolver.Set( new AutofacResolver( container ) );
+                try
+                {
+                    DependencyResolver.Set( new AutofacResolver( container ) );
 
-                var @class = new Class();
+                    var @class = new Class();
 
-                Assert.IsTrue( @class.Service is Service );
-            }
-            finally
-            {
-                DependencyResolver.Set( (IDependencyResolver)null );
+                    Assert.IsTrue( @class.Service is Service );
+                }
+                finally
+                {
+                    DependencyResolver.Set( (IDependencyResolver)null );
+                }
             }
         }
     }

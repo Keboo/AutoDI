@@ -1,5 +1,4 @@
-﻿using System;
-using AutoDI;
+﻿using AutoDI;
 using ExampleClasses;
 using Microsoft.Practices.Unity;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

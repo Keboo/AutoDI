@@ -10,22 +10,23 @@ namespace StructureMap.Example
         [TestMethod]
         public void CanUseStructureMap()
         {
-            var container = new Container( x =>
+            using ( var container = new Container( x =>
+              {
+                  x.For<IService>().Use<Service>();
+              } ) )
             {
-                x.For<IService>().Use<Service>();
-            } );
-            
-            try
-            {
-                DependencyResolver.Set( new StructureMapResolver( container ) );
+                try
+                {
+                    DependencyResolver.Set( new StructureMapResolver( container ) );
 
-                var @class = new Class();
+                    var @class = new Class();
 
-                Assert.IsTrue( @class.Service is Service );
-            }
-            finally
-            {
-                DependencyResolver.Set( (IDependencyResolver)null );
+                    Assert.IsTrue( @class.Service is Service );
+                }
+                finally
+                {
+                    DependencyResolver.Set( (IDependencyResolver)null );
+                }
             }
         }
     }

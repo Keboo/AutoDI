@@ -14,7 +14,7 @@ namespace SprintNet.Example
         {
             using ( var context = new StaticApplicationContext() )
             {
-                context.RegisterPrototype(typeof(IService).FullName, typeof(Service), new MutablePropertyValues());
+                context.RegisterPrototype( typeof( IService ).FullName, typeof( Service ), new MutablePropertyValues() );
 
                 try
                 {
