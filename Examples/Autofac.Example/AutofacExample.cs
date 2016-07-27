@@ -2,22 +2,21 @@
 using ExampleClasses;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace StructureMap.Example
+namespace Autofac.Example
 {
     [TestClass]
-    public class StructureMapExample
+    public class AutofacExample
     {
         [TestMethod]
-        public void CanUseStructureMap()
+        public void CanUseAutofac()
         {
-            var container = new Container( x =>
-            {
-                x.For<IService>().Use<Service>();
-            } );
+            var builder = new ContainerBuilder();
+            builder.RegisterType<Service>().As<IService>();
+            IContainer container = builder.Build();
 
             try
             {
-                DependencyResolver.Set( new StructureMapResolver( container ) );
+                DependencyResolver.Set( new AutofacResolver( container ) );
 
                 var @class = new Class();
 
