@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.25123.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI", "AutoDI\AutoDI.csproj", "{712610E5-F444-4A93-9C40-A478CEFA8EE2}"
 EndProject
@@ -24,9 +24,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{27881B07-0FEE-49EB-B580-E12F01B8AD70}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StructureMap", "Examples\StructureMap\StructureMap.csproj", "{B40A29C8-4AA3-428F-8ABA-EFEC7E600E20}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleClasses", "Examples\ExampleClasses\ExampleClasses.csproj", "{BD145C46-C1F5-4D5C-A775-1BAA772512A4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StructureMap.Example", "Examples\StructureMap.Example\StructureMap.Example.csproj", "{73AB70AA-1FA9-4283-8C2C-E5E59B7E4B38}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,20 +50,20 @@ Global
 		{47947EDA-C588-4F2A-94DB-0AE713F35AA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47947EDA-C588-4F2A-94DB-0AE713F35AA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47947EDA-C588-4F2A-94DB-0AE713F35AA7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B40A29C8-4AA3-428F-8ABA-EFEC7E600E20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B40A29C8-4AA3-428F-8ABA-EFEC7E600E20}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B40A29C8-4AA3-428F-8ABA-EFEC7E600E20}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B40A29C8-4AA3-428F-8ABA-EFEC7E600E20}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BD145C46-C1F5-4D5C-A775-1BAA772512A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BD145C46-C1F5-4D5C-A775-1BAA772512A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD145C46-C1F5-4D5C-A775-1BAA772512A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD145C46-C1F5-4D5C-A775-1BAA772512A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73AB70AA-1FA9-4283-8C2C-E5E59B7E4B38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73AB70AA-1FA9-4283-8C2C-E5E59B7E4B38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73AB70AA-1FA9-4283-8C2C-E5E59B7E4B38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73AB70AA-1FA9-4283-8C2C-E5E59B7E4B38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{B40A29C8-4AA3-428F-8ABA-EFEC7E600E20} = {27881B07-0FEE-49EB-B580-E12F01B8AD70}
 		{BD145C46-C1F5-4D5C-A775-1BAA772512A4} = {27881B07-0FEE-49EB-B580-E12F01B8AD70}
+		{73AB70AA-1FA9-4283-8C2C-E5E59B7E4B38} = {27881B07-0FEE-49EB-B580-E12F01B8AD70}
 	EndGlobalSection
 EndGlobal
