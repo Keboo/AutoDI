@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Fody extension for simplifying the creation of objects from your favorite DI container</description>
-    <releaseNotes>Adding parameters to the IDependencyResolver.Resolve method and DependencyResolver.Get methods.</releaseNotes>
+    <releaseNotes>Changing to resolve dependencies prior to base constructor calls to allow derived classes to resolve dependencies for their base class.</releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>AutoDI, Fody</tags>
     <dependencies>

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -14,8 +13,6 @@ namespace AutoDI.Fody
         {
             if (constructor == null) throw new ArgumentNullException(nameof(constructor));
             _constructor = constructor;
-
-            _insertionPoint = FindInsertionPoint(constructor.Body);
         }
 
         public void Insert(OpCode code, TypeReference type)
@@ -76,20 +73,6 @@ namespace AutoDI.Fody
         public void Insert(Instruction instruction)
         {
             _constructor.Body.Instructions.Insert(_insertionPoint++, instruction);
-        }
-
-        private static int FindInsertionPoint(MethodBody body)
-        {
-            var instructions = body.Instructions;
-            bool seenBaseCall = false;
-            return instructions.IndexOf(instructions.SkipWhile(x =>
-            {
-                if (x.OpCode != OpCodes.Nop && seenBaseCall)
-                    return false;
-                if (x.OpCode == OpCodes.Call)
-                    seenBaseCall = true;
-                return true;
-            }).First());
         }
 
     }

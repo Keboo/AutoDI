@@ -76,6 +76,51 @@ public class MyClass
 }
 ```
 
+It is important to note, that the dependencies are actually resolved _prior_ to calling any base constructors.
+Functionally this means, that the following:
+```C#
+public class DerivedClass : BaseClass
+{
+  public DerivedClass([Dependency]IService service = null) : base(service)
+  { }
+}
+public class BaseClass
+{
+  public BaseClass(IService service)
+  {
+    if (service == null) throw new ArgumentNullException(nameof(service));
+  }
+}
+```
+Functionally gets changed to something like this:
+```C#
+public class DerivedClass : BaseClass
+{
+  public DerivedClass([Dependency]IService service = null)
+  {
+    var resolverRequest = new AutoDI.ResolverRequest(typeof(DerivedClass), new[]{typeof(IService)});
+    AutoDI.IDependencyResolver resolver = AutoDI.DependencyResolver.Get(resolverRequest);
+    if (resolver != null)
+    {
+      if (service == null)
+      {
+        service = resolver.Resolve<IService>();
+      }
+    }
+    base(service);
+  }
+}
+public class BaseClass
+{
+  public BaseClass(IService service)
+  {
+    if (service == null) throw new ArgumentNullException(nameof(service));
+  }
+}
+```
+You will notice that `BaseClass` remains unchanged because its constructor parameter was not decorated with the `DependencyAttribute`.
+
+
 ## Limitations
 Again, this is a *not* an IL weaving DI container. It is merely a bridge that allows for using simple syntax for instantiating objects. 
 - Because it works by IL weaving extra commands into the constructor and requires you to opt-in by decorating constructor arguments, it is only possible to use this on asemblies that you can edit and compile. 

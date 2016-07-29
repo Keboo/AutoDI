@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassesWithDependencyParams.cs" />
+    <Compile Include="ClassWithExplicitBaseDependency.cs" />
     <Compile Include="ClassWithDependencies.cs" />
     <Compile Include="ClassWithInitData.cs" />
     <Compile Include="ClassWithSingleDependency.cs" />
