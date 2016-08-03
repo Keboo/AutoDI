@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -7,12 +8,15 @@ namespace AutoDI.Fody
     internal class Injector
     {
         private readonly MethodDefinition _constructor;
+        private readonly Document _sequencePointDocument;
         private int _insertionPoint;
 
         public Injector(MethodDefinition constructor)
         {
             if (constructor == null) throw new ArgumentNullException(nameof(constructor));
             _constructor = constructor;
+            _sequencePointDocument = constructor.Body.Instructions.FirstOrDefault(x => x.SequencePoint.Document != null)
+                ?.SequencePoint.Document;
         }
 
         public void Insert(OpCode code, TypeReference type)
@@ -72,6 +76,14 @@ namespace AutoDI.Fody
 
         public void Insert(Instruction instruction)
         {
+            if (_sequencePointDocument != null)
+            {
+                instruction.SequencePoint = new SequencePoint( _sequencePointDocument )
+                {
+                    StartLine = 0xfeefee,
+                    EndLine = 0xfeefee
+                };
+            }
             _constructor.Body.Instructions.Insert(_insertionPoint++, instruction);
         }
 
