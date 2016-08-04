@@ -82,145 +82,144 @@ public class ModuleWeaver
     {
         try
         {
-            foreach (TypeDefinition type in ModuleDefinition.Types)
+            foreach ( TypeDefinition type in ModuleDefinition.Types )
             {
-                foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
+                foreach ( MethodDefinition ctor in type.Methods.Where( x => x.IsConstructor ) )
                 {
-                    ProcessConstructor(type, ctor);
+                    ProcessConstructor( type, ctor );
                 }
             }
-            ModuleDefinition.Write(AssemblyFilePath);
         }
-        catch (Exception ex)
+        catch ( Exception ex )
         {
             var sb = new StringBuilder();
-            for (Exception e = ex; e != null; e = e.InnerException)
-                sb.AppendLine(e.ToString());
-            LogError(sb.ToString());
+            for ( Exception e = ex; e != null; e = e.InnerException )
+                sb.AppendLine( e.ToString() );
+            LogError( sb.ToString() );
         }
     }
 
-    private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor)
+    private void ProcessConstructor( TypeDefinition type, MethodDefinition constructor )
     {
         var dependencyParameters = constructor.Parameters.Where(
-                        p => p.CustomAttributes.Any(a => a.AttributeType.IsType<DependencyAttribute>())).ToList();
+                        p => p.CustomAttributes.Any( a => a.AttributeType.IsType<DependencyAttribute>() ) ).ToList();
 
-        if (dependencyParameters.Any())
+        if ( dependencyParameters.Any() )
         {
             var resolverType = ModuleDefinition.Get<IDependencyResolver>();
-            var dependencyResolverType = ModuleDefinition.ImportReference(typeof(DependencyResolver));
+            var dependencyResolverType = ModuleDefinition.ImportReference( typeof( DependencyResolver ) );
             var typeReference = ModuleDefinition.Get<Type>();
-            var getTypeMethod = ModuleDefinition.ImportReference(new MethodReference(nameof(Type.GetTypeFromHandle), typeReference, typeReference)
+            var getTypeMethod = ModuleDefinition.ImportReference( new MethodReference( nameof( Type.GetTypeFromHandle ), typeReference, typeReference )
             {
-                Parameters = { new ParameterDefinition(ModuleDefinition.ImportReference(typeof(RuntimeTypeHandle))) }
-            });
+                Parameters = { new ParameterDefinition( ModuleDefinition.ImportReference( typeof( RuntimeTypeHandle ) ) ) }
+            } );
             var resolverRequestType = ModuleDefinition.Get<ResolverRequest>();
-            var resolverRequestCtor = ModuleDefinition.ImportReference(typeof(ResolverRequest).GetConstructor(new[] { typeof(Type), typeof(Type[]) }));
+            var resolverRequestCtor = ModuleDefinition.ImportReference( typeof( ResolverRequest ).GetConstructor( new[] { typeof( Type ), typeof( Type[] ) } ) );
 
-            var injector = new Injector(constructor);
+            var injector = new Injector( constructor );
 
-            var end = Instruction.Create(OpCodes.Nop);
+            var end = Instruction.Create( OpCodes.Nop );
 
-            var resolverVariable = new VariableDefinition(resolverType);
-            constructor.Body.Variables.Add(resolverVariable);
-            var resolverRequestVariable = new VariableDefinition(resolverRequestType);
-            constructor.Body.Variables.Add(resolverRequestVariable);
+            var resolverVariable = new VariableDefinition( resolverType );
+            constructor.Body.Variables.Add( resolverVariable );
+            var resolverRequestVariable = new VariableDefinition( resolverRequestType );
+            constructor.Body.Variables.Add( resolverRequestVariable );
 
             //Create the ResolverRequest
             //Get the calling type
-            injector.Insert(OpCodes.Ldtoken, type);
-            injector.Insert(OpCodes.Call, getTypeMethod);
+            injector.Insert( OpCodes.Ldtoken, type );
+            injector.Insert( OpCodes.Call, getTypeMethod );
             //Create a new array to hold the dependency types
-            injector.Insert(OpCodes.Ldc_I4, dependencyParameters.Count);
-            injector.Insert(OpCodes.Newarr, typeReference);
-            for (int i = 0; i < dependencyParameters.Count; ++i)
+            injector.Insert( OpCodes.Ldc_I4, dependencyParameters.Count );
+            injector.Insert( OpCodes.Newarr, typeReference );
+            for ( int i = 0; i < dependencyParameters.Count; ++i )
             {
                 //Load the dependency type into the array
-                injector.Insert(OpCodes.Dup);
-                injector.Insert(Instruction.Create(OpCodes.Ldc_I4, i));
-                TypeReference parameterType = ModuleDefinition.ImportReference(dependencyParameters[i].ParameterType);
-                injector.Insert(OpCodes.Ldtoken, parameterType);
-                injector.Insert(OpCodes.Call, getTypeMethod);
-                injector.Insert(OpCodes.Stelem_Ref);
+                injector.Insert( OpCodes.Dup );
+                injector.Insert( Instruction.Create( OpCodes.Ldc_I4, i ) );
+                TypeReference parameterType = ModuleDefinition.ImportReference( dependencyParameters[i].ParameterType );
+                injector.Insert( OpCodes.Ldtoken, parameterType );
+                injector.Insert( OpCodes.Call, getTypeMethod );
+                injector.Insert( OpCodes.Stelem_Ref );
             }
             //Call the ResolverRequest constructor
-            injector.Insert(OpCodes.Newobj, resolverRequestCtor);
+            injector.Insert( OpCodes.Newobj, resolverRequestCtor );
             //Store the resolver request in the variable
-            injector.Insert(OpCodes.Stloc, resolverRequestVariable);
+            injector.Insert( OpCodes.Stloc, resolverRequestVariable );
             //Load the resolver request from the variable
-            injector.Insert(OpCodes.Ldloc, resolverRequestVariable);
+            injector.Insert( OpCodes.Ldloc, resolverRequestVariable );
 
             //Get the IDependencyResolver by calling DependencyResolver.Get(ResolverRequest)
-            injector.Insert(OpCodes.Call,
-                new MethodReference(nameof(DependencyResolver.Get), resolverType, dependencyResolverType)
+            injector.Insert( OpCodes.Call,
+                new MethodReference( nameof( DependencyResolver.Get ), resolverType, dependencyResolverType )
                 {
-                    Parameters = { new ParameterDefinition(resolverRequestType) }
-                });
+                    Parameters = { new ParameterDefinition( resolverRequestType ) }
+                } );
             //Store the resolver in our local variable
-            injector.Insert(OpCodes.Stloc, resolverVariable);
+            injector.Insert( OpCodes.Stloc, resolverVariable );
             //Push the resolver on top of the stack
-            injector.Insert(OpCodes.Ldloc, resolverVariable);
+            injector.Insert( OpCodes.Ldloc, resolverVariable );
             //Branch to the end if the resolver is null
-            injector.Insert(OpCodes.Brfalse, end);
+            injector.Insert( OpCodes.Brfalse, end );
 
-            foreach (ParameterDefinition parameter in dependencyParameters)
+            foreach ( ParameterDefinition parameter in dependencyParameters )
             {
-                if (!parameter.IsOptional)
+                if ( !parameter.IsOptional )
                 {
                     LogInfo(
-                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {nameof(DependencyAttribute)} but is not an optional parameter. In {type.FullName}.");
+                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {nameof( DependencyAttribute )} but is not an optional parameter. In {type.FullName}." );
                 }
-                if (parameter.Constant != null)
+                if ( parameter.Constant != null )
                 {
                     LogWarning(
-                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
+                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null" );
                 }
 
-                TypeReference parameterType = ModuleDefinition.ImportReference(parameter.ParameterType);
-                var afterParam = Instruction.Create(OpCodes.Nop);
+                TypeReference parameterType = ModuleDefinition.ImportReference( parameter.ParameterType );
+                var afterParam = Instruction.Create( OpCodes.Nop );
                 //Push dependency parameter onto the stack
-                injector.Insert(OpCodes.Ldarg, parameter);
+                injector.Insert( OpCodes.Ldarg, parameter );
                 //Push null onto the stack
-                injector.Insert(OpCodes.Ldnull);
+                injector.Insert( OpCodes.Ldnull );
                 //Push 1 if the values are equal, 0 if they are not equal
-                injector.Insert(OpCodes.Ceq);
+                injector.Insert( OpCodes.Ceq );
                 //Branch if the value is false (0), the dependency was set by the caller we wont replace it
-                injector.Insert(OpCodes.Brfalse_S, afterParam);
+                injector.Insert( OpCodes.Brfalse_S, afterParam );
                 //Push the dependency resolver onto the stack
-                injector.Insert(OpCodes.Ldloc, resolverVariable);
+                injector.Insert( OpCodes.Ldloc, resolverVariable );
 
                 //Create parameters array
-                var dependencyAttribute = parameter.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
+                var dependencyAttribute = parameter.CustomAttributes.First( x => x.AttributeType.IsType<DependencyAttribute>() );
                 var values =
-                    (dependencyAttribute.ConstructorArguments?.FirstOrDefault().Value as CustomAttributeArgument[])
-                        ?.Select(x => x.Value)
+                    ( dependencyAttribute.ConstructorArguments?.FirstOrDefault().Value as CustomAttributeArgument[] )
+                        ?.Select( x => x.Value )
                         .OfType<CustomAttributeArgument>()
                         .ToArray();
-                if ((values?.Length ?? 0) == 0)
+                if ( ( values?.Length ?? 0 ) == 0 )
                 {
                     //Push empty array onto the stack
-                    injector.Insert(OpCodes.Call, new GenericInstanceMethod(
-                        ModuleDefinition.ImportReference(typeof(Array).GetMethod(nameof(Array.Empty))))
+                    injector.Insert( OpCodes.Call, new GenericInstanceMethod(
+                        ModuleDefinition.ImportReference( typeof( Array ).GetMethod( nameof( Array.Empty ) ) ) )
                     {
-                        GenericArguments = { ModuleDefinition.ImportReference(typeof(object)) }
-                    });
+                        GenericArguments = { ModuleDefinition.ImportReference( typeof( object ) ) }
+                    } );
                 }
                 else
                 {
                     //Create array of appropriate length
-                    injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
-                    injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
-                    if (values?.Length > 0)
+                    injector.Insert( OpCodes.Ldc_I4, values?.Length ?? 0 );
+                    injector.Insert( OpCodes.Newarr, ModuleDefinition.ImportReference( typeof( object ) ) );
+                    if ( values?.Length > 0 )
                     {
-                        for (int i = 0; i < values.Length; ++i)
+                        for ( int i = 0; i < values.Length; ++i )
                         {
-                            injector.Insert(OpCodes.Dup);
+                            injector.Insert( OpCodes.Dup );
                             //Push the array index to insert
-                            injector.Insert(OpCodes.Ldc_I4, i);
+                            injector.Insert( OpCodes.Ldc_I4, i );
                             //Insert constant value with any boxing/conversion needed
-                            InsertObjectConstant(injector, values[i].Value, values[i].Type.Resolve());
+                            InsertObjectConstant( injector, values[i].Value, values[i].Type.Resolve() );
                             //Push the object into the array at index
-                            injector.Insert(OpCodes.Stelem_Ref);
+                            injector.Insert( OpCodes.Stelem_Ref );
                         }
                     }
                 }
@@ -228,91 +227,91 @@ public class ModuleWeaver
 
                 //Call the resolve method
                 var resolveMethod = ModuleDefinition.ImportReference(
-                        typeof(IDependencyResolver).GetMethod(nameof(IDependencyResolver.Resolve)));
-                resolveMethod = new GenericInstanceMethod(resolveMethod)
+                        typeof( IDependencyResolver ).GetMethod( nameof( IDependencyResolver.Resolve ) ) );
+                resolveMethod = new GenericInstanceMethod( resolveMethod )
                 {
                     GenericArguments = { parameterType }
                 };
-                injector.Insert(OpCodes.Callvirt, resolveMethod);
+                injector.Insert( OpCodes.Callvirt, resolveMethod );
                 //Store the return from the resolve method in the method parameter
-                injector.Insert(OpCodes.Starg, parameter);
-                injector.Insert(afterParam);
+                injector.Insert( OpCodes.Starg, parameter );
+                injector.Insert( afterParam );
             }
-            injector.Insert(end);
+            injector.Insert( end );
 
             constructor.Body.OptimizeMacros();
         }
     }
-    
-    private void InsertObjectConstant(Injector injector, object constant, TypeDefinition type)
+
+    private void InsertObjectConstant( Injector injector, object constant, TypeDefinition type )
     {
-        if (ReferenceEquals(constant, null))
+        if ( ReferenceEquals( constant, null ) )
         {
-            injector.Insert(OpCodes.Ldnull);
+            injector.Insert( OpCodes.Ldnull );
             return;
         }
-        if (type.IsEnum)
+        if ( type.IsEnum )
         {
-            InsertAndBoxConstant(injector, constant, type.GetEnumUnderlyingType(), type);
+            InsertAndBoxConstant( injector, constant, type.GetEnumUnderlyingType(), type );
         }
         else
         {
-            var typeDef = ModuleDefinition.ImportReference(constant.GetType());
-            InsertAndBoxConstant(injector, constant, typeDef, constant is string ? null : typeDef);
+            var typeDef = ModuleDefinition.ImportReference( constant.GetType() );
+            InsertAndBoxConstant( injector, constant, typeDef, constant is string ? null : typeDef );
         }
     }
 
-    private void InsertAndBoxConstant(Injector injector, object constant, TypeReference type, TypeReference boxType = null)
+    private void InsertAndBoxConstant( Injector injector, object constant, TypeReference type, TypeReference boxType = null )
     {
-        if (type.IsType<string>())
+        if ( type.IsType<string>() )
         {
-            injector.Insert(OpCodes.Ldstr, (string)constant);
+            injector.Insert( OpCodes.Ldstr, (string)constant );
         }
-        else if (type.IsType<int>())
+        else if ( type.IsType<int>() )
         {
-            injector.Insert(OpCodes.Ldc_I4, (int)constant);
+            injector.Insert( OpCodes.Ldc_I4, (int)constant );
         }
-        else if (type.IsType<long>())
+        else if ( type.IsType<long>() )
         {
-            injector.Insert(OpCodes.Ldc_I8, (long)constant);
+            injector.Insert( OpCodes.Ldc_I8, (long)constant );
         }
-        else if (type.IsType<double>())
+        else if ( type.IsType<double>() )
         {
-            injector.Insert(OpCodes.Ldc_R8, (double)constant);
+            injector.Insert( OpCodes.Ldc_R8, (double)constant );
         }
-        else if (type.IsType<float>())
+        else if ( type.IsType<float>() )
         {
-            injector.Insert(OpCodes.Ldc_R4, (float)constant);
+            injector.Insert( OpCodes.Ldc_R4, (float)constant );
         }
-        else if (type.IsType<short>())
+        else if ( type.IsType<short>() )
         {
-            injector.Insert(OpCodes.Ldc_I4, (short)constant);
+            injector.Insert( OpCodes.Ldc_I4, (short)constant );
         }
-        else if (type.IsType<byte>())
+        else if ( type.IsType<byte>() )
         {
-            injector.Insert(OpCodes.Ldc_I4, (byte)constant);
+            injector.Insert( OpCodes.Ldc_I4, (byte)constant );
         }
-        else if (type.IsType<uint>())
+        else if ( type.IsType<uint>() )
         {
-            injector.Insert(OpCodes.Ldc_I4, (int)(uint)constant);
+            injector.Insert( OpCodes.Ldc_I4, (int)(uint)constant );
         }
-        else if (type.IsType<ulong>())
+        else if ( type.IsType<ulong>() )
         {
-            injector.Insert(OpCodes.Ldc_I8, (long)(ulong)constant);
+            injector.Insert( OpCodes.Ldc_I8, (long)(ulong)constant );
         }
-        else if (type.IsType<ushort>())
+        else if ( type.IsType<ushort>() )
         {
-            injector.Insert(OpCodes.Ldc_I4, (ushort)constant);
+            injector.Insert( OpCodes.Ldc_I4, (ushort)constant );
         }
-        else if (type.IsType<sbyte>())
+        else if ( type.IsType<sbyte>() )
         {
-            injector.Insert(OpCodes.Ldc_I4, (sbyte)constant);
+            injector.Insert( OpCodes.Ldc_I4, (sbyte)constant );
         }
-        if (boxType != null)
+        if ( boxType != null )
         {
-            injector.Insert(Instruction.Create(OpCodes.Box, boxType));
+            injector.Insert( Instruction.Create( OpCodes.Box, boxType ) );
         }
-        LogWarning($"Unknown constant type {constant.GetType().FullName}");
+        LogWarning( $"Unknown constant type {constant.GetType().FullName}" );
     }
 
 
