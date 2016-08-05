@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Fody extension for simplifying the creation of objects from your favorite DI container</description>
-    <releaseNotes>Updating the SequencePoints for the injected IL commands to avoid messing up debuggers when stepping through classes that have been modified.</releaseNotes>
+    <releaseNotes>Strong naming the AutoDI assembly so it can be used in projects that are signed with a strong name.</releaseNotes>
     <copyright>Copyright 2016</copyright>
     <tags>AutoDI, Fody</tags>
     <dependencies>
