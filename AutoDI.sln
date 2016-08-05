@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI", "AutoDI\AutoDI.csproj", "{712610E5-F444-4A93-9C40-A478CEFA8EE2}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
 		NuGet\build\AutoDI.Fody.nuspec = NuGet\build\AutoDI.Fody.nuspec
+		NuGet\build\tools\install.ps1 = NuGet\build\tools\install.ps1
+		NuGet\build\tools\uninstall.ps1 = NuGet\build\tools\uninstall.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{27881B07-0FEE-49EB-B580-E12F01B8AD70}"

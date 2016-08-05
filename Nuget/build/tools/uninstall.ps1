@@ -8,13 +8,13 @@ function Update-FodyConfig($addinName, $project)
     if (!(Test-Path ($fodyWeaversPath)))
     {
         return
-    }   	
+    }
 
     Write-Host "Caching variables for possible update"
-	$env:FodyLastProjectPath = $project.FullName
-	$env:FodyLastWeaverName = $addinName
-	$env:FodyLastXmlContents = [IO.File]::ReadAllText($fodyWeaversPath)
-	
+    $env:FodyLastProjectPath = $project.FullName
+    $env:FodyLastWeaverName = $addinName
+    $env:FodyLastXmlContents = [IO.File]::ReadAllText($fodyWeaversPath)
+    
 
     $xml = [xml](get-content $fodyWeaversPath)
 
@@ -38,7 +38,7 @@ function UnlockWeaversXml($project)
     {
         $fodyWeaversProjectItem.Open("{7651A701-06E5-11D1-8EBD-00A0C90F26EA}")
         $fodyWeaversProjectItem.Save()
-		$fodyWeaversProjectItem.Document.Close()
+        $fodyWeaversProjectItem.Document.Close()
     }   
 }
 
