@@ -49,7 +49,7 @@ It uses [Fody](https://github.com/Fody/Fody) to perform IL weaving, on your asse
 public class MyClass
 {
   private readonly IService _service;
-  public MyClass([Dependency("Extra Data") IService service = null)
+  public MyClass([Dependency("Extra Data")] IService service = null)
   {
     _service = service;
   }
@@ -60,7 +60,7 @@ into:
 public class MyClass
 {
   private readonly IService _service;
-  public MyClass([Dependency("Extra Data") IService service = null)
+  public MyClass([Dependency("Extra Data")] IService service = null)
   {
     var resolverRequest = new AutoDI.ResolverRequest(typeof(MyClass), new[]{typeof(IService)});
     AutoDI.IDependencyResolver resolver = AutoDI.DependencyResolver.Get(resolverRequest);
@@ -92,7 +92,7 @@ public class BaseClass
   }
 }
 ```
-Functionally gets changed to something like this:
+Gets changed to something like this (obviously invalid C# due to the call to the base constructor):
 ```C#
 public class DerivedClass : BaseClass
 {
@@ -126,3 +126,4 @@ Again, this is a *not* an IL weaving DI container. It is merely a bridge that al
 - Because it works by IL weaving extra commands into the constructor and requires you to opt-in by decorating constructor arguments, it is only possible to use this on asemblies that you can edit and compile. 
 Since attribute can only contain constant values, it is not possible to pass run-time values to the IDependencyResolver.Resolve method.
 - It only checks the dependency parameters for null when choosing whether to resolve them or not. So dependency parameters that do not default to null will never be resolved.
+- This may inclease coupling between classes. However if you are already using your DI container to resolve concrete classes rather than interfaces I find this to be a cleaner alternative.
