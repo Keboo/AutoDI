@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>AutoDI</id>
-    <version>$version</version>
+    <version>0.0.0</version>
     <title>AutoDI</title>
     <authors>Keboo</authors>
     <owners>Keboo</owners>

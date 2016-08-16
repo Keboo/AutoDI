@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>AutoDI.Fody</id>
-    <version>$version</version>
+    <version>0.0.0</version>
     <title>AutoDI.Fody</title>
     <authors>Keboo</authors>
     <owners>Keboo</owners>
