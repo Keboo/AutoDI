@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>AutoDI</id>
+    <version>$version</version>
+    <title>AutoDI</title>
+    <authors>Keboo</authors>
+    <owners>Keboo</owners>
+    <licenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>AutoDI classes. These are expected to be used with the AutoDI.Fody extension.</description>
+    <releaseNotes>Creating stand alonge AutoDI lib to be referenced by unit test projects.</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>AutoDI</tags>
+  </metadata>
+</package>

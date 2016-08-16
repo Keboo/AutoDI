@@ -64,8 +64,10 @@
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
-  </Target>
+  </Target>-->
   <Target Name="AfterBuild">
+    <Copy SourceFiles="$(TargetDir)AutoDI.dll" DestinationFolder="$(SolutionDir)\NuGet\AutoDI\lib\net45" />
+    <Copy SourceFiles="$(TargetDir)AutoDI.dll" DestinationFolder="$(SolutionDir)\NuGet\AutoDI.Fody\lib\net45" />
   </Target>
-  -->
+  
 </Project>

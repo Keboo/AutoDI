@@ -4,6 +4,8 @@ A framework for simplifying the creation of objects that only partially depend o
 [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.Fody.svg?style=flat)](https://www.nuget.org/packages/AutoDI.Fody/)
 [![Build status](https://ci.appveyor.com/api/projects/status/ybmv50xxi3lb086o?svg=true)](https://ci.appveyor.com/project/Keboo/autodi)
 
+Just the AutoDI assembly without the weaver. [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.svg?style=flat)](https://www.nuget.org/packages/AutoDI/)
+
 This is not another [DI](https://en.wikipedia.org/wiki/Dependency_injection) container, rather its intent is to make interacting with your favorite DI container easier. It allows you to decorate constructor arguments so they are automatically resolved by your DI container. This also enables constructors that take in some initialization data, in addition to the service dependencies that are provided by the DI contianer.
 
 

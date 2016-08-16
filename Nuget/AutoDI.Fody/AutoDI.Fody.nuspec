@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>AutoDI.Fody</id>
-    <version>1.0.0</version>
+    <version>$version</version>
     <title>AutoDI.Fody</title>
     <authors>Keboo</authors>
     <owners>Keboo</owners>
@@ -15,6 +15,7 @@
     <tags>AutoDI, Fody</tags>
     <dependencies>
       <dependency id="Fody" version ="1.29"/>
+      <dependency id="AutoDI" version ="1.2"/>
     </dependencies>
   </metadata>
 </package>
