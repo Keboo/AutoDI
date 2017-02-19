@@ -45,7 +45,6 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -69,5 +68,4 @@
     <Copy SourceFiles="$(TargetDir)AutoDI.dll" DestinationFolder="$(SolutionDir)\NuGet\AutoDI\lib\net45" />
     <Copy SourceFiles="$(TargetDir)AutoDI.dll" DestinationFolder="$(SolutionDir)\NuGet\AutoDI.Fody\lib\net45" />
   </Target>
-  
 </Project>
