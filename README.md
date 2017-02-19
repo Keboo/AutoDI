@@ -13,6 +13,8 @@ This is not another [DI](https://en.wikipedia.org/wiki/Dependency_injection) con
 
 There are examples using many of the popular DI containers inside of the [examples directory](https://github.com/Keboo/AutoDI/tree/master/Examples).
 
+You can also see an example in a small WPF project [here](https://github.com/Keboo/YoutubeDownloader).
+
 To use AutoDI in you classes simply declare an optional constructor parameter and decorate it with the DependencyAttribute. This parameter will be resolved when the constructor is invoked.
 
 ```C#
