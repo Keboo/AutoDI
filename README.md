@@ -129,4 +129,4 @@ Again, this is a *not* an IL weaving DI container. It is merely a bridge that al
 - Because it works by IL weaving extra commands into the constructor and requires you to opt-in by decorating constructor arguments, it is only possible to use this on asemblies that you can edit and compile. 
 Since attribute can only contain constant values, it is not possible to pass run-time values to the IDependencyResolver.Resolve method.
 - It only checks the dependency parameters for null when choosing whether to resolve them or not. So dependency parameters that do not default to null will never be resolved.
-- This may inclease coupling between classes. However if you are already using your DI container to resolve concrete classes rather than interfaces I find this to be a cleaner alternative.
+- This may inclease coupling between classes. However if you are already directly using your DI container to resolve concrete classes rather than interfaces I find this to be a much cleaner alternative.
