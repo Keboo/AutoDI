@@ -67,6 +67,8 @@ public class ModuleWeaver
     // A copy of the contents of the $(DefineConstants). OPTIONAL
     public List<string> DefineConstants { get; set; }
 
+    public string AssemblyToProcess { get; set; }
+
     public ModuleWeaver()
     {
         LogWarning = s => { };
