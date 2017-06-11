@@ -65,6 +65,7 @@
     <Compile Include="CustomResolverResolutionTests.cs" />
     <Compile Include="ConstructorWithInitDataTests.cs" />
     <Compile Include="InheritanceTests.cs" />
+    <Compile Include="NestedTypesTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

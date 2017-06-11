@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net45</TargetFramework>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <PostBuildEvent />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FodyCecil" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.Build.Framework" />
+  </ItemGroup>
+
+  <Target Name="CopyToPackages" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <None Include="$(TargetDir)AutoDI*.dll" />
+    </ItemGroup>
+     <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\$(ProjectName).1.0.0" />
+  </Target>
+</Project>

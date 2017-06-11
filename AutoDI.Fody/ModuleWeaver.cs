@@ -82,10 +82,7 @@ public class ModuleWeaver
         {
             foreach (TypeDefinition type in ModuleDefinition.Types)
             {
-                foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
-                {
-                    ProcessConstructor(type, ctor);
-                }
+                ProcessType(type);
             }
         }
         catch (Exception ex)
@@ -94,6 +91,21 @@ public class ModuleWeaver
             for (Exception e = ex; e != null; e = e.InnerException)
                 sb.AppendLine(e.ToString());
             LogError(sb.ToString());
+        }
+    }
+
+    private void ProcessType(TypeDefinition type)
+    {
+        foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
+        {
+            ProcessConstructor(type, ctor);
+        }
+        if (type.HasNestedTypes)
+        {
+            foreach (TypeDefinition nestedType in type.NestedTypes)
+            {
+                ProcessType(nestedType);
+            }
         }
     }
 
