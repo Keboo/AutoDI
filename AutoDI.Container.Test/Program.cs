@@ -33,20 +33,23 @@ namespace AutoDI.Container.Test
     }
 }
 
-public class AutoDIContainer : IDependencyResolver
+namespace AutoDI
 {
-    private static readonly Dictionary<Type, Lazy<object>> _items = new Dictionary<Type, Lazy<object>>();
-
-    static AutoDIContainer()
+    public class AutoDIContainer : IDependencyResolver
     {
-        //var f = new Func<object>(() => new Manager());
-        //var l = new Lazy<object>(f);
-        _items[typeof(IManager)] = new Lazy<object>(() => new Manager());
-        //_objects[typeof(IService)] = new Lazy<object>(() => new Service1());
-        //_objects[typeof(IService2)] = new Lazy<object>(() => new Service2());
-        //_objects[typeof(object)] = new Lazy<object>(() => Get<object>());
-    }
+        private static readonly Dictionary<Type, Lazy<object>> _items = new Dictionary<Type, Lazy<object>>();
 
-    T IDependencyResolver.Resolve<T>(params object[] parameters) => 
-        _items.TryGetValue(typeof(T), out Lazy<object> lazy) ? (T)lazy.Value : default(T);
+        static AutoDIContainer()
+        {
+            //var f = new Func<object>(() => new Manager());
+            //var l = new Lazy<object>(f);
+            _items[typeof(IManager)] = new Lazy<object>(() => new Manager());
+            //_objects[typeof(IService)] = new Lazy<object>(() => new Service1());
+            //_objects[typeof(IService2)] = new Lazy<object>(() => new Service2());
+            //_objects[typeof(object)] = new Lazy<object>(() => Get<object>());
+        }
+
+        T IDependencyResolver.Resolve<T>(params object[] parameters) =>
+            _items.TryGetValue(typeof(T), out Lazy<object> lazy) ? (T) lazy.Value : default(T);
+    }
 }
