@@ -79,24 +79,22 @@ public class ModuleWeaver
     {
         try
         {
-            var mapping = new Dictionary<TypeDefinition, TypeDefinition>();
-            mapping[ModuleDefinition.GetType("AutoDI.Container.Test", "IManager")] =
-                ModuleDefinition.GetType("AutoDI.Container.Test", "Manager");
+            IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping = GetMapping();
 
             TypeDefinition resolverType = CreateAutoDIContainer(mapping);
             ModuleDefinition.Types.Add(resolverType);
 
-            return;
-            var typesByInterface = new Dictionary<TypeDefinition, TypeDefinition>();
-            foreach (TypeDefinition type in ModuleDefinition.Types)
+            if (ModuleDefinition.EntryPoint != null)
             {
-                if (type.IsClass && type.HasInterfaces)
-                {
-                    foreach (var @interface in type.Interfaces)
-                    {
-
-                    }
-                }
+                ILProcessor entryMethodProcessor = ModuleDefinition.EntryPoint.Body.GetILProcessor();
+                //var create = Instruction.Create(OpCodes.Newobj, resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
+                var instance = Instruction.Create(OpCodes.Ldsfld, resolverType.Fields.Single(f => f.Name == "_instance"));
+                var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(nameof(DependencyResolver.Set),
+                        new[] {typeof(IDependencyResolver)}));
+                //DependencyResolver.Set(new AutoDIContainer());
+                var set = Instruction.Create(OpCodes.Call, setMethod);
+                entryMethodProcessor.InsertBefore(ModuleDefinition.EntryPoint.Body.Instructions.First(), set);
+                entryMethodProcessor.InsertBefore(set, instance);
             }
         }
         catch (Exception ex)
@@ -108,6 +106,33 @@ public class ModuleWeaver
         }
     }
 
+    private IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> GetMapping()
+    {
+        var map = new Dictionary<string, List<TypeDefinition>>();
+        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract))
+        {
+            foreach (var @interface in type.Interfaces)
+            {
+                if (!map.TryGetValue(@interface.InterfaceType.FullName, out List<TypeDefinition> list))
+                {
+                    map.Add(@interface.InterfaceType.FullName, list = new List<TypeDefinition>());
+                }
+                list.Add(type);
+                //TODO: Base types
+            }
+        }
+
+        var rv = new Dictionary<TypeDefinition, TypeDefinition>();
+        foreach (KeyValuePair<string, List<TypeDefinition>> kvp in map)
+        {
+            if (kvp.Value.Count != 1) continue;
+            var type = ModuleDefinition.GetType(kvp.Key);
+            if (type == null) continue;
+            rv[type] = kvp.Value[0];
+        }
+        return rv;
+    }
+
     private TypeDefinition CreateAutoDIContainer(IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping)
     {
         var type = new TypeDefinition("AutoDI", "AutoDIContainer",
@@ -115,27 +140,11 @@ public class ModuleWeaver
         {
             BaseType = ModuleDefinition.Get<object>()
         };
+        MethodDefinition ctor = CreateConstructor();
+        type.Methods.Add(ctor);
 
-        
-        //Create delegate container class
-        var nestedType = new TypeDefinition("AutoDI", "AutoDIContainer.<>c",
-            TypeAttributes.Class | TypeAttributes.NestedPrivate | TypeAttributes.Sealed | TypeAttributes.Serializable |
-            TypeAttributes.BeforeFieldInit);
-
-        FieldDefinition delegateInstanceField = CreateStaticReadonlyField("_instance", true, nestedType);
-        nestedType.Fields.Add(delegateInstanceField);
-
-        MethodDefinition nestedTypeCtor = CreateConstructor();
-        nestedType.Methods.Add(nestedTypeCtor);
-
-        MethodDefinition nestedTypeStaticCtor = CreateStaticConstructor();
-        ILProcessor nestedStaticBody = nestedTypeStaticCtor.Body.GetILProcessor();
-        nestedStaticBody.Emit(OpCodes.Newobj, nestedTypeCtor);
-        nestedStaticBody.Emit(OpCodes.Stsfld, delegateInstanceField);
-        nestedStaticBody.Emit(OpCodes.Ret);
-        nestedType.Methods.Add(nestedTypeStaticCtor);
-
-        type.NestedTypes.Add(nestedType);
+        FieldDefinition instanceField = CreateStaticReadonlyField("_instance", true, type);
+        type.Fields.Add(instanceField);
 
         //Declare dictionary map
         FieldDefinition mapField = CreateStaticReadonlyField<Dictionary<Type, Lazy<object>>>("_items", false);
@@ -149,7 +158,10 @@ public class ModuleWeaver
         staticBody.Emit(OpCodes.Newobj, dictionaryConstructor);
         staticBody.Emit(OpCodes.Stsfld, mapField);
 
-        BuildMap(mapField, staticBody, nestedType, mapping);
+        staticBody.Emit(OpCodes.Newobj, ctor);
+        staticBody.Emit(OpCodes.Stsfld, instanceField);
+
+        BuildMap(mapField, staticBody, type, instanceField, mapping);
 
         staticBody.Emit(OpCodes.Ret);
 
@@ -217,7 +229,7 @@ public class ModuleWeaver
         return ctor;
     }
 
-    private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping)
+    private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, FieldDefinition instanceField, IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping)
     {
         //TODO: Make static
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
@@ -228,12 +240,14 @@ public class ModuleWeaver
 
         foreach (KeyValuePair<TypeDefinition, TypeDefinition> kvp in mapping)
         {
+            LogInfo($"  Mapping {kvp.Key.FullName} -> {kvp.Value.FullName}");
+
             staticBody.Emit(OpCodes.Ldsfld, mapField);
             staticBody.Emit(OpCodes.Ldtoken, kvp.Key);
             staticBody.Emit(OpCodes.Call, getTypeMethod);
-            staticBody.Emit(OpCodes.Ldsfld, delegateContainer.Fields.Single());
+            staticBody.Emit(OpCodes.Ldsfld, instanceField);
       
-            var delegateMethod = new MethodDefinition($"</cctor>b__1_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig, ModuleDefinition.Get<object>());
+            var delegateMethod = new MethodDefinition($"<{kvp.Value.Name}>_generated_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig, ModuleDefinition.Get<object>());
             delegateContainer.Methods.Add(delegateMethod);
             ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
             bool foundCtor = false;
