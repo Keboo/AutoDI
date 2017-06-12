@@ -87,14 +87,12 @@ public class ModuleWeaver
             if (ModuleDefinition.EntryPoint != null)
             {
                 ILProcessor entryMethodProcessor = ModuleDefinition.EntryPoint.Body.GetILProcessor();
-                //var create = Instruction.Create(OpCodes.Newobj, resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
-                var instance = Instruction.Create(OpCodes.Ldsfld, resolverType.Fields.Single(f => f.Name == "_instance"));
+                var create = Instruction.Create(OpCodes.Newobj, resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
                 var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(nameof(DependencyResolver.Set),
                         new[] {typeof(IDependencyResolver)}));
-                //DependencyResolver.Set(new AutoDIContainer());
                 var set = Instruction.Create(OpCodes.Call, setMethod);
                 entryMethodProcessor.InsertBefore(ModuleDefinition.EntryPoint.Body.Instructions.First(), set);
-                entryMethodProcessor.InsertBefore(set, instance);
+                entryMethodProcessor.InsertBefore(set, create);
             }
         }
         catch (Exception ex)
@@ -143,9 +141,6 @@ public class ModuleWeaver
         MethodDefinition ctor = CreateConstructor();
         type.Methods.Add(ctor);
 
-        FieldDefinition instanceField = CreateStaticReadonlyField("_instance", true, type);
-        type.Fields.Add(instanceField);
-
         //Declare dictionary map
         FieldDefinition mapField = CreateStaticReadonlyField<Dictionary<Type, Lazy<object>>>("_items", false);
         type.Fields.Add(mapField);
@@ -158,10 +153,7 @@ public class ModuleWeaver
         staticBody.Emit(OpCodes.Newobj, dictionaryConstructor);
         staticBody.Emit(OpCodes.Stsfld, mapField);
 
-        staticBody.Emit(OpCodes.Newobj, ctor);
-        staticBody.Emit(OpCodes.Stsfld, instanceField);
-
-        BuildMap(mapField, staticBody, type, instanceField, mapping);
+        BuildMap(mapField, staticBody, type, mapping);
 
         staticBody.Emit(OpCodes.Ret);
 
@@ -229,7 +221,7 @@ public class ModuleWeaver
         return ctor;
     }
 
-    private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, FieldDefinition instanceField, IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping)
+    private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping)
     {
         //TODO: Make static
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
@@ -245,9 +237,8 @@ public class ModuleWeaver
             staticBody.Emit(OpCodes.Ldsfld, mapField);
             staticBody.Emit(OpCodes.Ldtoken, kvp.Key);
             staticBody.Emit(OpCodes.Call, getTypeMethod);
-            staticBody.Emit(OpCodes.Ldsfld, instanceField);
       
-            var delegateMethod = new MethodDefinition($"<{kvp.Value.Name}>_generated_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig, ModuleDefinition.Get<object>());
+            var delegateMethod = new MethodDefinition($"<{kvp.Value.Name}>_generated_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static, ModuleDefinition.Get<object>());
             delegateContainer.Methods.Add(delegateMethod);
             ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
             bool foundCtor = false;
@@ -267,6 +258,7 @@ public class ModuleWeaver
                 LogWarning($"Could not find acceptable constructor for '{kvp.Value.FullName}'");
             }
             delegateProcessor.Emit(OpCodes.Ret);
+            staticBody.Emit(OpCodes.Ldnull);
             staticBody.Emit(OpCodes.Ldftn, delegateMethod);
             staticBody.Emit(OpCodes.Newobj, funcCtor);
             staticBody.Emit(OpCodes.Newobj, lazyCtor);
