@@ -79,6 +79,7 @@ public class ModuleWeaver
     {
         try
         {
+            
             IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping = GetMapping();
 
             TypeDefinition resolverType = CreateAutoDIContainer(mapping);
