@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MyTestNameSpace;
@@ -12,17 +13,20 @@ namespace AutoDI.Container.Tests
         public async Task CanGenerateSimple()
         {
             var gen = new Gen();
-            gen.AddType<Sut>();
-            gen.AddType<IService>();
-            gen.AddType<Service>();
-            gen.AddWeaver<ModuleWeaver>();
-    
-    
-            await gen.Execute(() =>
+
+
+            try
             {
-                var sut = new Sut();
-                Assert.IsTrue(sut.Service is Service);
-            });
+                await gen.Execute(() =>
+                {
+                    var sut = new Sut();
+                    Assert.IsTrue(sut.Service is Service);
+                });
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
     }
 }
