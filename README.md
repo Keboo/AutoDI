@@ -15,7 +15,7 @@ There are examples using many of the popular DI containers inside of the [exampl
 
 You can also see an example in a small WPF project [here](https://github.com/Keboo/YoutubeDownloader).
 
-To use AutoDI in you classes simply declare an optional constructor parameter and decorate it with the DependencyAttribute. This parameter will be resolved when the constructor is invoked.
+To use AutoDI in your classes simply declare an optional constructor parameter and decorate it with the DependencyAttribute. This parameter will be resolved when the constructor is invoked.
 
 ```C#
 public class MyClass()
@@ -28,7 +28,7 @@ public class MyClass()
 ```
 
 ## Setup 
-Since AutoDI relies on a DI container fist make sure that you have your favorite DI container setup.
+Since AutoDI relies on a DI container first make sure that you have your favorite DI container setup.
 
 To use AutoDI there are only a few simple steps:
 1. Install AutoDI from the [Nuget](https://www.nuget.org/packages/AutoDI.Fody/). Because this is a Fody extension it will add a FodyWeavers.xml file to your project that looks something like this:
