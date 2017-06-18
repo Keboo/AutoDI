@@ -10,8 +10,7 @@ namespace SprintNet.Example
 
         public SprintNetResolver(IObjectFactory factory)
         {
-            if (factory == null) throw new ArgumentNullException(nameof(factory));
-            _factory = factory;
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
         }
 
         public T Resolve<T>(params object[] parameters)

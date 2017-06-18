@@ -16,8 +16,7 @@ namespace AssemblyToProcess
 
         public ClassWithExplicitDependency(IService service)
         {
-            if (service == null) throw new ArgumentNullException(nameof(service));
-            Service = service;
+            Service = service ?? throw new ArgumentNullException(nameof(service));
         }
     }
 }

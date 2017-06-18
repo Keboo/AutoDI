@@ -28,7 +28,7 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanManuallyInjectTheGeneratedContainer()
         {
-            AutoDIContainer.Inject();
+            AutoDIContainer.Inject(_testAssembly);
 
             dynamic sut = _testAssembly.CreateInstance<Sut>();
             Assert.IsTrue(((object)sut.Service).Is<Service>());

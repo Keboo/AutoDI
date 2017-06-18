@@ -15,7 +15,9 @@ namespace AutoDI.AssemblyGenerator
 {
     public class Generator
     {
+        private static int _instanceCount = 1;
         private readonly AssemblyType _assebmlyType;
+        private readonly string _assemblyName = $"AssemblyToTest{_instanceCount++}";
         private const string WeaverName = "ModuleWeaver";
 
         private readonly List<object> _weavers = new List<object>();
@@ -112,17 +114,16 @@ namespace AutoDI.AssemblyGenerator
             {
                 await GetDocument()
             };
-            const string assemblyName = "AssemblyToTest";
 
             var project = workspace.AddProject(ProjectInfo.Create(projectId,
-                VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
+                VersionStamp.Create(), _assemblyName, _assemblyName, LanguageNames.CSharp,
                 compilationOptions: new CSharpCompilationOptions((OutputKind)_assebmlyType),
                 documents: documents, metadataReferences: _references, 
                 filePath: Path.GetFullPath($"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
 
 
             var compile = await project.GetCompilationAsync();
-            string filePath = $"{Path.GetRandomFileName()}.dll";
+            string filePath = $"{_assemblyName}-{Path.GetFileNameWithoutExtension(sourceFile)}.dll";
             using (var file = File.Create(filePath))
             {
                 var emitResult = compile.Emit(file);
@@ -142,7 +143,7 @@ namespace AutoDI.AssemblyGenerator
             }
 
             var assembly = Assembly.Load(File.ReadAllBytes(filePath));
-            File.Delete(filePath);
+            //File.Delete(filePath);
             return assembly;
         }
     }

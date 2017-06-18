@@ -10,8 +10,7 @@ namespace CastleWindsor.Example
 
         public CastleWindsorResolver(IWindsorContainer container)
         {
-            if (container == null) throw new ArgumentNullException(nameof(container));
-            _container = container;
+            _container = container ?? throw new ArgumentNullException(nameof(container));
         }
 
         public T Resolve<T>(params object[] parameters)

@@ -9,8 +9,7 @@ namespace Ninject.Example
 
         public NinjectResolver(IKernel kernel)
         {
-            if (kernel == null) throw new ArgumentNullException(nameof(kernel));
-            _kernel = kernel;
+            _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
         }
 
         public T Resolve<T>(params object[] parameters)

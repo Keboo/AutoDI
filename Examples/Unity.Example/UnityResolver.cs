@@ -10,8 +10,7 @@ namespace Unity.Example
 
         public UnityResolver(IUnityContainer container)
         {
-            if (container == null) throw new ArgumentNullException(nameof(container));
-            _container = container;
+            _container = container ?? throw new ArgumentNullException(nameof(container));
         }
 
         public T Resolve<T>(params object[] parameters)

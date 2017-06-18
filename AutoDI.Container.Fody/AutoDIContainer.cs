@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 
 namespace AutoDI.Container.Fody
@@ -10,8 +9,13 @@ namespace AutoDI.Container.Fody
         {
             const string typeName = "AutoDI.AutoDIContainer";
 
+            //Checks currently executing assembly
             var containerType = Type.GetType(typeName);
-            if (containerType == null)
+            if (assembly != null)
+            {
+                containerType = assembly.GetType(typeName);
+            }
+            else if (containerType == null)
             {
                 foreach (Assembly domainAssembly in AppDomain.CurrentDomain.GetAssemblies())
                 {

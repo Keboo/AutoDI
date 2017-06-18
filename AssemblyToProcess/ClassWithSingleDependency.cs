@@ -11,8 +11,7 @@ namespace AssemblyToProcess
 
         public ClassWithSingleDependency( [Dependency] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 }

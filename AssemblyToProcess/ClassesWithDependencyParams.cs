@@ -9,8 +9,7 @@ namespace AssemblyToProcess
 
         public ClassWithNullParam( [Dependency( (object)null )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -20,8 +19,7 @@ namespace AssemblyToProcess
 
         public ClassWithStringParam( [Dependency( "Test String" )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -31,8 +29,7 @@ namespace AssemblyToProcess
 
         public ClassWithIntParam( [Dependency( 42 )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -42,8 +39,7 @@ namespace AssemblyToProcess
 
         public ClassWithLongParam( [Dependency( long.MaxValue )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -53,8 +49,7 @@ namespace AssemblyToProcess
 
         public ClassWithDoubleParam( [Dependency( double.NaN )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -64,8 +59,7 @@ namespace AssemblyToProcess
 
         public ClassWithFloatParam( [Dependency( float.MinValue )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -75,8 +69,7 @@ namespace AssemblyToProcess
 
         public ClassWithShortParam( [Dependency( short.MinValue )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -86,8 +79,7 @@ namespace AssemblyToProcess
 
         public ClassWithByteParam( [Dependency( byte.MaxValue )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -97,8 +89,7 @@ namespace AssemblyToProcess
 
         public ClassWithUnsignedIntParam( [Dependency( (uint)int.MaxValue + 1 )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -108,8 +99,7 @@ namespace AssemblyToProcess
 
         public ClassWithUnsignedLongParam( [Dependency( (ulong)long.MaxValue + 1 )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -119,8 +109,7 @@ namespace AssemblyToProcess
 
         public ClassWithUnsignedShortParam( [Dependency( (ushort)short.MaxValue + 1 )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -130,8 +119,7 @@ namespace AssemblyToProcess
 
         public ClassWithEnumParam( [Dependency( EnumParam.BeAwesome )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -141,8 +129,7 @@ namespace AssemblyToProcess
 
         public ClassWithSignedByteParam( [Dependency( sbyte.MinValue )] IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 
@@ -152,8 +139,7 @@ namespace AssemblyToProcess
 
         public ClassWithTwoDependencyParams( [Dependency( 4, "Test" )]IService service = null )
         {
-            if ( service == null ) throw new ArgumentNullException( nameof( service ) );
-            Service = service;
+            Service = service ?? throw new ArgumentNullException( nameof( service ) );
         }
     }
 

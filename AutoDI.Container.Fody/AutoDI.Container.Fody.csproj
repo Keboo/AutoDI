@@ -3,8 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
-    <PostBuildEvent />
+    <PackageId>AutoDI.Container.Fody</PackageId>
+    <Authors>AutoDI.Container.Fody</Authors>
+    <Company>AutoDI.Container.Fody</Company>
+    <Product>AutoDI.Container.Fody</Product>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,14 +17,4 @@
     <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Microsoft.Build.Framework" />
-  </ItemGroup>
-
-  <Target Name="CopyToPackages" AfterTargets="AfterBuild">
-    <ItemGroup>
-      <None Include="$(TargetDir)AutoDI*.dll" />
-    </ItemGroup>
-     <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\$(ProjectName).1.0.0" />
-  </Target>
 </Project>
