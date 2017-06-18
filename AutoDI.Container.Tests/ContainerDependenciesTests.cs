@@ -1,38 +1,44 @@
-﻿using System;
-using System.Threading.Tasks;
-using AutoDI.AssemblyGenerator;
-using AutoDI.Container.Fody;
+﻿using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MyTestNameSpace;
+using System.Reflection;
+using System.Threading.Tasks;
 
 
 namespace AutoDI.Container.Tests
 {
     [TestClass]
-    public class ContainerDependencies
+    public class ContainerDependenciesTests
     {
-        [TestMethod]
-        public async Task CanGenerateSimple()
+        private static Assembly _testAssembly;
+        [ClassInitialize]
+        public static async Task Initialize(TestContext context)
         {
-            var gen = new AssemblyGenerator.AssemblyGenerator();
+            var gen = new Generator(AssemblyType.ConsoleApplication);
+            
             //Add AutoDI reference
             gen.AddReference(typeof(DependencyAttribute).Assembly.Location);
             gen.AddWeaver("AutoDI");
             gen.AddWeaver("AutoDI.Container");
 
-            var testAssembly = await gen.Execute();
-            testAssembly.InvokeStatic<Program>(nameof(Program.Main), new object[] {new string[0]});
-            dynamic sut = testAssembly.CreateInstance<Sut>();
+            _testAssembly = await gen.Execute();
+        }
+
+        [TestMethod]
+        public void SimpleConstructorDependenciesAreInjected()
+        {
+            _testAssembly.InvokeStatic<Program>(nameof(Program.Main), new object[] {new string[0]});
+            dynamic sut = _testAssembly.CreateInstance<Sut>();
             Assert.IsTrue(((object)sut.Service).Is<Service>());
         }
     }
 }
 
-/*<code_file>*/
+//<code_file>
 namespace MyTestNameSpace
 {
-    using System;
     using AutoDI;
+    using System;
 
     public class Program
     {
@@ -54,4 +60,4 @@ namespace MyTestNameSpace
 
     public class Service : IService { }
 }
-/*</code_file>*/
+//</code_file>

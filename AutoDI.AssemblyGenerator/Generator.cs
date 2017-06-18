@@ -13,15 +13,21 @@ using Mono.Cecil;
 
 namespace AutoDI.AssemblyGenerator
 {
-    public class AssemblyGenerator
+    public class Generator
     {
+        private readonly AssemblyType _assebmlyType;
         private const string WeaverName = "ModuleWeaver";
-        private readonly List<object> _weavers = new List<object>();
 
+        private readonly List<object> _weavers = new List<object>();
         private readonly List<MetadataReference> _references = new List<MetadataReference>
         {
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
         };
+
+        public Generator(AssemblyType assebmlyType = AssemblyType.DynamicallyLinkedLibrary)
+        {
+            _assebmlyType = assebmlyType;
+        }
 
         public void AddWeaver(string weaverName)
         {
@@ -101,12 +107,17 @@ namespace AutoDI.AssemblyGenerator
                 return rv;
             }
 
+
+            var documents = new List<DocumentInfo>
+            {
+                await GetDocument()
+            };
             const string assemblyName = "AssemblyToTest";
 
             var project = workspace.AddProject(ProjectInfo.Create(projectId,
                 VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
-                compilationOptions: new CSharpCompilationOptions(OutputKind.ConsoleApplication),
-                documents: new[] { await GetDocument() }, metadataReferences: _references, 
+                compilationOptions: new CSharpCompilationOptions((OutputKind)_assebmlyType),
+                documents: documents, metadataReferences: _references, 
                 filePath: Path.GetFullPath($"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
 
 
@@ -134,5 +145,13 @@ namespace AutoDI.AssemblyGenerator
             File.Delete(filePath);
             return assembly;
         }
+    }
+
+    public enum AssemblyType
+    {
+        ConsoleApplication = OutputKind.ConsoleApplication,
+        WindowsApplication = OutputKind.WindowsApplication,
+        DynamicallyLinkedLibrary = OutputKind.DynamicallyLinkedLibrary,
+        NetModule = OutputKind.NetModule
     }
 }
