@@ -299,25 +299,3 @@ public class ModuleWeaver
     {
     }
 }
-
-public class AutoDIContainer : IDependencyResolver
-{
-    private static readonly Dictionary<Type, Lazy<object>> _objects = new Dictionary<Type, Lazy<object>>();
-
-    static AutoDIContainer()
-    {
-        //_objects[typeof(object)] = new Lazy<object>(() => Get<object>());
-    }
-
-    T IDependencyResolver.Resolve<T>(params object[] parameters) => Get<T>();
-
-    private static T Get<T>()
-    {
-        if (_objects.TryGetValue(typeof(T), out Lazy<object> lazy))
-        {
-            return (T)lazy.Value;
-        }
-        return default(T);
-    }
-}
-

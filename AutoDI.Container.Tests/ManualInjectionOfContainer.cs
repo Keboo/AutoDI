@@ -1,21 +1,22 @@
-﻿using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
-using ContainerDependencyNameSpace;
-
+using AutoDI.AssemblyGenerator;
+using AutoDI.Container.Fody;
+using ManualInjectionNamespace;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Container.Tests
 {
     [TestClass]
-    public class ContainerDependenciesTests
+    public class ManualInjectionOfContainer
     {
         private static Assembly _testAssembly;
+
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
         {
-            var gen = new Generator(AssemblyType.ConsoleApplication);
-            
+            var gen = new Generator();
+
             //Add AutoDI reference
             gen.AddReference(typeof(DependencyAttribute).Assembly.Location);
             gen.AddWeaver("AutoDI");
@@ -25,9 +26,10 @@ namespace AutoDI.Container.Tests
         }
 
         [TestMethod]
-        public void SimpleConstructorDependenciesAreInjected()
+        public void CanManuallyInjectTheGeneratedContainer()
         {
-            _testAssembly.InvokeStatic<Program>(nameof(Program.Main), new object[] {new string[0]});
+            AutoDIContainer.Inject();
+
             dynamic sut = _testAssembly.CreateInstance<Sut>();
             Assert.IsTrue(((object)sut.Service).Is<Service>());
         }
@@ -35,16 +37,10 @@ namespace AutoDI.Container.Tests
 }
 
 //<code_file>
-namespace ContainerDependencyNameSpace
+namespace ManualInjectionNamespace
 {
     using AutoDI;
     using System;
-
-    public class Program
-    {
-        public static void Main(string[] args)
-        { }
-    }
 
     public class Sut
     {
