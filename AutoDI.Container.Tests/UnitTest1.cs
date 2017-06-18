@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using AutoDI.AssemblyGenerator;
+using AutoDI.Container.Fody;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MyTestNameSpace;
+
 
 namespace AutoDI.Container.Tests
 {
@@ -12,39 +14,31 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public async Task CanGenerateSimple()
         {
-            var gen = new Gen();
+            var gen = new AssemblyGenerator.AssemblyGenerator();
+            //Add AutoDI reference
+            gen.AddReference(typeof(DependencyAttribute).Assembly.Location);
+            gen.AddWeaver("AutoDI");
+            gen.AddWeaver("AutoDI.Container");
 
-
-            try
-            {
-                await gen.Execute(() =>
-                {
-                    var sut = new Sut();
-                    Assert.IsTrue(sut.Service is Service);
-                });
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
+            var testAssembly = await gen.Execute();
+            testAssembly.InvokeStatic<Program>(nameof(Program.Main), new object[] {new string[0]});
+            dynamic sut = testAssembly.CreateInstance<Sut>();
+            Assert.IsTrue(((object)sut.Service).Is<Service>());
         }
     }
 }
 
-//<code_file>
-namespace NS
-{
-    public class Foo
-    {
-        
-    }
-}
-
-/*</code_file>*/
+/*<code_file>*/
 namespace MyTestNameSpace
 {
     using System;
     using AutoDI;
+
+    public class Program
+    {
+        public static void Main(string[] args)
+        { }
+    }
 
     public class Sut
     {
