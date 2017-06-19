@@ -166,6 +166,8 @@
     <Compile Include="ContainerDependenciesTests.cs" />
     <Compile Include="ManualInjectionOfContainer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResolverTests.cs" />
+    <Compile Include="SettingsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

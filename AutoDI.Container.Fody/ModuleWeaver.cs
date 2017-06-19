@@ -85,16 +85,7 @@ public class ModuleWeaver
             TypeDefinition resolverType = CreateAutoDIContainer(mapping);
             ModuleDefinition.Types.Add(resolverType);
 
-            if (ModuleDefinition.EntryPoint != null)
-            {
-                ILProcessor entryMethodProcessor = ModuleDefinition.EntryPoint.Body.GetILProcessor();
-                var create = Instruction.Create(OpCodes.Newobj, resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
-                var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(nameof(DependencyResolver.Set),
-                        new[] {typeof(IDependencyResolver)}));
-                var set = Instruction.Create(OpCodes.Call, setMethod);
-                entryMethodProcessor.InsertBefore(ModuleDefinition.EntryPoint.Body.Instructions.First(), set);
-                entryMethodProcessor.InsertBefore(set, create);
-            }
+            InjectResolver(resolverType);
         }
         catch (Exception ex)
         {
@@ -102,6 +93,20 @@ public class ModuleWeaver
             for (Exception e = ex; e != null; e = e.InnerException)
                 sb.AppendLine(e.ToString());
             LogError(sb.ToString());
+        }
+    }
+
+    private void InjectResolver(TypeDefinition resolverType)
+    {
+        if (ModuleDefinition.EntryPoint != null)
+        {
+            ILProcessor entryMethodProcessor = ModuleDefinition.EntryPoint.Body.GetILProcessor();
+            var create = Instruction.Create(OpCodes.Newobj, resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
+            var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(nameof(DependencyResolver.Set),
+                new[] { typeof(IDependencyResolver) }));
+            var set = Instruction.Create(OpCodes.Call, setMethod);
+            entryMethodProcessor.InsertBefore(ModuleDefinition.EntryPoint.Body.Instructions.First(), set);
+            entryMethodProcessor.InsertBefore(set, create);
         }
     }
 
@@ -142,14 +147,14 @@ public class ModuleWeaver
         MethodDefinition ctor = CreateConstructor();
         type.Methods.Add(ctor);
 
-        //Declare dictionary map
-        FieldDefinition mapField = CreateStaticReadonlyField<Dictionary<Type, Lazy<object>>>("_items", false);
-        type.Fields.Add(mapField);
-
+        
         //Create static constructor
         MethodDefinition staticConstructor = CreateStaticConstructor();
         ILProcessor staticBody = staticConstructor.Body.GetILProcessor();
 
+        //Declare and initialize dictionary map
+        FieldDefinition mapField = CreateStaticReadonlyField<Dictionary<Type, Lazy<object>>>("_items", false);
+        type.Fields.Add(mapField);
         MethodReference dictionaryConstructor = ModuleDefinition.ImportReference(typeof(Dictionary<Type, Lazy<object>>).GetConstructor(new Type[0]));
         staticBody.Emit(OpCodes.Newobj, dictionaryConstructor);
         staticBody.Emit(OpCodes.Stsfld, mapField);
@@ -290,12 +295,13 @@ public class ModuleWeaver
     }
 
     // Will be called when a request to cancel the build occurs. OPTIONAL
-    public void Cancel()
-    {
-    }
+    //public void Cancel()
+    //{
+    //
+    //}
 
     // Will be called after all weaving has occurred and the module has been saved. OPTIONAL
-    public void AfterWeaving()
-    {
-    }
+    //public void AfterWeaving()
+    //{
+    //}
 }

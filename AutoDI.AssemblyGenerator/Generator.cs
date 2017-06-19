@@ -31,22 +31,24 @@ namespace AutoDI.AssemblyGenerator
             _assebmlyType = assebmlyType;
         }
 
-        public void AddWeaver(string weaverName)
+        public object AddWeaver(string weaverName)
         {
-            bool ProcessAssembly(Assembly assembly)
+            object ProcessAssembly(Assembly assembly)
             {
                 Type weaverType = assembly.GetType(WeaverName);
-                if (weaverType == null) return false;
-                _weavers.Add(Activator.CreateInstance(weaverType));
-                return true;
+                if (weaverType == null) return null;
+                object weaver = Activator.CreateInstance(weaverType);
+                _weavers.Add(weaver);
+                return weaver;
             }
 
             string assemblyName = $"{weaverName}.Fody";
 
             try
             {
-                if (ProcessAssembly(Assembly.Load(assemblyName)))
-                    return;
+                object weaver = ProcessAssembly(Assembly.Load(assemblyName));
+                if (weaver != null)
+                    return weaver;
             }
             catch
             {
@@ -55,8 +57,9 @@ namespace AutoDI.AssemblyGenerator
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => a.FullName == assemblyName))
             {
-                if (ProcessAssembly(assembly))
-                    return;
+                object weaver = ProcessAssembly(assembly);
+                if (weaver != null)
+                    return weaver;
             }
             throw new Exception($"Could not find '{weaverName}' weaver");
         }

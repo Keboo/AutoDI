@@ -25,6 +25,38 @@ namespace AutoDI.AssemblyGenerator
             return method.Invoke(null, parameters);
         }
 
+        public static object InvokeGeneric<TGeneric>(this Assembly assembly, object target, string methodName, params object[] parameters)
+        {
+            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (methodName == null) throw new ArgumentNullException(nameof(methodName));
+
+            Type genericType = assembly.GetType(typeof(TGeneric).FullName);
+            if (genericType == null)
+                throw new AssemblyInvocationExcetion($"Could not find generic parameter type '{typeof(TGeneric).FullName}' in '{assembly.FullName}'");
+
+            Type targetType = target.GetType();
+
+            MethodInfo method = targetType.GetMethod(methodName);
+            if (method == null)
+            {
+                foreach (var @interface in targetType.GetInterfaces())
+                {
+                    method = @interface.GetMethod(methodName);
+                    if (method != null) break;
+                }
+            }
+            if (method == null)
+                throw new AssemblyInvocationExcetion($"Could not find method '{methodName}' on type '{targetType.FullName}'");
+
+            if (method.IsStatic)
+                throw new AssemblyInvocationExcetion($"Method '{genericType.FullName}.{methodName}' is static");
+
+            MethodInfo genericMethod = method.MakeGenericMethod(genericType);
+
+            return genericMethod.Invoke(target, parameters);
+        }
+
         public static object CreateInstance<T>(this Assembly assembly)
         {
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
