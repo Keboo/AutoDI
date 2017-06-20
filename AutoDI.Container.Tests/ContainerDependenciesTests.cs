@@ -1,9 +1,8 @@
-﻿using System;
-using AutoDI.AssemblyGenerator;
+﻿using AutoDI.AssemblyGenerator;
+using ContainerDependencyNameSpace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
-using ContainerDependencyNameSpace;
 
 
 namespace AutoDI.Container.Tests
@@ -35,7 +34,7 @@ namespace AutoDI.Container.Tests
     }
 }
 
-//<code_file>
+//<gen>
 namespace ContainerDependencyNameSpace
 {
     using AutoDI;
@@ -61,4 +60,4 @@ namespace ContainerDependencyNameSpace
 
     public class Service : IService { }
 }
-//</code_file>
+//</gen>

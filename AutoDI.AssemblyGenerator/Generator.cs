@@ -89,12 +89,12 @@ namespace AutoDI.AssemblyGenerator
                         string line = await sr.ReadLineAsync();
                         switch (line.Trim())
                         {
-                            case "/*<code_file>*/":
-                            case "//<code_file>":
+                            case "/*<gen>*/":
+                            case "//<gen>":
                                 include = true;
                                 break;
-                            case "/*</code_file>*/":
-                            case "//</code_file>":
+                            case "/*</gen>*/":
+                            case "//</gen>":
                                 include = false;
                                 break;
                             default:

@@ -41,12 +41,12 @@ namespace AutoDI.Container.Tests
             var xml = XElement.Parse($@"<?xml version=""1.0"" encoding=""utf-8""?>
                 <Weavers>
                     <AutoDI/>
-                    <AutoDI.Container Behavior=""{Behaviors.SingleInterfaceImplementation},{Behaviors.ByClass}""/>
+                    <AutoDI.Container Behavior=""{Behaviors.SingleInterfaceImplementation},{Behaviors.IncludeClasses}""/>
                 </Weavers >");
 
             var settings = Settings.Parse(xml);
 
-            Assert.AreEqual(Behaviors.SingleInterfaceImplementation | Behaviors.ByClass, settings.Behavior);
+            Assert.AreEqual(Behaviors.SingleInterfaceImplementation | Behaviors.IncludeClasses, settings.Behavior);
         }
 
         [TestMethod]
@@ -56,7 +56,7 @@ namespace AutoDI.Container.Tests
                 <Weavers>
                     <AutoDI/>
                     <AutoDI.Container>
-                        <type name=""MyType.*"" Create=""Always"" Lazy=""False"" />
+                        <type name=""MyType.*"" Create=""Always"" />
                     </AutoDI.Container>
                 </Weavers >");
 
@@ -65,7 +65,6 @@ namespace AutoDI.Container.Tests
             Assert.AreEqual(1, settings.Types.Count);
             Assert.IsTrue(settings.Types[0].Matches("MyType2"));
             Assert.AreEqual(Create.Always, settings.Types[0].Create);
-            Assert.IsFalse(settings.Types[0].IsLazy);
         }
 
         [TestMethod]

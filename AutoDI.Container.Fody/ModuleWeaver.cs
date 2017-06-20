@@ -79,8 +79,8 @@ public class ModuleWeaver
     {
         try
         {
-            
-            IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping = GetMapping();
+            Settings settings = Settings.Parse(Config);
+            IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping = GetMapping(settings);
 
             TypeDefinition resolverType = CreateAutoDIContainer(mapping);
             ModuleDefinition.Types.Add(resolverType);
@@ -110,31 +110,74 @@ public class ModuleWeaver
         }
     }
 
-    private IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> GetMapping()
+    private IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> GetMapping(Settings settings)
     {
-        var map = new Dictionary<string, List<TypeDefinition>>();
+        var rv = new Dictionary<TypeDefinition, TypeDefinition>();
+
+        if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
+        {
+            AddSingleInterfaceImplementation(rv);
+        }
+        if (settings.Behavior.HasFlag(Behaviors.IncludeClasses))
+        {
+            AddClasses(rv);
+        }
+
+        AddSettingsMap(settings, rv);
+
+        return rv;
+    }
+
+    private void AddSettingsMap(Settings settings, Dictionary<TypeDefinition, TypeDefinition> map)
+    {
+        var allTypes = ModuleDefinition.GetAllTypes().ToDictionary(x => x.FullName);
+        foreach (Map settingsMap in settings.Maps)
+        {
+            foreach (string typeName in allTypes.Keys)
+            {
+                if (settingsMap.TryGetMap(typeName, out string mappedType))
+                {
+                    if (allTypes.TryGetValue(mappedType, out TypeDefinition mapped))
+                    {
+                        map[allTypes[typeName]] = mapped;
+                    }
+                }
+            }
+        }
+    }
+
+    private void AddClasses(Dictionary<TypeDefinition, TypeDefinition> map)
+    {
+        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract))
+        {
+            map[type] = type;
+        }
+    }
+
+    private void AddSingleInterfaceImplementation(Dictionary<TypeDefinition, TypeDefinition> map)
+    {
+        var types = new Dictionary<string, List<TypeDefinition>>();
+
         foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract))
         {
             foreach (var @interface in type.Interfaces)
             {
-                if (!map.TryGetValue(@interface.InterfaceType.FullName, out List<TypeDefinition> list))
+                if (!types.TryGetValue(@interface.InterfaceType.FullName, out List<TypeDefinition> list))
                 {
-                    map.Add(@interface.InterfaceType.FullName, list = new List<TypeDefinition>());
+                    types.Add(@interface.InterfaceType.FullName, list = new List<TypeDefinition>());
                 }
                 list.Add(type);
                 //TODO: Base types
             }
         }
 
-        var rv = new Dictionary<TypeDefinition, TypeDefinition>();
-        foreach (KeyValuePair<string, List<TypeDefinition>> kvp in map)
+        foreach (KeyValuePair<string, List<TypeDefinition>> kvp in types)
         {
             if (kvp.Value.Count != 1) continue;
             var type = ModuleDefinition.GetType(kvp.Key);
             if (type == null) continue;
-            rv[type] = kvp.Value[0];
+            map[type] = kvp.Value[0];
         }
-        return rv;
     }
 
     private TypeDefinition CreateAutoDIContainer(IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping)
@@ -147,7 +190,7 @@ public class ModuleWeaver
         MethodDefinition ctor = CreateConstructor();
         type.Methods.Add(ctor);
 
-        
+
         //Create static constructor
         MethodDefinition staticConstructor = CreateStaticConstructor();
         ILProcessor staticBody = staticConstructor.Body.GetILProcessor();
@@ -181,7 +224,7 @@ public class ModuleWeaver
         var genericParameter = new GenericParameter("T", resolveMethod);
         resolveMethod.GenericParameters.Add(genericParameter);
         resolveMethod.ReturnType = genericParameter;
-        
+
         var lazy = new VariableDefinition(ModuleDefinition.Get<Lazy<object>>());
         resolveMethod.Body.Variables.Add(lazy);
         var genericVariable = new VariableDefinition(genericParameter);
@@ -196,7 +239,7 @@ public class ModuleWeaver
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
         body.Append(Instruction.Create(OpCodes.Call, getTypeMethod));
         body.Append(Instruction.Create(OpCodes.Ldloca_S, lazy));
-        
+
         MethodReference tryGetValueMethod = ModuleDefinition.ImportReference(
                 typeof(Dictionary<Type, Lazy<object>>).GetMethod(nameof(Dictionary<Type, Lazy<object>>.TryGetValue)));
         body.Append(Instruction.Create(OpCodes.Callvirt, tryGetValueMethod));
@@ -211,7 +254,7 @@ public class ModuleWeaver
         body.Append(Instruction.Create(OpCodes.Callvirt, lazyValueMethod));
         body.Append(Instruction.Create(OpCodes.Unbox_Any, genericParameter));
         body.Append(returnInstruction);
-        
+
         type.Methods.Add(resolveMethod);
 
         return type;
@@ -232,7 +275,7 @@ public class ModuleWeaver
         //TODO: Make static
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
         MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<object>).GetConstructors().Single());
-        MethodReference lazyCtor = ModuleDefinition.ImportReference(typeof(Lazy<object>).GetConstructor(new[] {typeof(Func<object>)}));
+        MethodReference lazyCtor = ModuleDefinition.ImportReference(typeof(Lazy<object>).GetConstructor(new[] { typeof(Func<object>) }));
         MethodReference dictionarySetItem = ModuleDefinition.ImportReference(typeof(Dictionary<Type, Lazy<object>>).GetMethod("set_Item"));
         int delegateMethodCount = 0;
 
@@ -243,7 +286,7 @@ public class ModuleWeaver
             staticBody.Emit(OpCodes.Ldsfld, mapField);
             staticBody.Emit(OpCodes.Ldtoken, kvp.Key);
             staticBody.Emit(OpCodes.Call, getTypeMethod);
-      
+
             var delegateMethod = new MethodDefinition($"<{kvp.Value.Name}>_generated_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static, ModuleDefinition.Get<object>());
             delegateContainer.Methods.Add(delegateMethod);
             ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
@@ -253,7 +296,7 @@ public class ModuleWeaver
                 if (targetTypeCtor.Parameters.All(pd => pd.HasDefault && pd.Constant == null))
                 {
                     foundCtor = true;
-                    for(int i = 0; i < targetTypeCtor.Parameters.Count; i++)
+                    for (int i = 0; i < targetTypeCtor.Parameters.Count; i++)
                         delegateProcessor.Emit(OpCodes.Ldnull);
                     delegateProcessor.Emit(OpCodes.Newobj, targetTypeCtor);
                     break;
@@ -282,7 +325,7 @@ public class ModuleWeaver
         return ctor;
     }
 
-    private FieldDefinition CreateStaticReadonlyField<T>(string name, bool @public )
+    private FieldDefinition CreateStaticReadonlyField<T>(string name, bool @public)
     {
         return CreateStaticReadonlyField(name, @public, ModuleDefinition.Get<T>());
     }

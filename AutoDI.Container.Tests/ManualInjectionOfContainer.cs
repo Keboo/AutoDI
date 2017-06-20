@@ -36,7 +36,7 @@ namespace AutoDI.Container.Tests
     }
 }
 
-//<code_file>
+//<gen>
 namespace ManualInjectionNamespace
 {
     using AutoDI;
@@ -56,4 +56,4 @@ namespace ManualInjectionNamespace
 
     public class Service : IService { }
 }
-//</code_file>
+//</gen>

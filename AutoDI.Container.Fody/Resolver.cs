@@ -9,22 +9,81 @@ using System.Xml.Linq;
 
 namespace AutoDI.Container.Fody
 {
-    public class Resolver
+    public interface IResolver
     {
-        public void Foo()
-        {
+        T Get<T>() where T : class;
+    }
 
+    internal class OnceLazy<T> : IResolver where T : class
+    {
+        private readonly Lazy<T> _lazy;
+
+        public OnceLazy(Func<T> create)
+        {
+            _lazy = new Lazy<T>(create);
         }
 
-        public T Get<T>()
+        public TRequest Get<TRequest>() where TRequest : class
         {
-            return default(T);
+            return (TRequest)(object)_lazy.Value;
         }
+    }
+
+    internal class Once<T> : IResolver
+    {
+        private readonly T _instance;
+
+        public Once(T instance)
+        {
+            _instance = instance;
+        }
+
+        public TRequest Get<TRequest>() where TRequest : class => (TRequest) (object)_instance;
+    }
+
+    internal class Single<T> : IResolver where T : class
+    {
+        private readonly Func<T> _create;
+        private WeakReference<T> _reference;
+
+        public Single(Func<T> create)
+        {
+            _create = create;
+        }
+
+        public TRequest Get<TRequest>() where TRequest : class
+        {
+            lock (this)
+            {
+                T target;
+                if (_reference == null)
+                {
+                    _reference = new WeakReference<T>(target = _create());
+                }
+                else if (!_reference.TryGetTarget(out target))
+                {
+                    _reference.SetTarget(target = _create());
+                }
+                return (TRequest)(object)target;
+            }
+        }
+    }
+
+    internal class Always<T> : IResolver
+    {
+        private readonly Func<T> _create;
+
+        public Always(Func<T> create)
+        {
+            _create = create;
+        }
+
+        public TRequested Get<TRequested>() where TRequested : class => (TRequested) (object) _create();
     }
 
     internal class Settings
     {
-        private Settings(Behaviors behavior)
+        internal Settings(Behaviors behavior)
         {
             Behavior = behavior;
         }
@@ -68,14 +127,7 @@ namespace AutoDI.Container.Fody
                     create = Create.Once;
                 }
 
-                string lazyStr = typeNode.GetAttributeValue("Lazy");
-                bool lazy;
-                if (lazyStr == null || !bool.TryParse(lazyStr, out lazy))
-                {
-                    lazy = true;
-                }
-
-                rv.Types.Add(new MatchType(typePattern, create, lazy));
+                rv.Types.Add(new MatchType(typePattern, create));
             }
 
             foreach (XElement mapNode in containerRoot.DescendantNodes().OfType<XElement>()
@@ -114,7 +166,7 @@ namespace AutoDI.Container.Fody
             _to = to;
             _fromRegex = new Regex(from);
         }
-        
+
 
         public bool TryGetMap(string fromType, out string mappedType)
         {
@@ -132,22 +184,20 @@ namespace AutoDI.Container.Fody
     internal class MatchType
     {
         private readonly Regex _typeRegex;
-        public MatchType(string type, Create create, bool isLazy)
+        public MatchType(string type, Create create)
         {
             _typeRegex = new Regex(type);
             Create = create;
-            IsLazy = isLazy;
         }
 
         public Create Create { get; }
-
-        public bool IsLazy { get; }
 
         public bool Matches(string type) => _typeRegex.IsMatch(type);
     }
 
     public enum Create
     {
+        OnceLazy,
         Once,
         Single,
         Always
@@ -158,7 +208,7 @@ namespace AutoDI.Container.Fody
     {
         None = 0,
         SingleInterfaceImplementation = 1,
-        ByClass = 2,
-        Default = SingleInterfaceImplementation | ByClass
+        IncludeClasses = 2,
+        Default = SingleInterfaceImplementation | IncludeClasses
     }
 }
