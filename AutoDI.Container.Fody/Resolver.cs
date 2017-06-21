@@ -9,76 +9,52 @@ using System.Xml.Linq;
 
 namespace AutoDI.Container.Fody
 {
-    public interface IResolver
+    internal class InternalMap
     {
-        T Get<T>() where T : class;
-    }
+        private readonly Dictionary<Type, Delegate> _accessors = new Dictionary<Type, Delegate>();
 
-    internal class OnceLazy<T> : IResolver where T : class
-    {
-        private readonly Lazy<T> _lazy;
-
-        public OnceLazy(Func<T> create)
+        public void AddOnce<TKey, TValue>(TValue instance)
         {
-            _lazy = new Lazy<T>(create);
+            _accessors[typeof(TKey)] = new Func<TValue>(() => instance);
         }
 
-        public TRequest Get<TRequest>() where TRequest : class
+        public void AddLazy<TKey, TValue>(Func<TValue> create)
         {
-            return (TRequest)(object)_lazy.Value;
-        }
-    }
-
-    internal class Once<T> : IResolver
-    {
-        private readonly T _instance;
-
-        public Once(T instance)
-        {
-            _instance = instance;
+            var lazy = new Lazy<TValue>(create);
+            _accessors[typeof(TKey)] = new Func<TValue>(() => lazy.Value);
         }
 
-        public TRequest Get<TRequest>() where TRequest : class => (TRequest) (object)_instance;
-    }
-
-    internal class Single<T> : IResolver where T : class
-    {
-        private readonly Func<T> _create;
-        private WeakReference<T> _reference;
-
-        public Single(Func<T> create)
+        public void AddSingle<TKey, TValue>(Func<TValue> create) where TValue : class
         {
-            _create = create;
-        }
-
-        public TRequest Get<TRequest>() where TRequest : class
-        {
-            lock (this)
+            var weakRef = new WeakReference<TValue>(default(TValue));
+            _accessors[typeof(TKey)] = new Func<TValue>(() =>
             {
-                T target;
-                if (_reference == null)
+                lock (weakRef)
                 {
-                    _reference = new WeakReference<T>(target = _create());
+                    if (!weakRef.TryGetTarget(out TValue value))
+                    {
+                        value = create();
+                        weakRef.SetTarget(value);
+                    }
+                    return value;
                 }
-                else if (!_reference.TryGetTarget(out target))
-                {
-                    _reference.SetTarget(target = _create());
-                }
-                return (TRequest)(object)target;
-            }
+            });
         }
-    }
 
-    internal class Always<T> : IResolver
-    {
-        private readonly Func<T> _create;
-
-        public Always(Func<T> create)
+        public void AddAlways<TKey, TValue>(Func<TValue> create)
         {
-            _create = create;
+            _accessors[typeof(TKey)] = create;
         }
 
-        public TRequested Get<TRequested>() where TRequested : class => (TRequested) (object) _create();
+        public T Get<T>()
+        {
+            if (_accessors.TryGetValue(typeof(T), out Delegate d)
+                && d is Func<T> func)
+            {
+                return func();
+            }
+            return default(T);
+        }
     }
 
     internal class Settings

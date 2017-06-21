@@ -1,13 +1,13 @@
-﻿using Mono.Cecil;
+﻿using AutoDI;
+using AutoDI.Container.Fody;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
-using AutoDI;
-using AutoDI.Container.Fody;
-using Mono.Cecil.Rocks;
 
 // ReSharper disable once CheckNamespace
 public class ModuleWeaver

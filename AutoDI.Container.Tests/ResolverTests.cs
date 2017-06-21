@@ -30,8 +30,6 @@ namespace AutoDI.Container.Tests
             Assert.IsNotNull(resolverType, "Could not find generated AudoDI resolver");
             _resolver = Activator.CreateInstance(resolverType) as IDependencyResolver;
             Assert.IsNotNull(_resolver, "Failed to create resolver");
-
-
         }
 
         private object Resolve<T>()
@@ -63,6 +61,12 @@ namespace AutoDI.Container.Tests
         {
             Assert.IsTrue(ReferenceEquals(_resolver.Resolve<Service>(), _resolver.Resolve<IService>()));
         }
+
+        [TestMethod]
+        public void CanResolveSingletonByAnyInterface()
+        {
+            Assert.IsTrue(ReferenceEquals(_resolver.Resolve<IService>(), _resolver.Resolve<IService2>()));
+        }
     }
 }
 
@@ -75,7 +79,10 @@ namespace ResolveTestsNamespace
     public interface IService
     { }
 
-    public class Service : IService
+    public interface IService2
+    { }
+
+    public class Service : IService, IService2
     { }
 }
 //</code_file>
