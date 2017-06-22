@@ -70,7 +70,7 @@ namespace AutoDI.Container.Tests
     }
 }
 
-//<code_file>
+//<gen>
 namespace ResolveTestsNamespace
 {
     using AutoDI;
@@ -85,4 +85,4 @@ namespace ResolveTestsNamespace
     public class Service : IService, IService2
     { }
 }
-//</code_file>
+//</gen>

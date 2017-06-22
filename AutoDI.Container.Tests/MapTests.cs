@@ -1,7 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
-using AutoDI.Container.Fody;
+﻿using AutoDI.Container.Fody;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace AutoDI.Container.Tests
 {
@@ -9,40 +8,40 @@ namespace AutoDI.Container.Tests
     public class MapTests
     {
         [TestMethod]
-        public void TestGetFromOnce()
+        public void TestGetSingleton()
         {
             var map = new InternalMap();
-            map.AddOnce<IInterface, Class>(new Class());
+            map.AddSingleton<IInterface, Class>(new Class());
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
         }
 
         [TestMethod]
-        public void TestGetFromOnceLazy()
+        public void TestGetLazySingleton()
         {
             var map = new InternalMap();
-            map.AddLazy<IInterface, Class>(() => new Class());
+            map.AddLazySingleton<IInterface, Class>(() => new Class());
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
         }
 
         [TestMethod]
-        public void TestGetFromSingle()
+        public void TestGetWeakTransient()
         {
             var map = new InternalMap();
-            map.AddSingle<IInterface, Class>(() => new Class());
+            map.AddWeakTransient<IInterface, Class>(() => new Class());
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
         }
 
         [TestMethod]
-        public void TestGetFromAlways()
+        public void TestGetTransient()
         {
             var map = new InternalMap();
-            map.AddAlways<IInterface, Class>(() => new Class());
+            map.AddTransient<IInterface, Class>(() => new Class());
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -53,7 +52,7 @@ namespace AutoDI.Container.Tests
         {
             var map = new InternalMap();
             var instance = new Class();
-            map.AddOnce<IInterface, Class>(instance);
+            map.AddSingleton<IInterface, Class>(instance);
 
             IInterface c1 = map.Get<IInterface>();
             IInterface c2 = map.Get<IInterface>();
@@ -66,7 +65,7 @@ namespace AutoDI.Container.Tests
         public void GetOnceLazyDoesNotCreateObjectUntilRequested()
         {
             var map = new InternalMap();
-            map.AddLazy<IInterface, Class>(() => throw new Exception());
+            map.AddLazySingleton<IInterface, Class>(() => throw new Exception());
 
             try
             {
@@ -85,7 +84,7 @@ namespace AutoDI.Container.Tests
         {
             var map = new InternalMap();
             int instanceCount = 0;
-            map.AddSingle<IInterface, Class>(() =>
+            map.AddWeakTransient<IInterface, Class>(() =>
             {
                 instanceCount++;
                 return new Class();
@@ -94,17 +93,16 @@ namespace AutoDI.Container.Tests
             var instance = map.Get<IInterface>();
 
             Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>()));
+            Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>()));
 
-            var weakRef = new WeakReference<IInterface>(instance);
+            Assert.AreEqual(1, instanceCount);
+
+            // ReSharper disable once RedundantAssignment
             instance = null;
-            GC.Collect();
-            while (weakRef.TryGetTarget(out instance))
-            {
-                instance = null;
-                Task.Delay(TimeSpan.FromSeconds(1));
-            }
 
-            map.Get<IInterface>();
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+
+            Assert.IsNotNull(map.Get<IInterface>());
             Assert.AreEqual(2, instanceCount);
         }
 
@@ -113,7 +111,7 @@ namespace AutoDI.Container.Tests
         {
             var map = new InternalMap();
             int instanceCount = 0;
-            map.AddAlways<IInterface, Class>(() =>
+            map.AddTransient<IInterface, Class>(() =>
             {
                 instanceCount++;
                 return new Class();
@@ -126,6 +124,18 @@ namespace AutoDI.Container.Tests
             Assert.IsFalse(ReferenceEquals(b, c));
             Assert.IsFalse(ReferenceEquals(a, c));
             Assert.AreEqual(3, instanceCount);
+        }
+
+        public class AutoDiContainer
+        {
+            private static readonly InternalMap _map = new InternalMap();
+
+            static AutoDiContainer()
+            {
+                _map.AddSingleton<IInterface, Class>(new Class());
+
+                _map.AddLazySingleton<IInterface, Class>(() => new Class());
+            }
         }
 
         private interface IInterface

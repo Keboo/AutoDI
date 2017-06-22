@@ -64,7 +64,7 @@ namespace AutoDI.Container.Tests
 
             Assert.AreEqual(1, settings.Types.Count);
             Assert.IsTrue(settings.Types[0].Matches("MyType2"));
-            Assert.AreEqual(Create.Always, settings.Types[0].Create);
+            Assert.AreEqual(Create.Transient, settings.Types[0].Create);
         }
 
         [TestMethod]

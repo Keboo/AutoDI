@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -133,15 +134,32 @@ namespace AutoDI.AssemblyGenerator
                 if (emitResult.Success)
                 {
                     //ms.Position = 0;
-                    file.Position = 0;
-                    var module = ModuleDefinition.ReadModule(file);
+                    
                     foreach (dynamic weaver in _weavers)
                     {
+                        file.Position = 0;
+                        var module = ModuleDefinition.ReadModule(file);
                         weaver.ModuleDefinition = module;
+                        var errors = new StringBuilder();
+                        weaver.LogError = new Action<string>(s =>
+                        {
+                            errors.AppendLine(s);
+                        });
+                        weaver.LogWarning = new Action<string>(s => Debug.WriteLine($"Weaver Warning: {s}"));
+                        weaver.LogInfo = new Action<string>(s => Debug.WriteLine($"Weaver Info: {s}"));
+                        weaver.LogDebug = new Action<string>(s => Debug.WriteLine($"Weaver Debug: {s}"));
                         weaver.Execute();
+                        file.Position = 0;
+                        module.Write(file);
+                        if (errors.Length > 0)
+                        {
+                            throw new Exception($"Weaver Error {errors}");
+                        }
                     }
-                    file.Position = 0;
-                    module.Write(file);
+                }
+                else
+                {
+                    throw new Exception(string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => d.GetMessage())));
                 }
             }
 
@@ -149,13 +167,5 @@ namespace AutoDI.AssemblyGenerator
             //File.Delete(filePath);
             return assembly;
         }
-    }
-
-    public enum AssemblyType
-    {
-        ConsoleApplication = OutputKind.ConsoleApplication,
-        WindowsApplication = OutputKind.WindowsApplication,
-        DynamicallyLinkedLibrary = OutputKind.DynamicallyLinkedLibrary,
-        NetModule = OutputKind.NetModule
     }
 }

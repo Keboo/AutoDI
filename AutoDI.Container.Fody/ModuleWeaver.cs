@@ -6,9 +6,11 @@ using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
 
+[assembly: InternalsVisibleTo("AutoDI.Container.Tests")]
 // ReSharper disable once CheckNamespace
 public class ModuleWeaver
 {
@@ -73,6 +75,7 @@ public class ModuleWeaver
         LogWarning = s => { };
         LogInfo = s => { };
         LogDebug = s => { };
+        LogError = s => { };
     }
 
     public void Execute()
@@ -196,10 +199,10 @@ public class ModuleWeaver
         ILProcessor staticBody = staticConstructor.Body.GetILProcessor();
 
         //Declare and initialize dictionary map
-        FieldDefinition mapField = CreateStaticReadonlyField<Dictionary<Type, Lazy<object>>>("_items", false);
+        FieldDefinition mapField = CreateStaticReadonlyField<InternalMap>("_items", false);
         type.Fields.Add(mapField);
-        MethodReference dictionaryConstructor = ModuleDefinition.ImportReference(typeof(Dictionary<Type, Lazy<object>>).GetConstructor(new Type[0]));
-        staticBody.Emit(OpCodes.Newobj, dictionaryConstructor);
+        MethodReference mapConstructor = ModuleDefinition.ImportReference(typeof(InternalMap).GetConstructor(new Type[0]));
+        staticBody.Emit(OpCodes.Newobj, mapConstructor);
         staticBody.Emit(OpCodes.Stsfld, mapField);
 
         BuildMap(mapField, staticBody, type, mapping);
@@ -272,11 +275,22 @@ public class ModuleWeaver
 
     private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, IEnumerable<KeyValuePair<TypeDefinition, TypeDefinition>> mapping)
     {
+        return;
         //TODO: Make static
-        MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
+        MethodReference addSingleton =
+            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddSingleton)));
+        MethodReference addLazySingleton =
+            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddLazySingleton)));
+        MethodReference addWeakTransient =
+            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddWeakTransient)));
+        MethodReference addTransient =
+            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddTransient)));
+
+
+        //MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
         MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<object>).GetConstructors().Single());
-        MethodReference lazyCtor = ModuleDefinition.ImportReference(typeof(Lazy<object>).GetConstructor(new[] { typeof(Func<object>) }));
-        MethodReference dictionarySetItem = ModuleDefinition.ImportReference(typeof(Dictionary<Type, Lazy<object>>).GetMethod("set_Item"));
+        //MethodReference lazyCtor = ModuleDefinition.ImportReference(typeof(Lazy<object>).GetConstructor(new[] { typeof(Func<object>) }));
+        //MethodReference dictionarySetItem = ModuleDefinition.ImportReference(typeof(Dictionary<Type, Lazy<object>>).GetMethod("set_Item"));
         int delegateMethodCount = 0;
 
         foreach (KeyValuePair<TypeDefinition, TypeDefinition> kvp in mapping)
@@ -284,8 +298,8 @@ public class ModuleWeaver
             LogInfo($"  Mapping {kvp.Key.FullName} -> {kvp.Value.FullName}");
 
             staticBody.Emit(OpCodes.Ldsfld, mapField);
-            staticBody.Emit(OpCodes.Ldtoken, kvp.Key);
-            staticBody.Emit(OpCodes.Call, getTypeMethod);
+            //staticBody.Emit(OpCodes.Ldtoken, kvp.Key);
+            //staticBody.Emit(OpCodes.Call, getTypeMethod);
 
             var delegateMethod = new MethodDefinition($"<{kvp.Value.Name}>_generated_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static, ModuleDefinition.Get<object>());
             delegateContainer.Methods.Add(delegateMethod);
@@ -297,7 +311,9 @@ public class ModuleWeaver
                 {
                     foundCtor = true;
                     for (int i = 0; i < targetTypeCtor.Parameters.Count; i++)
+                    {
                         delegateProcessor.Emit(OpCodes.Ldnull);
+                    }
                     delegateProcessor.Emit(OpCodes.Newobj, targetTypeCtor);
                     break;
                 }
@@ -308,10 +324,16 @@ public class ModuleWeaver
             }
             delegateProcessor.Emit(OpCodes.Ret);
             staticBody.Emit(OpCodes.Ldnull);
+
+            var addMethod = new GenericInstanceMethod(addLazySingleton);
+            addMethod.GenericArguments.Add(kvp.Key);
+            addMethod.GenericArguments.Add(kvp.Value);
+
             staticBody.Emit(OpCodes.Ldftn, delegateMethod);
             staticBody.Emit(OpCodes.Newobj, funcCtor);
-            staticBody.Emit(OpCodes.Newobj, lazyCtor);
-            staticBody.Emit(OpCodes.Callvirt, dictionarySetItem);
+            staticBody.Emit(OpCodes.Callvirt, addMethod);
+            //staticBody.Emit(OpCodes.Newobj, lazyCtor);
+            //staticBody.Emit(OpCodes.Callvirt, dictionarySetItem);
             staticBody.Emit(OpCodes.Nop);
         }
     }
@@ -330,7 +352,7 @@ public class ModuleWeaver
         return CreateStaticReadonlyField(name, @public, ModuleDefinition.Get<T>());
     }
 
-    private FieldDefinition CreateStaticReadonlyField(string name, bool @public, TypeReference type)
+    private static FieldDefinition CreateStaticReadonlyField(string name, bool @public, TypeReference type)
     {
         return new FieldDefinition(name,
             (@public ? FieldAttributes.Public : FieldAttributes.Private) | FieldAttributes.Static |
