@@ -1,9 +1,9 @@
-﻿using System;
-using System.Reflection;
-using System.Threading.Tasks;
-using AutoDI.AssemblyGenerator;
+﻿using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ResolveTestsNamespace;
+using System;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace AutoDI.Container.Tests
 {
@@ -53,19 +53,27 @@ namespace AutoDI.Container.Tests
         public void CanResolveSingletonInstance()
         {
             // ReSharper disable once EqualExpressionComparison
-            Assert.IsTrue(ReferenceEquals(_resolver.Resolve<IService>(), _resolver.Resolve<IService>()));
+            Assert.IsTrue(ReferenceEquals(Resolve<IService>(), Resolve<IService>()));
         }
 
         [TestMethod]
         public void CanResolveSingletonByClassOrInterface()
         {
-            Assert.IsTrue(ReferenceEquals(_resolver.Resolve<Service>(), _resolver.Resolve<IService>()));
+            var @interface = Resolve<IService>();
+            var @class = Resolve<Service>();
+            Assert.IsNotNull(@interface);
+            Assert.IsNotNull(@class);
+            Assert.IsTrue(ReferenceEquals(@interface, @class));
         }
 
         [TestMethod]
         public void CanResolveSingletonByAnyInterface()
         {
-            Assert.IsTrue(ReferenceEquals(_resolver.Resolve<IService>(), _resolver.Resolve<IService2>()));
+            var interface1 = Resolve<IService>();
+            var interface2 = Resolve<IService2>();
+            Assert.IsNotNull(interface1);
+            Assert.IsNotNull(interface2);
+            Assert.IsTrue(ReferenceEquals(interface1, interface2));
         }
     }
 }
@@ -73,9 +81,6 @@ namespace AutoDI.Container.Tests
 //<gen>
 namespace ResolveTestsNamespace
 {
-    using AutoDI;
-    using System;
-
     public interface IService
     { }
 

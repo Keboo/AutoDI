@@ -56,7 +56,7 @@ namespace AutoDI.Container.Tests
                 <Weavers>
                     <AutoDI/>
                     <AutoDI.Container>
-                        <type name=""MyType.*"" Create=""Always"" />
+                        <type name=""MyType.*"" Create=""Transient"" />
                     </AutoDI.Container>
                 </Weavers >");
 

@@ -23,13 +23,11 @@ namespace AutoDI.Container.Tests
             gen.AddWeaver("AutoDI");
             dynamic container = gen.AddWeaver("AutoDI.Container");
             
-            var settings = new Settings(Behaviors.None);
-            
-            container.Element = XElement.Parse($@"<?xml version=""1.0"" encoding=""utf-8""?>
+            container.Config = XElement.Parse($@"<?xml version=""1.0"" encoding=""utf-8""?>
 <Weavers>
     <AutoDI/>
     <AutoDI.Container Behavior=""{Behaviors.None}"">
-        <type name=""MyType.*"" Create=""Always"" />
+        <type name=""MyType.*"" Create=""{Create.Transient}"" />
         <map from=""IService"" to=""Service"" />
     </AutoDI.Container>
 </Weavers >");

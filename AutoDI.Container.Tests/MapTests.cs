@@ -11,7 +11,7 @@ namespace AutoDI.Container.Tests
         public void TestGetSingleton()
         {
             var map = new InternalMap();
-            map.AddSingleton<IInterface, Class>(new Class());
+            map.AddSingleton(new Class(), new[] { typeof(IInterface) });
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -21,7 +21,7 @@ namespace AutoDI.Container.Tests
         public void TestGetLazySingleton()
         {
             var map = new InternalMap();
-            map.AddLazySingleton<IInterface, Class>(() => new Class());
+            map.AddLazySingleton(() => new Class(), new[]{typeof(IInterface)});
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -31,7 +31,7 @@ namespace AutoDI.Container.Tests
         public void TestGetWeakTransient()
         {
             var map = new InternalMap();
-            map.AddWeakTransient<IInterface, Class>(() => new Class());
+            map.AddWeakTransient(() => new Class(), new[] { typeof(IInterface) });
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -41,18 +41,18 @@ namespace AutoDI.Container.Tests
         public void TestGetTransient()
         {
             var map = new InternalMap();
-            map.AddTransient<IInterface, Class>(() => new Class());
+            map.AddTransient(() => new Class(), new[] { typeof(IInterface) });
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
         }
 
         [TestMethod]
-        public void GetOnceAlwaysReturnsTheSameInstance()
+        public void GetSingletonAlwaysReturnsTheSameInstance()
         {
             var map = new InternalMap();
             var instance = new Class();
-            map.AddSingleton<IInterface, Class>(instance);
+            map.AddSingleton(instance, new[] { typeof(IInterface) });
 
             IInterface c1 = map.Get<IInterface>();
             IInterface c2 = map.Get<IInterface>();
@@ -62,10 +62,10 @@ namespace AutoDI.Container.Tests
         }
 
         [TestMethod]
-        public void GetOnceLazyDoesNotCreateObjectUntilRequested()
+        public void GetLazySingletonDoesNotCreateObjectUntilRequested()
         {
             var map = new InternalMap();
-            map.AddLazySingleton<IInterface, Class>(() => throw new Exception());
+            map.AddLazySingleton<Class>(() => throw new Exception(), new[] { typeof(IInterface) });
 
             try
             {
@@ -78,17 +78,29 @@ namespace AutoDI.Container.Tests
             Assert.Fail("Exception should have been thrown");
         }
 
+        [TestMethod]
+        public void GetLazySingletonReturnsTheSameInstance()
+        {
+            var map = new InternalMap();
+            map.AddLazySingleton(() => new Class(), new[] { typeof(IInterface), typeof(IInterface2) });
+
+            var instance1 = map.Get<IInterface>();
+            var instance2 = map.Get<IInterface2>();
+            Assert.IsNotNull(instance1);
+            Assert.IsNotNull(instance2);
+            Assert.IsTrue(ReferenceEquals(instance1, instance2));
+        }
 
         [TestMethod]
         public void GetSingleOnlyCreatesOneInstanceAtATime()
         {
             var map = new InternalMap();
             int instanceCount = 0;
-            map.AddWeakTransient<IInterface, Class>(() =>
+            map.AddWeakTransient(() =>
             {
                 instanceCount++;
                 return new Class();
-            });
+            }, new []{typeof(IInterface)});
 
             var instance = map.Get<IInterface>();
 
@@ -111,11 +123,11 @@ namespace AutoDI.Container.Tests
         {
             var map = new InternalMap();
             int instanceCount = 0;
-            map.AddTransient<IInterface, Class>(() =>
+            map.AddTransient(() =>
             {
                 instanceCount++;
                 return new Class();
-            });
+            }, new[] {typeof(IInterface)});
 
             var a = map.Get<IInterface>();
             var b = map.Get<IInterface>();
@@ -126,21 +138,28 @@ namespace AutoDI.Container.Tests
             Assert.AreEqual(3, instanceCount);
         }
 
-        public class AutoDiContainer
+        public class AutoDiContainer : IDependencyResolver
         {
             private static readonly InternalMap _map = new InternalMap();
 
             static AutoDiContainer()
             {
-                _map.AddSingleton<IInterface, Class>(new Class());
+                _map.AddSingleton(new Class(), new[] {typeof(IInterface)});
 
-                _map.AddLazySingleton<IInterface, Class>(() => new Class());
+                _map.AddLazySingleton(() => new Class(), new[] {typeof(IInterface), typeof(IInterface)});
+            }
+
+
+            T IDependencyResolver.Resolve<T>(params object[] parameters)
+            {
+                return _map.Get<T>();
             }
         }
 
-        private interface IInterface
-        { }
+        private interface IInterface { }
 
-        public class Class : IInterface { }
+        private interface IInterface2 { }
+
+        public class Class : IInterface, IInterface2 { }
     }
 }

@@ -3,41 +3,41 @@ using System.Collections.Generic;
 
 namespace AutoDI.Container.Fody
 {
-    internal sealed class InternalMap
+    public sealed class InternalMap
     {
         private readonly Dictionary<Type, Delegate> _accessors = new Dictionary<Type, Delegate>();
 
-        public void AddSingleton<TKey, TValue>(TValue instance)
+        public void AddSingleton<T>(T instance, Type[] keys)
         {
-            _accessors[typeof(TKey)] = new Func<TValue>(() => instance);
+            Add(() => instance, keys);
         }
 
-        public void AddLazySingleton<TKey, TValue>(Func<TValue> create)
+        public void AddLazySingleton<T>(Func<T> create, Type[] keys)
         {
-            var lazy = new Lazy<TValue>(create);
-            _accessors[typeof(TKey)] = new Func<TValue>(() => lazy.Value);
+            var lazy = new Lazy<T>(create);
+            Add(() => lazy.Value, keys);
         }
 
-        public void AddWeakTransient<TKey, TValue>(Func<TValue> create) where TValue : class
+        public void AddWeakTransient<T>(Func<T> create, Type[] keys) where T : class
         {
-            var weakRef = new WeakReference<TValue>(default(TValue));
-            _accessors[typeof(TKey)] = new Func<TValue>(() =>
+            var weakRef = new WeakReference<T>(default(T));
+            Add(() =>
             {
                 lock (weakRef)
                 {
-                    if (!weakRef.TryGetTarget(out TValue value))
+                    if (!weakRef.TryGetTarget(out T value))
                     {
                         value = create();
                         weakRef.SetTarget(value);
                     }
                     return value;
                 }
-            });
+            }, keys);
         }
 
-        public void AddTransient<TKey, TValue>(Func<TValue> create)
+        public void AddTransient<T>(Func<T> create, Type[] keys)
         {
-            _accessors[typeof(TKey)] = create;
+            Add(create, keys);
         }
 
         public T Get<T>()
@@ -48,6 +48,14 @@ namespace AutoDI.Container.Fody
                 return func();
             }
             return default(T);
+        }
+
+        private void Add<T>(Func<T> @delegate, Type[] keys)
+        {
+            foreach (Type key in keys)
+            {
+                _accessors[key] = @delegate;
+            }
         }
     }
 }
