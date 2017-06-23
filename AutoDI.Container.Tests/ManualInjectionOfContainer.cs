@@ -1,9 +1,9 @@
-﻿using System.Reflection;
-using System.Threading.Tasks;
-using AutoDI.AssemblyGenerator;
+﻿using AutoDI.AssemblyGenerator;
 using AutoDI.Container.Fody;
 using ManualInjectionNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace AutoDI.Container.Tests
 {

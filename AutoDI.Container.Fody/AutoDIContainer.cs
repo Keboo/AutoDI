@@ -5,15 +5,15 @@ namespace AutoDI.Container.Fody
 {
     public static class AutoDIContainer
     {
-        public static void Inject(Assembly assembly = null)
+        public static void Inject(Assembly containerAssembly = null)
         {
             const string typeName = "AutoDI.AutoDIContainer";
 
             //Checks currently executing assembly
             var containerType = Type.GetType(typeName);
-            if (assembly != null)
+            if (containerAssembly != null)
             {
-                containerType = assembly.GetType(typeName);
+                containerType = containerAssembly.GetType(typeName);
             }
             else if (containerType == null)
             {

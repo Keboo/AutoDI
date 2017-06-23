@@ -135,9 +135,10 @@ public class ModuleWeaver
     private void AddSettingsMap(Settings settings, Mapping map)
     {
         var allTypes = ModuleDefinition.GetAllTypes().ToDictionary(x => x.FullName);
-        foreach (Map settingsMap in settings.Maps)
+
+        foreach (string typeName in allTypes.Keys)
         {
-            foreach (string typeName in allTypes.Keys)
+            foreach (Map settingsMap in settings.Maps)
             {
                 if (settingsMap.TryGetMap(typeName, out string mappedType))
                 {
@@ -148,6 +149,7 @@ public class ModuleWeaver
                 }
             }
         }
+        map.UpdateCreation(settings.Types);
     }
 
     private void AddClasses(Mapping map)
@@ -234,35 +236,16 @@ public class ModuleWeaver
         var genericVariable = new VariableDefinition(genericParameter);
         resolveMethod.Body.Variables.Add(genericVariable);
 
-        var loadLazyInstruction = Instruction.Create(OpCodes.Ldloc_0);
-        var returnInstruction = Instruction.Create(OpCodes.Ret);
-
         var body = resolveMethod.Body.GetILProcessor();
-        body.Append(Instruction.Create(OpCodes.Ldsfld, mapField));
+        body.Emit(OpCodes.Ldsfld, mapField);
+
         MethodReference getMethod =
             ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.Get)));
         var genericGetMethod = new GenericInstanceMethod(getMethod);
         genericGetMethod.GenericArguments.Add(genericParameter);
-        body.Append(Instruction.Create(OpCodes.Call, genericGetMethod));
-        //body.Append(Instruction.Create(OpCodes.Ldtoken, genericParameter));
-        //MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
-        //body.Append(Instruction.Create(OpCodes.Call, getTypeMethod));
-        //body.Append(Instruction.Create(OpCodes.Ldloca_S, lazy));
 
-        //MethodReference tryGetValueMethod = ModuleDefinition.ImportReference(
-        //        typeof(Dictionary<Type, Lazy<object>>).GetMethod(nameof(Dictionary<Type, Lazy<object>>.TryGetValue)));
-        //body.Append(Instruction.Create(OpCodes.Callvirt, tryGetValueMethod));
-        //body.Append(Instruction.Create(OpCodes.Brtrue_S, loadLazyInstruction));
-        //body.Append(Instruction.Create(OpCodes.Ldloca_S, genericVariable));
-        //body.Append(Instruction.Create(OpCodes.Initobj, genericParameter));
-        //body.Append(Instruction.Create(OpCodes.Ldloc_1));
-        //body.Append(Instruction.Create(OpCodes.Br_S, returnInstruction));
-        //body.Append(loadLazyInstruction);
-        //MethodReference lazyValueMethod =
-        //    ModuleDefinition.ImportReference(typeof(Lazy<object>).GetProperty(nameof(Lazy<object>.Value)).GetMethod);
-        //body.Append(Instruction.Create(OpCodes.Callvirt, lazyValueMethod));
-        //body.Append(Instruction.Create(OpCodes.Unbox_Any, genericParameter));
-        body.Append(returnInstruction);
+        body.Emit(OpCodes.Call, genericGetMethod);
+        body.Emit(OpCodes.Ret);
 
         type.Methods.Add(resolveMethod);
 
@@ -281,6 +264,23 @@ public class ModuleWeaver
 
     private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, Mapping mapping)
     {
+        bool InvokeConstructor(TypeMap map, ILProcessor processor)
+        {
+            foreach (MethodDefinition targetTypeCtor in map.TargetType.GetConstructors().OrderByDescending(c => c.Parameters.Count))
+            {
+                if (targetTypeCtor.Parameters.All(pd => pd.HasDefault && pd.Constant == null))
+                {
+                    for (int i = 0; i < targetTypeCtor.Parameters.Count; i++)
+                    {
+                        processor.Emit(OpCodes.Ldnull);
+                    }
+                    processor.Emit(OpCodes.Newobj, targetTypeCtor);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         //TODO: Make static
         MethodReference addSingleton =
             ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddSingleton)));
@@ -291,7 +291,7 @@ public class ModuleWeaver
         MethodReference addTransient =
             ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddTransient)));
 
-        MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<object>).GetConstructors().Single());
+        TypeReference funcType = ModuleDefinition.ImportReference(typeof(Func<>));
         TypeReference type = ModuleDefinition.ImportReference(typeof(Type));
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
 
@@ -299,40 +299,46 @@ public class ModuleWeaver
 
         foreach (TypeMap map in mapping)
         {
-            var delegateMethod = new MethodDefinition($"<{map.TargetType.Name}>_generated_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static | MethodAttributes.Private, ModuleDefinition.Get<object>());
-            ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
-            bool foundCtor = false;
-            foreach (MethodDefinition targetTypeCtor in map.TargetType.GetConstructors().OrderByDescending(c => c.Parameters.Count))
-            {
-                if (targetTypeCtor.Parameters.All(pd => pd.HasDefault && pd.Constant == null))
-                {
-                    foundCtor = true;
-                    for (int i = 0; i < targetTypeCtor.Parameters.Count; i++)
-                    {
-                        delegateProcessor.Emit(OpCodes.Ldnull);
-                    }
-                    delegateProcessor.Emit(OpCodes.Newobj, targetTypeCtor);
-                    break;
-                }
-            }
-            if (!foundCtor)
-            {
-                LogWarning($"Could not find acceptable constructor for '{map.TargetType.FullName}'");
-                continue;
-            }
-            delegateProcessor.Emit(OpCodes.Ret);
-            delegateContainer.Methods.Add(delegateMethod);
-
             staticBody.Emit(OpCodes.Ldsfld, mapField);
-            staticBody.Emit(OpCodes.Ldnull);
-            staticBody.Emit(OpCodes.Ldftn, delegateMethod);
-            staticBody.Emit(OpCodes.Newobj, funcCtor);
+
+            switch (map.CreateType)
+            {
+                case Create.Singleton:
+                    if (!InvokeConstructor(map, staticBody))
+                    {
+                        staticBody.Remove(staticBody.Body.Instructions.Last());
+                        LogDebug($"Could not find acceptable constructor for '{map.TargetType.FullName}'");
+                        continue;
+                    }
+                    break;
+                default:
+                    var delegateMethod = new MethodDefinition($"<{map.TargetType.Name}>_generated_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static | MethodAttributes.Private, map.TargetType);
+                    ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
+                    if (!InvokeConstructor(map, delegateProcessor))
+                    {
+                        delegateMethodCount--;
+                        staticBody.Remove(staticBody.Body.Instructions.Last());
+                        LogDebug($"Could not find acceptable constructor for '{map.TargetType.FullName}'");
+                        continue;
+                    }
+                    delegateProcessor.Emit(OpCodes.Ret);
+                    delegateContainer.Methods.Add(delegateMethod);
+
+                    staticBody.Emit(OpCodes.Ldnull);
+                    staticBody.Emit(OpCodes.Ldftn, delegateMethod);
+
+                    MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<>).GetConstructors().Single());
+                    funcCtor.DeclaringType = funcType.MakeGenericInstanceType(map.TargetType);
+
+                    staticBody.Emit(OpCodes.Newobj, funcCtor);
+                    break;
+            }
 
             staticBody.Emit(OpCodes.Ldc_I4, map.Keys.Count);
             staticBody.Emit(OpCodes.Newarr, type);
 
             int arrayIndex = 0;
-            foreach(var key in map.Keys)
+            foreach (var key in map.Keys)
             {
                 LogInfo($"  Mapping {key.FullName} -> {map.TargetType.FullName}");
                 staticBody.Emit(OpCodes.Dup);
@@ -342,10 +348,28 @@ public class ModuleWeaver
                 staticBody.Emit(OpCodes.Stelem_Ref);
             }
 
-            var addMethod = new GenericInstanceMethod(addLazySingleton);
-            addMethod.GenericArguments.Add(map.TargetType);
+            MethodReference addMethod;
+            switch (map.CreateType)
+            {
+                case Create.Singleton:
+                    addMethod = addSingleton;
+                    break;
+                case Create.LazySingleton:
+                    addMethod = addLazySingleton;
+                    break;
+                case Create.WeakTransient:
+                    addMethod = addWeakTransient;
+                    break;
+                case Create.Transient:
+                    addMethod = addTransient;
+                    break;
+                default:
+                    throw new InvalidOperationException($"Invalid Crate value '{map.CreateType}'");
+            }
+            var addGenericMethod = new GenericInstanceMethod(addMethod);
+            addGenericMethod.GenericArguments.Add(map.TargetType);
 
-            staticBody.Emit(OpCodes.Call, addMethod);
+            staticBody.Emit(OpCodes.Call, addGenericMethod);
             staticBody.Emit(OpCodes.Nop);
 
         }
@@ -379,7 +403,7 @@ public class ModuleWeaver
             TargetType = targetType;
         }
 
-        public Create CreateType { get; } = Create.LazySingleton;
+        public Create CreateType { get; set; } = Create.LazySingleton;
 
         public TypeDefinition TargetType { get; }
 
@@ -397,6 +421,20 @@ public class ModuleWeaver
                 _maps[targetType.FullName] = typeMap = new TypeMap(targetType);
             }
             typeMap.Keys.Add(key);
+        }
+
+        public void UpdateCreation(ICollection<MatchType> matchTypes)
+        {
+            foreach (string targetType in _maps.Keys)
+            {
+                foreach (MatchType type in matchTypes)
+                {
+                    if (type.Matches(targetType))
+                    {
+                        _maps[targetType].CreateType = type.Create;
+                    }
+                }
+            }
         }
 
         public IEnumerator<TypeMap> GetEnumerator()
@@ -421,3 +459,4 @@ public class ModuleWeaver
     //{
     //}
 }
+

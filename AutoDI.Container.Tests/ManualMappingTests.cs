@@ -27,8 +27,10 @@ namespace AutoDI.Container.Tests
 <Weavers>
     <AutoDI/>
     <AutoDI.Container Behavior=""{Behaviors.None}"">
-        <type name=""MyType.*"" Create=""{Create.Transient}"" />
-        <map from=""IService"" to=""Service"" />
+        <type name=""My.*"" Create=""{Create.Transient}"" />
+        <!--<map from=""IService"" to=""Service"" />-->
+        <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
+        <map from="".*"" to=""$0"" />
     </AutoDI.Container>
 </Weavers >");
             _testAssembly = await gen.Execute();
@@ -42,6 +44,19 @@ namespace AutoDI.Container.Tests
             dynamic sut = _testAssembly.CreateInstance<Manager>();
             Assert.IsTrue(((object)sut.Service).Is<Service>());
             Assert.IsNull(sut.Service2);
+        }
+
+        [TestMethod]
+        public void TransientTypesAlwaysCreateNewInstances()
+        {
+            AutoDIContainer.Inject(_testAssembly);
+            
+            object dog1 = _testAssembly.Resolve<MyDog>();
+            object dog2 = _testAssembly.Resolve<MyDog>();
+
+            Assert.IsNotNull(dog1);
+            Assert.IsNotNull(dog2);
+            Assert.IsFalse(ReferenceEquals(dog1, dog2));
         }
     }
 }
@@ -61,6 +76,8 @@ namespace ManualMappingTests
 
     public class Service2 : IService
     { }
+
+    public class MyDog { }
 
     public class Manager
     {

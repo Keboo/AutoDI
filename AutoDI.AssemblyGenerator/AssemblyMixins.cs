@@ -73,14 +73,22 @@ namespace AutoDI.AssemblyGenerator
             }
             throw new AssemblyCreateInstanceException($"Could not find valid constructor for '{typeof(T).FullName}'");
         }
-    }
 
-    public class AssemblyCreateInstanceException : Exception
-    {
-        public AssemblyCreateInstanceException(string message) 
-            : base(message)
+        public static object Resolve<T>(this Assembly assembly)
         {
-            
+            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+
+            Type resolverType = assembly.GetType("AutoDI.AutoDIContainer");
+            if (resolverType == null)
+                throw new InvalidOperationException("Could not find AutoDIContainer");
+
+            var resolver = Activator.CreateInstance(resolverType) as IDependencyResolver;
+
+            if (resolver == null)
+                throw new InvalidOperationException($"Failed to create resolver '{resolverType.FullName}'");
+
+
+            return assembly.InvokeGeneric<T>(resolver, nameof(IDependencyResolver.Resolve), (object) new object[0]);
         }
     }
 }
