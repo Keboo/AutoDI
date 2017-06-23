@@ -27,10 +27,10 @@ namespace AutoDI.Container.Tests
 <Weavers>
     <AutoDI/>
     <AutoDI.Container Behavior=""{Behaviors.None}"">
-        <type name=""My.*"" Create=""{Create.Transient}"" />
-        <!--<map from=""IService"" to=""Service"" />-->
         <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from="".*"" to=""$0"" />
+
+        <type name=""My.*"" Create=""{Create.Transient}"" />
     </AutoDI.Container>
 </Weavers >");
             _testAssembly = await gen.Execute();
@@ -49,8 +49,6 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void TransientTypesAlwaysCreateNewInstances()
         {
-            AutoDIContainer.Inject(_testAssembly);
-            
             object dog1 = _testAssembly.Resolve<MyDog>();
             object dog2 = _testAssembly.Resolve<MyDog>();
 
@@ -58,7 +56,26 @@ namespace AutoDI.Container.Tests
             Assert.IsNotNull(dog2);
             Assert.IsFalse(ReferenceEquals(dog1, dog2));
         }
+
+        [TestMethod]
+        public void SingletonInstanceAlwaysReturnsTheSameInstance()
+        {
+            object instance1 = _testAssembly.Resolve<IService>();
+            object instance2 = _testAssembly.Resolve<IService>();
+
+            Assert.IsNotNull(instance1);
+            Assert.IsNotNull(instance2);
+            Assert.IsTrue(ReferenceEquals(instance1, instance2));
+        }
     }
+
+    //public static class _
+    //{
+    //    public static T @new<T>()
+    //    {
+    //        return default(T);
+    //    }
+    //}
 }
 
 //<gen>
@@ -74,8 +91,12 @@ namespace ManualMappingTests
 
     public interface IService2 { }
 
-    public class Service2 : IService
+    public class Service2 : IService2
     { }
+
+    public interface IService3 { }
+
+    public class Service3 { }
 
     public class MyDog { }
 
