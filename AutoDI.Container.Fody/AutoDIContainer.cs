@@ -7,6 +7,21 @@ namespace AutoDI.Container.Fody
     {
         public static void Inject(Assembly containerAssembly = null)
         {
+            Type containerType = GetContainerType(containerAssembly);
+            IDependencyResolver resolver = (IDependencyResolver) Activator.CreateInstance(containerType);
+            DependencyResolver.Set(resolver);
+        }
+
+        public static ContainerMap GetMap(Assembly containerAssembly = null)
+        {
+            Type containerType = GetContainerType(containerAssembly);
+            FieldInfo field = containerType.GetField("_items", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.GetField);
+            if (field == null) throw new InvalidOperationException("Could not find mapping field in container");
+            return (ContainerMap) field.GetValue(null);
+        }
+
+        private static Type GetContainerType(Assembly containerAssembly)
+        {
             const string typeName = "AutoDI.AutoDIContainer";
 
             //Checks currently executing assembly
@@ -29,7 +44,7 @@ namespace AutoDI.Container.Fody
 
             if (containerType == null)
                 throw new InvalidOperationException("Could not find AutoDI container to inject");
-            DependencyResolver.Set((IDependencyResolver)Activator.CreateInstance(containerType));
+            return containerType;
         }
     }
 }

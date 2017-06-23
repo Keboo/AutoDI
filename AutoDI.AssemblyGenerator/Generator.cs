@@ -145,9 +145,9 @@ namespace AutoDI.AssemblyGenerator
                         {
                             errors.AppendLine(s);
                         });
-                        weaver.LogWarning = new Action<string>(s => Debug.WriteLine($"Weaver Warning: {s}"));
-                        weaver.LogInfo = new Action<string>(s => Debug.WriteLine($"Weaver Info: {s}"));
-                        weaver.LogDebug = new Action<string>(s => Debug.WriteLine($"Weaver Debug: {s}"));
+                        weaver.LogWarning = new Action<string>(s => Debug.WriteLine($" Warning: {s}"));
+                        weaver.LogInfo = new Action<string>(s => Debug.WriteLine($" Info: {s}"));
+                        weaver.LogDebug = new Action<string>(s => Debug.WriteLine($" Debug: {s}"));
                         weaver.Execute();
                         file.Position = 0;
                         module.Write(file);

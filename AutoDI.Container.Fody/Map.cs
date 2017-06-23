@@ -7,12 +7,14 @@ namespace AutoDI.Container.Fody
         private readonly string _to;
         private readonly Regex _fromRegex;
 
-        public Map(string from, string to)
+        public bool Force { get; }
+
+        public Map(string from, string to, bool force)
         {
             _to = to;
             _fromRegex = new Regex(from);
+            Force = force;
         }
-
 
         public bool TryGetMap(string fromType, out string mappedType)
         {

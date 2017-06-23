@@ -89,7 +89,10 @@ public class ModuleWeaver
             TypeDefinition resolverType = CreateAutoDIContainer(mapping);
             ModuleDefinition.Types.Add(resolverType);
 
-            InjectResolver(resolverType);
+            if (settings.InjectContainer)
+            {
+                InjectContainer(resolverType);
+            }
         }
         catch (Exception ex)
         {
@@ -100,17 +103,23 @@ public class ModuleWeaver
         }
     }
 
-    private void InjectResolver(TypeDefinition resolverType)
+    private void InjectContainer(TypeDefinition resolverType)
     {
         if (ModuleDefinition.EntryPoint != null)
         {
             ILProcessor entryMethodProcessor = ModuleDefinition.EntryPoint.Body.GetILProcessor();
-            var create = Instruction.Create(OpCodes.Newobj, resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
-            var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(nameof(DependencyResolver.Set),
-                new[] { typeof(IDependencyResolver) }));
+            var create = Instruction.Create(OpCodes.Newobj,
+                resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
+            var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(
+                nameof(DependencyResolver.Set),
+                new[] {typeof(IDependencyResolver)}));
             var set = Instruction.Create(OpCodes.Call, setMethod);
             entryMethodProcessor.InsertBefore(ModuleDefinition.EntryPoint.Body.Instructions.First(), set);
             entryMethodProcessor.InsertBefore(set, create);
+        }
+        else
+        {
+            LogDebug($"No entry point in {ModuleDefinition.FileName}. Skipping container injection.");
         }
     }
 
@@ -126,6 +135,10 @@ public class ModuleWeaver
         {
             AddClasses(rv);
         }
+        if (settings.Behavior.HasFlag(Behaviors.IncludeDerivedClasses))
+        {
+            AddDerivedClasses(rv);
+        }
 
         AddSettingsMap(settings, rv);
 
@@ -140,12 +153,12 @@ public class ModuleWeaver
         {
             foreach (Map settingsMap in settings.Maps)
             {
-                if (settingsMap.TryGetMap(typeName, out string mappedType))
+                //TODO: Logging for the various cases where we don't map...
+                if (settingsMap.TryGetMap(typeName, out string mappedType) &&
+                    allTypes.TryGetValue(mappedType, out TypeDefinition mapped) &&
+                    (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped)))
                 {
-                    if (allTypes.TryGetValue(mappedType, out TypeDefinition mapped))
-                    {
-                        map.Add(allTypes[typeName], mapped);
-                    }
+                    map.Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace);
                 }
             }
         }
@@ -156,7 +169,30 @@ public class ModuleWeaver
     {
         foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract))
         {
-            map.Add(type, type);
+            map.Add(type, type, DuplicateKeyBehavior.RemoveAll);
+        }
+    }
+
+    private void AddDerivedClasses(Mapping map)
+    {
+        TypeDefinition GetBaseType(TypeDefinition type)
+        {
+            if (type.BaseType != null)
+            {
+                return ModuleDefinition.ImportReference(type.BaseType).Resolve();
+            }
+            return null;
+        }
+
+        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && t.BaseType != null))
+        {
+            for (TypeDefinition t = GetBaseType(type); t != null; t = GetBaseType(t))
+            {
+                if (t.FullName != typeof(object).FullName)
+                {
+                    map.Add(t, type, DuplicateKeyBehavior.RemoveAll);
+                }
+            }
         }
     }
 
@@ -182,7 +218,7 @@ public class ModuleWeaver
             if (kvp.Value.Count != 1) continue;
             var type = ModuleDefinition.GetType(kvp.Key);
             if (type == null) continue;
-            map.Add(type, kvp.Value[0]);
+            map.Add(type, kvp.Value[0], DuplicateKeyBehavior.RemoveAll);
         }
     }
 
@@ -202,9 +238,9 @@ public class ModuleWeaver
         ILProcessor staticBody = staticConstructor.Body.GetILProcessor();
 
         //Declare and initialize dictionary map
-        FieldDefinition mapField = CreateStaticReadonlyField<InternalMap>("_items", false);
+        FieldDefinition mapField = CreateStaticReadonlyField<ContainerMap>("_items", false);
         type.Fields.Add(mapField);
-        MethodReference mapConstructor = ModuleDefinition.ImportReference(typeof(InternalMap).GetConstructor(new Type[0]));
+        MethodReference mapConstructor = ModuleDefinition.ImportReference(typeof(ContainerMap).GetConstructor(new Type[0]));
         staticBody.Emit(OpCodes.Newobj, mapConstructor);
         staticBody.Emit(OpCodes.Stsfld, mapField);
 
@@ -240,7 +276,7 @@ public class ModuleWeaver
         body.Emit(OpCodes.Ldsfld, mapField);
 
         MethodReference getMethod =
-            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.Get)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get)));
         var genericGetMethod = new GenericInstanceMethod(getMethod);
         genericGetMethod.GenericArguments.Add(genericParameter);
 
@@ -283,13 +319,13 @@ public class ModuleWeaver
 
         //TODO: Make static
         MethodReference addSingleton =
-            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddSingleton)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddSingleton)));
         MethodReference addLazySingleton =
-            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddLazySingleton)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddLazySingleton)));
         MethodReference addWeakTransient =
-            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddWeakTransient)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddWeakTransient)));
         MethodReference addTransient =
-            ModuleDefinition.ImportReference(typeof(InternalMap).GetMethod(nameof(InternalMap.AddTransient)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddTransient)));
 
         TypeReference funcType = ModuleDefinition.ImportReference(typeof(Func<>));
         TypeReference type = ModuleDefinition.ImportReference(typeof(Type));
@@ -307,7 +343,7 @@ public class ModuleWeaver
                     if (!InvokeConstructor(map, staticBody))
                     {
                         staticBody.Remove(staticBody.Body.Instructions.Last());
-                        LogDebug($"Could not find acceptable constructor for '{map.TargetType.FullName}'");
+                        LogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map");
                         continue;
                     }
                     break;
@@ -318,7 +354,7 @@ public class ModuleWeaver
                     {
                         delegateMethodCount--;
                         staticBody.Remove(staticBody.Body.Instructions.Last());
-                        LogDebug($"Could not find acceptable constructor for '{map.TargetType.FullName}'");
+                        LogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map");
                         continue;
                     }
                     delegateProcessor.Emit(OpCodes.Ret);
@@ -340,7 +376,7 @@ public class ModuleWeaver
             int arrayIndex = 0;
             foreach (var key in map.Keys)
             {
-                LogInfo($"  Mapping {key.FullName} -> {map.TargetType.FullName}");
+                LogDebug($"Mapping {key.FullName} -> {map.TargetType.FullName}");
                 staticBody.Emit(OpCodes.Dup);
                 staticBody.Emit(OpCodes.Ldc_I4, arrayIndex++);
                 staticBody.Emit(OpCodes.Ldtoken, key);
@@ -396,6 +432,22 @@ public class ModuleWeaver
             FieldAttributes.InitOnly, type);
     }
 
+    private bool CanBeCastToType(TypeDefinition key, TypeDefinition targetType)
+    {
+        var comparer = TypeComparer.FullName;
+
+        for (TypeDefinition t = targetType; t != null; t = t.BaseType?.Resolve())
+        {
+            if (comparer.Equals(key, t)) return true;
+            if (t.Interfaces.Any(i => comparer.Equals(i.InterfaceType, key)))
+            {
+                return true;
+            }
+        }
+        LogDebug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring");
+        return false;
+    }
+
     private class TypeMap
     {
         public TypeMap(TypeDefinition targetType)
@@ -407,34 +459,74 @@ public class ModuleWeaver
 
         public TypeDefinition TargetType { get; }
 
-        public ICollection<TypeDefinition> Keys { get; } = new HashSet<TypeDefinition>(TypeDefinitionComparer.FullName);
+        public ICollection<TypeDefinition> Keys { get; } = new HashSet<TypeDefinition>(TypeComparer.FullName);
+    }
+
+    private enum DuplicateKeyBehavior
+    {
+        Replace,
+        RemoveAll
     }
 
     private class Mapping : IEnumerable<TypeMap>
     {
         private readonly Dictionary<string, TypeMap> _maps = new Dictionary<string, TypeMap>();
 
-        public void Add(TypeDefinition key, TypeDefinition targetType)
+        public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior)
         {
+            if (!HasValidConstructor(targetType)) return;
+
+            //Last key in wins, this allows for manual mapping to override things added with behaviors
+            bool duplicateKey = false;
+            foreach (var kvp in _maps.Where(kvp => kvp.Value.Keys.Contains(key)).ToList())
+            {
+                duplicateKey = true;
+                kvp.Value.Keys.Remove(key);
+                if (!kvp.Value.Keys.Any())
+                {
+                    _maps.Remove(kvp.Key);
+                }
+            }
+
+            if (duplicateKey && behavior == DuplicateKeyBehavior.RemoveAll)
+            {
+                return;
+            }
+
             if (!_maps.TryGetValue(targetType.FullName, out TypeMap typeMap))
             {
                 _maps[targetType.FullName] = typeMap = new TypeMap(targetType);
             }
+
             typeMap.Keys.Add(key);
         }
 
         public void UpdateCreation(ICollection<MatchType> matchTypes)
         {
-            foreach (string targetType in _maps.Keys)
+            foreach (string targetType in _maps.Keys.ToList())
             {
                 foreach (MatchType type in matchTypes)
                 {
                     if (type.Matches(targetType))
                     {
-                        _maps[targetType].CreateType = type.Create;
+                        switch (type.Create)
+                        {
+                            case Create.None:
+                                _maps.Remove(targetType);
+                                break;
+                            default:
+                                _maps[targetType].CreateType = type.Create;
+                                break;
+                        }
                     }
                 }
             }
+        }
+
+        //TODO: This behavior is duplicated when it builds the map :/
+        private bool HasValidConstructor(TypeDefinition type)
+        {
+            return type.GetConstructors().Any(c => c.Parameters.All(pd => pd.HasDefault && pd.Constant == null));
         }
 
         public IEnumerator<TypeMap> GetEnumerator()

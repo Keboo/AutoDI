@@ -4,6 +4,7 @@ using ResolveTestsNamespace;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using AutoDI.Container.Fody;
 
 namespace AutoDI.Container.Tests
 {
@@ -75,6 +76,20 @@ namespace AutoDI.Container.Tests
             Assert.IsNotNull(interface2);
             Assert.IsTrue(ReferenceEquals(interface1, interface2));
         }
+
+        [TestMethod]
+        public void CanResolveClassByBaseType()
+        {
+            //This works because it is the only derived class from Base2
+            Assert.IsTrue(Resolve<Base2>().Is<Derived2>());
+            string foo = AutoDIContainer.GetMap(_testAssembly).ToString();
+        }
+
+        [TestMethod]
+        public void CannotResolveClassByBaseTypeIfThereAreMultipleDerivedClasses()
+        {
+            Assert.IsNull(Resolve<Base>());
+        }
     }
 }
 
@@ -88,6 +103,18 @@ namespace ResolveTestsNamespace
     { }
 
     public class Service : IService, IService2
+    { }
+
+    public abstract class Base
+    { }
+
+    public abstract class Base2 : Base
+    { }
+
+    public class Derived1 : Base
+    { }
+
+    public class Derived2 : Base2
     { }
 }
 //</gen>

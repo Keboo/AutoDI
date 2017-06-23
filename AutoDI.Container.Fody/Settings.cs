@@ -7,12 +7,15 @@ namespace AutoDI.Container.Fody
 {
     internal class Settings
     {
-        internal Settings(Behaviors behavior)
+        internal Settings(Behaviors behavior, bool injectContainer)
         {
             Behavior = behavior;
+            InjectContainer = injectContainer;
         }
 
         public Behaviors Behavior { get; }
+
+        public bool InjectContainer { get; }
 
         public IList<MatchType> Types { get; } = new List<MatchType>();
 
@@ -21,12 +24,13 @@ namespace AutoDI.Container.Fody
         public static Settings Parse(XElement fodyWeaversRoot)
         {
             Behaviors behavior = Behaviors.Default;
-            if (fodyWeaversRoot == null) return new Settings(behavior);
+            if (fodyWeaversRoot == null) return new Settings(behavior, true);
+
             XElement containerRoot = fodyWeaversRoot.DescendantNodes().OfType<XElement>().FirstOrDefault(x => x.Name.LocalName == "AutoDI.Container");
             if (containerRoot == null)
                 throw new InvalidOperationException("Could not find AutoDI.Container element in FodyWeavers.xml"); //How did we get here?
 
-            var behaviorAttribute = containerRoot.GetAttributeValue("Behavior");
+            string behaviorAttribute = containerRoot.GetAttributeValue("Behavior");
             if (behaviorAttribute != null)
             {
                 behavior = Behaviors.None;
@@ -37,7 +41,13 @@ namespace AutoDI.Container.Fody
                 }
             }
 
-            var rv = new Settings(behavior);
+            if (!bool.TryParse(containerRoot.GetAttributeValue("InjectContainer") ?? bool.TrueString,
+                out bool injectContainer))
+            {
+                injectContainer = true;
+            }
+
+            var rv = new Settings(behavior, injectContainer);
 
             foreach (XElement typeNode in containerRoot.DescendantNodes().OfType<XElement>()
                 .Where(x => string.Equals(x.Name.LocalName, "Type", StringComparison.OrdinalIgnoreCase)))
@@ -61,8 +71,11 @@ namespace AutoDI.Container.Fody
                 if (string.IsNullOrWhiteSpace(from)) continue;
                 string to = mapNode.GetAttributeValue("To");
                 if (string.IsNullOrWhiteSpace(to)) continue;
-
-                rv.Maps.Add(new Map(from, to));
+                if (!bool.TryParse(mapNode.GetAttributeValue("force") ?? bool.FalseString, out bool force))
+                {
+                    force = false;
+                }
+                rv.Maps.Add(new Map(from, to, force));
             }
 
             return rv;
