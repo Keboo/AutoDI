@@ -1,7 +1,8 @@
-﻿using AutoDI.Container.Examples;
-using System;
+﻿using System;
+using AutoDI;
+using AutoDI.Container.Examples;
 
-namespace AutoDI.Container.ConsoleFramework
+namespace Console.Framework
 {
     class Program
     {
@@ -9,7 +10,7 @@ namespace AutoDI.Container.ConsoleFramework
         {
             var quoteBoard = new QuoteBoard();
             quoteBoard.ShowQuotes();
-            Console.ReadLine();
+            System.Console.ReadLine();
         }
     }
 
@@ -27,9 +28,9 @@ namespace AutoDI.Container.ConsoleFramework
         {
             foreach (Quote quote in _service.GetQuotes())
             {
-                Console.WriteLine($"{quote.Text}");
-                Console.WriteLine($"   -{quote.Author}");
-                Console.WriteLine();
+                System.Console.WriteLine($"{quote.Text}");
+                System.Console.WriteLine($"   -{quote.Author}");
+                System.Console.WriteLine();
             }
         }
     }

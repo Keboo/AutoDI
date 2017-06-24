@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AutoDI", "AutoDI", "{93505D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AutoDI.Container", "AutoDI.Container", "{CB47BA35-93A4-4D85-B733-F848D64445D5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container.ConsoleFramework", "AutoDI.Container\AutoDI.Container.ConsoleFramework\AutoDI.Container.ConsoleFramework.csproj", "{8B6E097C-40D9-4BDC-B40B-9822490E5188}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.Framework", "AutoDI.Container\Console.Framework\Console.Framework.csproj", "{8B6E097C-40D9-4BDC-B40B-9822490E5188}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleClasses", "AutoDI\ExampleClasses\ExampleClasses.csproj", "{BD145C46-C1F5-4D5C-A775-1BAA772512A4}"
 EndProject
@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StructureMap.Example", "Aut
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Example", "AutoDI\Unity.Example\Unity.Example.csproj", "{138C13E3-D24A-49FD-9E91-F9E6E49472B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.NetCore", "Console.NetCore\Console.NetCore.csproj", "{06F450C0-5CB9-4389-8185-156AF46198D1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.NetCore", "AutoDI.Container\Console.NetCore\Console.NetCore.csproj", "{06F450C0-5CB9-4389-8185-156AF46198D1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

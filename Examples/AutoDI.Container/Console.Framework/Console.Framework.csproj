@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{8B6E097C-40D9-4BDC-B40B-9822490E5188}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>AutoDI.Container.ConsoleFramework</RootNamespace>
-    <AssemblyName>AutoDI.Container.ConsoleFramework</AssemblyName>
+    <RootNamespace>Console.Framework</RootNamespace>
+    <AssemblyName>Console.Framework</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
