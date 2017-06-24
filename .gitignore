@@ -253,3 +253,4 @@ paket-files/
 *.sln.iml
 
 
+/nuget.exe
