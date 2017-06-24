@@ -8,7 +8,7 @@
     <owners>Keboo</owners>
     <licenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>Fody extension for simplifying the creation of objects from your favorite DI container</description>
     <releaseNotes>Fixed assembly resolution issue when compiling with Visual Studio 2017 RC</releaseNotes>
     <copyright>Copyright 2016</copyright>
