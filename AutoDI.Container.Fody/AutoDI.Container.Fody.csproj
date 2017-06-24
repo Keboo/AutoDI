@@ -3,18 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <PackageId>AutoDI.Container.Fody</PackageId>
-    <Authors>AutoDI.Container.Fody</Authors>
-    <Company>AutoDI.Container.Fody</Company>
-    <Product>AutoDI.Container.Fody</Product>
-    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <Description>A Fody extension build on top of the AutoDI.Fody extension that automatically builds a simple DI container at build time. Simplying the process of adding DI into any project.</Description>
-    <PackageLicenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/Keboo/AutoDI</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/Keboo/AutoDI</RepositoryUrl>
-    <PackageTags>AutoDI, Fody, Container</PackageTags>
-    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
-    <PostBuildEvent></PostBuildEvent>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +17,8 @@
     <ItemGroup>
       <None Include="$(TargetDir)AutoDI*.dll" />
     </ItemGroup>
+    <Copy SourceFiles="$(TargetDir)AutoDI.dll" DestinationFolder="$(SolutionDir)\NuGet\AutoDI.Container.Fody\lib\net45" />
+    <Copy SourceFiles="$(TargetDir)AutoDI.Container.Fody.dll" DestinationFolder="$(SolutionDir)\NuGet\AutoDI.Container.Fody\lib\net45" />
     <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\AutoDI.Container.Fody.1.0.0" />
     <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\NuGet\AutoDI.Container.Fody" />
   </Target>

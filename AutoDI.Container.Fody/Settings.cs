@@ -21,16 +21,13 @@ namespace AutoDI.Container.Fody
 
         public IList<Map> Maps { get; } = new List<Map>();
 
-        public static Settings Parse(XElement fodyWeaversRoot)
+        public static Settings Parse(XElement rootElement)
         {
             Behaviors behavior = Behaviors.Default;
-            if (fodyWeaversRoot == null) return new Settings(behavior, true);
+            if (rootElement == null) return new Settings(behavior, true);
+            
 
-            XElement containerRoot = fodyWeaversRoot.DescendantNodes().OfType<XElement>().FirstOrDefault(x => x.Name.LocalName == "AutoDI.Container");
-            if (containerRoot == null)
-                throw new InvalidOperationException("Could not find AutoDI.Container element in FodyWeavers.xml"); //How did we get here?
-
-            string behaviorAttribute = containerRoot.GetAttributeValue("Behavior");
+            string behaviorAttribute = rootElement.GetAttributeValue("Behavior");
             if (behaviorAttribute != null)
             {
                 behavior = Behaviors.None;
@@ -41,7 +38,7 @@ namespace AutoDI.Container.Fody
                 }
             }
 
-            if (!bool.TryParse(containerRoot.GetAttributeValue("InjectContainer") ?? bool.TrueString,
+            if (!bool.TryParse(rootElement.GetAttributeValue("InjectContainer") ?? bool.TrueString,
                 out bool injectContainer))
             {
                 injectContainer = true;
@@ -49,7 +46,7 @@ namespace AutoDI.Container.Fody
 
             var rv = new Settings(behavior, injectContainer);
 
-            foreach (XElement typeNode in containerRoot.DescendantNodes().OfType<XElement>()
+            foreach (XElement typeNode in rootElement.DescendantNodes().OfType<XElement>()
                 .Where(x => string.Equals(x.Name.LocalName, "Type", StringComparison.OrdinalIgnoreCase)))
             {
                 string typePattern = typeNode.GetAttributeValue("Name");
@@ -64,7 +61,7 @@ namespace AutoDI.Container.Fody
                 rv.Types.Add(new MatchType(typePattern, create));
             }
 
-            foreach (XElement mapNode in containerRoot.DescendantNodes().OfType<XElement>()
+            foreach (XElement mapNode in rootElement.DescendantNodes().OfType<XElement>()
                 .Where(x => string.Equals(x.Name.LocalName, "Map", StringComparison.OrdinalIgnoreCase)))
             {
                 string from = mapNode.GetAttributeValue("From");

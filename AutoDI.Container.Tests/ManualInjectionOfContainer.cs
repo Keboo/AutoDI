@@ -23,11 +23,7 @@ namespace AutoDI.Container.Tests
             gen.AddWeaver("AutoDI");
             dynamic container = gen.AddWeaver("AutoDI.Container");
 
-            container.Config = XElement.Parse($@"<?xml version=""1.0"" encoding=""utf-8""?>
-<Weavers>
-    <AutoDI/>
-    <AutoDI.Container InjectContainer=""false"" />
-</Weavers >");
+            container.Config = XElement.Parse(@"<AutoDI.Container InjectContainer=""false"" />");
 
             _testAssembly = await gen.Execute();
         }

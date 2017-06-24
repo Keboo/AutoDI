@@ -10,11 +10,7 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanLoadBasicSettings()
         {
-            var xml = XElement.Parse(@"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Weavers>
-                    <AutoDI/>
-                    <AutoDI.Container />
-                </Weavers >");
+            var xml = XElement.Parse(@"<AutoDI.Container />");
 
             var settings = Settings.Parse(xml);
 
@@ -24,11 +20,7 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanLoadIndividualBehavior()
         {
-            var xml = XElement.Parse($@"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Weavers>
-                    <AutoDI/>
-                    <AutoDI.Container Behavior=""{Behaviors.SingleInterfaceImplementation}""/>
-                </Weavers >");
+            var xml = XElement.Parse($@"<AutoDI.Container Behavior=""{Behaviors.SingleInterfaceImplementation}""/>");
 
             var settings = Settings.Parse(xml);
 
@@ -38,11 +30,7 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanLoadCompositeBehavior()
         {
-            var xml = XElement.Parse($@"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Weavers>
-                    <AutoDI/>
-                    <AutoDI.Container Behavior=""{Behaviors.SingleInterfaceImplementation},{Behaviors.IncludeClasses}""/>
-                </Weavers >");
+            var xml = XElement.Parse($@"<AutoDI.Container Behavior=""{Behaviors.SingleInterfaceImplementation},{Behaviors.IncludeClasses}""/>");
 
             var settings = Settings.Parse(xml);
 
@@ -52,13 +40,10 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanLoadSettingsWithDeclaredType()
         {
-            var xml = XElement.Parse(@"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Weavers>
-                    <AutoDI/>
+            var xml = XElement.Parse(@"
                     <AutoDI.Container>
                         <type name=""MyType.*"" Create=""Transient"" />
-                    </AutoDI.Container>
-                </Weavers >");
+                    </AutoDI.Container>");
 
             var settings = Settings.Parse(xml);
 
@@ -70,13 +55,10 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanLoadSettingsWithSimpleMap()
         {
-            var xml = XElement.Parse(@"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Weavers>
-                    <AutoDI/>
+            var xml = XElement.Parse(@"
                     <AutoDI.Container>
                         <map from=""IService"" to=""Service"" />
-                    </AutoDI.Container>
-                </Weavers >");
+                    </AutoDI.Container>");
 
             var settings = Settings.Parse(xml);
 
@@ -89,13 +71,10 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanLoadSettingsWithRegexMap()
         {
-            var xml = XElement.Parse(@"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Weavers>
-                    <AutoDI/>
+            var xml = XElement.Parse(@"
                     <AutoDI.Container>
                         <map from=""ViewModels.(.*)"" to=""Views.$1"" />
-                    </AutoDI.Container>
-                </Weavers >");
+                    </AutoDI.Container>");
 
             var settings = Settings.Parse(xml);
 

@@ -24,9 +24,7 @@ namespace AutoDI.Container.Tests
             gen.AddWeaver("AutoDI");
             dynamic container = gen.AddWeaver("AutoDI.Container");
             
-            container.Config = XElement.Parse($@"<?xml version=""1.0"" encoding=""utf-8""?>
-<Weavers>
-    <AutoDI/>
+            container.Config = XElement.Parse($@"
     <AutoDI.Container Behavior=""{Behaviors.None}"">
         <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from="".*"" to=""$0"" />
@@ -35,8 +33,7 @@ namespace AutoDI.Container.Tests
 
         <type name=""Service2"" Create=""{Create.None}"" />
         <type name=""My.*"" Create=""{Create.Transient}"" />
-    </AutoDI.Container>
-</Weavers >");
+    </AutoDI.Container>");
             _testAssembly = await gen.Execute();
         }
 
