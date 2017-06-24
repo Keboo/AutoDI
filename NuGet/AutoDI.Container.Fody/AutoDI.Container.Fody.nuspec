@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>AutoDI.Container.Fody</id>
+    <version>0.0.0</version>
+    <authors>AutoDI.Container.Fody</authors>
+    <owners>AutoDI.Container.Fody</owners>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
+    <description>A Fody extension build on top of the AutoDI.Fody extension that automatically builds a simple DI container at build time. Simplying the process of adding DI into any project.</description>
+    <releaseNotes>Initial release</releaseNotes>
+    <tags>AutoDI, Fody, Container</tags>
+    <repository url="https://github.com/Keboo/AutoDI" />
+    <dependencies>
+      <group>
+        <dependency id="AutoDI" version="1.2.0" />
+        <dependency id="FodyCecil" version="2.1.0" />
+        <dependency id="Fody" version="1.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>
