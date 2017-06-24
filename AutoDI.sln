@@ -19,9 +19,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Tests", "AutoDI.Test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
+		NuGet\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec = NuGet\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec
 		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
-		NuGet\AutoDI.Fody\tools\install.ps1 = NuGet\AutoDI.Fody\tools\install.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{27881B07-0FEE-49EB-B580-E12F01B8AD70}"
@@ -47,9 +47,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container.Fody", "AutoDI.Container.Fody\AutoDI.Container.Fody.csproj", "{0026AAF0-FBFD-42CB-B1DC-54F8C41CA126}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Container.Fody", "AutoDI.Container.Fody\AutoDI.Container.Fody.csproj", "{0026AAF0-FBFD-42CB-B1DC-54F8C41CA126}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.AssemblyGenerator", "AutoDI.AssemblyGenerator\AutoDI.AssemblyGenerator.csproj", "{8167477F-2716-49C2-AFB5-357E51DF6F9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AssemblyGenerator", "AutoDI.AssemblyGenerator\AutoDI.AssemblyGenerator.csproj", "{8167477F-2716-49C2-AFB5-357E51DF6F9D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container.Tests", "AutoDI.Container.Tests\AutoDI.Container.Tests.csproj", "{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}"
 EndProject
