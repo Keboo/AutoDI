@@ -29,6 +29,7 @@ namespace AutoDI.Container.ConsoleFramework
             {
                 Console.WriteLine($"{quote.Text}");
                 Console.WriteLine($"   -{quote.Author}");
+                Console.WriteLine();
             }
         }
     }
