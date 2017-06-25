@@ -61,13 +61,13 @@
     <Compile Include="TypeReferenceMixins.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AutoDI\AutoDI.csproj">
-      <Project>{712610e5-f444-4a93-9c40-a478cefa8ee2}</Project>
-      <Name>AutoDI</Name>
-    </ProjectReference>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\AutoDI\AutoDI.csproj">
+      <Project>{13e2fd78-569f-479a-8af4-39412a3a9578}</Project>
+      <Name>AutoDI</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

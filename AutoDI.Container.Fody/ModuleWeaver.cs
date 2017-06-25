@@ -1,4 +1,4 @@
-﻿using AutoDI;
+﻿using AutoDI.Container;
 using AutoDI.Container.Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
+using AutoDI;
 
 [assembly: InternalsVisibleTo("AutoDI.Container.Tests")]
 // ReSharper disable once CheckNamespace

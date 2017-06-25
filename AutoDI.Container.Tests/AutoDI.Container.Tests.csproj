@@ -189,10 +189,6 @@
       <Project>{2465f5a0-d4fa-4398-aeda-36c117290bf4}</Project>
       <Name>AutoDI.Fody</Name>
     </ProjectReference>
-    <ProjectReference Include="..\AutoDI\AutoDI.csproj">
-      <Project>{712610e5-f444-4a93-9c40-a478cefa8ee2}</Project>
-      <Name>AutoDI</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />

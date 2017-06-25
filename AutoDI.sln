@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.13
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI", "AutoDI\AutoDI.csproj", "{712610E5-F444-4A93-9C40-A478CEFA8EE2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Fody", "AutoDI.Fody\AutoDI.Fody.csproj", "{2465F5A0-D4FA-4398-AEDA-36C117290BF4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}"
@@ -27,6 +25,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}"
 	ProjectSection(SolutionItems) = preProject
 		Nuget\build\AutoDI.Fody.nuspec = Nuget\build\AutoDI.Fody.nuspec
+		AutoDI.snk = AutoDI.snk
 		local.testsettings = local.testsettings
 		README.md = README.md
 	EndProjectSection
@@ -37,16 +36,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AssemblyGenerator", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container.Tests", "AutoDI.Container.Tests\AutoDI.Container.Tests.csproj", "{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container", "AutoDI.Container\AutoDI.Container.csproj", "{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI", "AutoDI\AutoDI.csproj", "{13E2FD78-569F-479A-8AF4-39412A3A9578}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{712610E5-F444-4A93-9C40-A478CEFA8EE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{712610E5-F444-4A93-9C40-A478CEFA8EE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{712610E5-F444-4A93-9C40-A478CEFA8EE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{712610E5-F444-4A93-9C40-A478CEFA8EE2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2465F5A0-D4FA-4398-AEDA-36C117290BF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2465F5A0-D4FA-4398-AEDA-36C117290BF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2465F5A0-D4FA-4398-AEDA-36C117290BF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -71,6 +70,14 @@ Global
 		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

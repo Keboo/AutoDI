@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace AutoDI.Container.Fody
+namespace AutoDI.Container
 {
     public sealed class ContainerMap
     {
@@ -65,7 +65,7 @@ namespace AutoDI.Container.Fody
             foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors.OrderBy(kvp => kvp.Key.FullName))
             {
                 var delegateType = ((Delegate)kvp.Value).GetType();
-                var targetType = delegateType.IsGenericType ? delegateType.GenericTypeArguments.FirstOrDefault() : null;
+                var targetType = delegateType.IsConstructedGenericType ? delegateType.GenericTypeArguments.FirstOrDefault() : null;
                 yield return new Map(kvp.Key, targetType, kvp.Value.CreateMode);
             }
         }

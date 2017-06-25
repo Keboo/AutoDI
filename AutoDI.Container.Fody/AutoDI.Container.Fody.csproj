@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AutoDI.Container\AutoDI.Container.csproj" />
     <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
   </ItemGroup>
 

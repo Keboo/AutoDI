@@ -3,7 +3,7 @@
 namespace AutoDI.Container.Fody
 {
     [Flags]
-    public enum Behaviors
+    internal enum Behaviors
     {
         None = 0,
         SingleInterfaceImplementation = 1,

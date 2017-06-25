@@ -73,10 +73,6 @@
       <Project>{27fc0110-1f2c-402f-812d-d9a65ff3dfc7}</Project>
       <Name>AssemblyToProcess</Name>
     </ProjectReference>
-    <ProjectReference Include="..\AutoDI\AutoDI.csproj">
-      <Project>{712610E5-F444-4A93-9C40-A478CEFA8EE2}</Project>
-      <Name>AutoDI</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

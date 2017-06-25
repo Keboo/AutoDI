@@ -1,4 +1,4 @@
-namespace AutoDI.Container.Fody
+namespace AutoDI.Container
 {
     public enum Create
     {
