@@ -177,11 +177,7 @@ public class ModuleWeaver
     {
         TypeDefinition GetBaseType(TypeDefinition type)
         {
-            if (type.BaseType != null)
-            {
-                return ModuleDefinition.ImportReference(type.BaseType).Resolve();
-            }
-            return null;
+            return type.BaseType?.Resolve();
         }
 
         foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && t.BaseType != null))
@@ -374,12 +370,13 @@ public class ModuleWeaver
             staticBody.Emit(OpCodes.Newarr, type);
 
             int arrayIndex = 0;
-            foreach (var key in map.Keys)
+            foreach (TypeDefinition key in map.Keys)
             {
-                LogDebug($"Mapping {key.FullName} -> {map.TargetType.FullName}");
+                TypeReference importedKey = ModuleDefinition.ImportReference(key);
+                LogDebug($"Mapping {importedKey.FullName} -> {map.TargetType.FullName}");
                 staticBody.Emit(OpCodes.Dup);
                 staticBody.Emit(OpCodes.Ldc_I4, arrayIndex++);
-                staticBody.Emit(OpCodes.Ldtoken, key);
+                staticBody.Emit(OpCodes.Ldtoken, importedKey);
                 staticBody.Emit(OpCodes.Call, getTypeMethod);
                 staticBody.Emit(OpCodes.Stelem_Ref);
             }
