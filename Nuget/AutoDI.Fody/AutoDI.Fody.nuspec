@@ -11,7 +11,7 @@
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>Fody extension for simplifying the creation of objects from your favorite DI container</description>
     <releaseNotes>Fixed assembly resolution issue when compiling with Visual Studio 2017 RC</releaseNotes>
-    <copyright>Copyright 2016</copyright>
+    <copyright>Copyright 2017</copyright>
     <tags>AutoDI, Fody</tags>
     <dependencies>
       <dependency id="Fody" version="2.1.0" />

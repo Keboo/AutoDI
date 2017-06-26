@@ -6,4 +6,10 @@
     <AssemblyOriginatorKeyFile>AutoDI.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
+  <Target Name="CopyOutput" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
+  </Target>
 </Project>

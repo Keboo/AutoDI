@@ -10,14 +10,13 @@
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
     <description>A Fody extension build on top of the AutoDI.Fody extension that automatically builds a simple DI container at build time. Simplying the process of adding DI into any project.</description>
     <releaseNotes>Initial release</releaseNotes>
-    <tags>AutoDI, Fody, Container</tags>
+    <copyright>Copyright 2017</copyright>
+    <tags>AutoDI, Fody, Container, Dependency Injdection, DI</tags>
     <dependencies>
-      <group>
         <dependency id="AutoDI" version="2.0" />
+        <dependency id="AutoDI.Container" version="2.0" />
         <dependency id="AutoDI.Fody" version="2.0" />
-        <dependency id="FodyCecil" version="2.1.0" />
         <dependency id="Fody" version="2.1.0" />
-      </group>
     </dependencies>
   </metadata>
 </package>

@@ -185,9 +185,13 @@
       <Project>{0026aaf0-fbfd-42cb-b1dc-54f8c41ca126}</Project>
       <Name>AutoDI.Container.Fody</Name>
     </ProjectReference>
-    <ProjectReference Include="..\AutoDI.Fody\AutoDI.Fody.csproj">
-      <Project>{2465f5a0-d4fa-4398-aeda-36c117290bf4}</Project>
-      <Name>AutoDI.Fody</Name>
+    <ProjectReference Include="..\AutoDI.Container\AutoDI.Container.csproj">
+      <Project>{d8d21081-dcea-4fa6-98b6-8e34400d20bb}</Project>
+      <Name>AutoDI.Container</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AutoDI\AutoDI.csproj">
+      <Project>{13e2fd78-569f-479a-8af4-39412a3a9578}</Project>
+      <Name>AutoDI</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
