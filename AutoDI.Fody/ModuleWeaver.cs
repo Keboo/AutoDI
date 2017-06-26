@@ -205,36 +205,23 @@ public class ModuleWeaver
                         ?.Select(x => x.Value)
                         .OfType<CustomAttributeArgument>()
                         .ToArray();
-                if ((values?.Length ?? 0) == 0)
+                //Create array of appropriate length
+                injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
+                injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
+                if (values?.Length > 0)
                 {
-                    //Push empty array onto the stack
-                    injector.Insert(OpCodes.Call, new GenericInstanceMethod(
-                        ModuleDefinition.ImportReference(typeof(Array).GetMethod(nameof(Array.Empty))))
+                    for (int i = 0; i < values.Length; ++i)
                     {
-                        GenericArguments = { ModuleDefinition.ImportReference(typeof(object)) }
-                    });
-                }
-                else
-                {
-                    //Create array of appropriate length
-                    injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
-                    injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
-                    if (values?.Length > 0)
-                    {
-                        for (int i = 0; i < values.Length; ++i)
-                        {
-                            injector.Insert(OpCodes.Dup);
-                            //Push the array index to insert
-                            injector.Insert(OpCodes.Ldc_I4, i);
-                            //Insert constant value with any boxing/conversion needed
-                            InsertObjectConstant(injector, values[i].Value, values[i].Type.Resolve());
-                            //Push the object into the array at index
-                            injector.Insert(OpCodes.Stelem_Ref);
-                        }
+                        injector.Insert(OpCodes.Dup);
+                        //Push the array index to insert
+                        injector.Insert(OpCodes.Ldc_I4, i);
+                        //Insert constant value with any boxing/conversion needed
+                        InsertObjectConstant(injector, values[i].Value, values[i].Type.Resolve());
+                        //Push the object into the array at index
+                        injector.Insert(OpCodes.Stelem_Ref);
                     }
                 }
-
-
+                
                 //Call the resolve method
                 var resolveMethod = ModuleDefinition.ImportReference(
                         typeof(IDependencyResolver).GetMethod(nameof(IDependencyResolver.Resolve)));

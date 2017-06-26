@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,9 +17,6 @@
     <ItemGroup>
       <None Include="$(TargetDir)AutoDI*.dll" />
     </ItemGroup>
-    <Copy SourceFiles="$(TargetDir)AutoDI.dll" DestinationFolder="$(SolutionDir)\NuGet\AutoDI.Container.Fody\lib\net45" />
-    <Copy SourceFiles="$(TargetDir)AutoDI.Container.Fody.dll" DestinationFolder="$(SolutionDir)\NuGet\AutoDI.Container.Fody\lib\net45" />
-    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\AutoDI.Container.Fody.1.0.0" />
-    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\NuGet\AutoDI.Container.Fody" />
+    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\NuGet\$(ProjectName)" />
   </Target>
 </Project>

@@ -10,4 +10,10 @@
     <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
   </ItemGroup>
 
+  <Target Name="CopyOutput" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
+  </Target>
 </Project>
