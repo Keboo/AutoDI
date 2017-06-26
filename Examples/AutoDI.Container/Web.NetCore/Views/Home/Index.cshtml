@@ -1,0 +1,18 @@
+﻿@model IEnumerable<AutoDI.Container.Examples.Quote>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+
+<h2>Quotes</h2>
+
+@foreach (var quote in Model)
+{
+    <blockquote class="blockquote blockquote-reverse">
+        <p class="mb-0">
+            @quote.Text
+        </p>
+        <footer class="blockquote-footer">@quote.Author</footer>
+    </blockquote>
+}
