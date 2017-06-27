@@ -17,5 +17,7 @@
       <None Include="$(TargetDir)AutoDI*.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\NuGet\$(ProjectName)" />
+    <!--Needed by AssemblyToProcess so Fody can find the weaver-->
+    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\$(ProjectName).1.0.0" />
   </Target>
 </Project>

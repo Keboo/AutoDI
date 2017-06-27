@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 
 namespace AutoDI.Container
@@ -15,7 +16,7 @@ namespace AutoDI.Container
         public static ContainerMap GetMap(Assembly containerAssembly = null)
         {
             Type containerType = GetContainerType(containerAssembly);
-            FieldInfo field = containerType.GetRuntimeField("_items");
+            FieldInfo field = containerType.GetRuntimeFields().SingleOrDefault(f => f.Name == "_items");
             if (field == null) throw new InvalidOperationException("Could not find mapping field in container");
             return (ContainerMap) field.GetValue(null);
         }
