@@ -51,7 +51,7 @@ namespace AutoDI.AssemblyGenerator
                 if (weaver != null)
                     return weaver;
             }
-            catch
+            catch (Exception ex)
             {
                 // ignored
             }
@@ -62,7 +62,7 @@ namespace AutoDI.AssemblyGenerator
                 if (weaver != null)
                     return weaver;
             }
-            throw new Exception($"Could not find '{weaverName}' weaver");
+            throw new Exception($"Failed to add weaver '{weaverName}'. Could not locate {weaverName}.Fody assembly.");
         }
 
         public void AddReference(string filePath)

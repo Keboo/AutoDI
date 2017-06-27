@@ -148,7 +148,7 @@ public class ModuleWeaver
 
     private void AddSettingsMap(Settings settings, Mapping map)
     {
-        var allTypes = ModuleDefinition.GetAllTypes().ToDictionary(x => x.FullName);
+        var allTypes = ModuleDefinition.GetAllTypes().Where(t => !t.IsCompilerGenerated()).ToDictionary(x => x.FullName);
 
         foreach (string typeName in allTypes.Keys)
         {
@@ -168,7 +168,7 @@ public class ModuleWeaver
 
     private void AddClasses(Mapping map)
     {
-        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract))
+        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && !t.IsCompilerGenerated()))
         {
             map.Add(type, type, DuplicateKeyBehavior.RemoveAll);
         }
@@ -181,7 +181,7 @@ public class ModuleWeaver
             return type.BaseType?.Resolve();
         }
 
-        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && t.BaseType != null))
+        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && t.BaseType != null && !t.IsCompilerGenerated()))
         {
             for (TypeDefinition t = GetBaseType(type); t != null; t = GetBaseType(t))
             {
@@ -197,7 +197,7 @@ public class ModuleWeaver
     {
         var types = new Dictionary<string, List<TypeDefinition>>();
 
-        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract))
+        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && !t.IsCompilerGenerated()))
         {
             foreach (var @interface in type.Interfaces)
             {

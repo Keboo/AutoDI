@@ -53,6 +53,13 @@ namespace ContainerDependencyNameSpace
         public Sut([Dependency] IService service = null)
         {
             Service = service ?? throw new ArgumentNullException(nameof(service));
+
+            SomeLambda(x => { });
+        }
+
+        private static void SomeLambda(Action<int> doStuff)
+        {
+            
         }
     }
 
