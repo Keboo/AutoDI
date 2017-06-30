@@ -10,10 +10,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoDI" Version="2.1.13" />
-    <PackageReference Include="AutoDI.Container" Version="2.1.13" />
-    <PackageReference Include="AutoDI.Container.Fody" Version="2.1.13" />
-    <PackageReference Include="AutoDI.Fody" Version="2.1.13" />
+    <PackageReference Include="AutoDI" Version="2.1.14" />
+    <PackageReference Include="AutoDI.Container" Version="2.1.14" />
+    <PackageReference Include="AutoDI.Container.Fody" Version="2.1.14" />
+    <PackageReference Include="AutoDI.Fody" Version="2.1.14" />
   </ItemGroup>
 
 </Project>

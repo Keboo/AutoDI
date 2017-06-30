@@ -21,6 +21,8 @@ namespace AutoDI.Container.Fody
 
         public IList<Map> Maps { get; } = new List<Map>();
 
+        public IList<MatchAssembly> Assemblies { get; } = new List<MatchAssembly>();
+
         public static Settings Parse(XElement rootElement)
         {
             Behaviors behavior = Behaviors.Default;
@@ -45,6 +47,15 @@ namespace AutoDI.Container.Fody
             }
 
             var rv = new Settings(behavior, injectContainer);
+
+            foreach (XElement assemblyNode in rootElement.DescendantNodes().OfType<XElement>()
+                .Where(x => string.Equals(x.Name.LocalName, "Assembly", StringComparison.OrdinalIgnoreCase)))
+            {
+                string assemblyName = assemblyNode.GetAttributeValue("Name");
+                if (string.IsNullOrWhiteSpace(assemblyName)) continue;
+
+                rv.Assemblies.Add(new MatchAssembly(assemblyName));
+            }
 
             foreach (XElement typeNode in rootElement.DescendantNodes().OfType<XElement>()
                 .Where(x => string.Equals(x.Name.LocalName, "Type", StringComparison.OrdinalIgnoreCase)))

@@ -133,19 +133,19 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AutoDI">
-      <Version>2.1.13</Version>
+      <Version>2.1.14</Version>
     </PackageReference>
     <PackageReference Include="AutoDI.Container">
-      <Version>2.1.13</Version>
+      <Version>2.1.14</Version>
     </PackageReference>
     <PackageReference Include="AutoDI.Container.Fody">
-      <Version>2.1.13</Version>
+      <Version>2.1.14</Version>
     </PackageReference>
     <PackageReference Include="AutoDI.Fody">
-      <Version>2.1.13</Version>
+      <Version>2.1.14</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>5.2.3</Version>
+      <Version>5.3.3</Version>
     </PackageReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

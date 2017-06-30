@@ -4,7 +4,7 @@ using Mono.Cecil;
 
 namespace AutoDI.Container.Fody
 {
-    public static class TypeDefinitionMixins
+    internal static class TypeDefinitionMixins
     {
         public static bool IsCompilerGenerated(this TypeDefinition type)
         {

@@ -127,28 +127,54 @@ public class ModuleWeaver
     private Mapping GetMapping(Settings settings)
     {
         var rv = new Mapping();
+        List<TypeDefinition> allTypes = GetAllTypes(settings).ToList();
 
         if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
         {
-            AddSingleInterfaceImplementation(rv);
+            AddSingleInterfaceImplementation(rv, allTypes);
         }
         if (settings.Behavior.HasFlag(Behaviors.IncludeClasses))
         {
-            AddClasses(rv);
+            AddClasses(rv, allTypes);
         }
         if (settings.Behavior.HasFlag(Behaviors.IncludeDerivedClasses))
         {
-            AddDerivedClasses(rv);
+            AddDerivedClasses(rv, allTypes);
         }
 
-        AddSettingsMap(settings, rv);
+        AddSettingsMap(settings, rv, allTypes);
 
         return rv;
     }
 
-    private void AddSettingsMap(Settings settings, Mapping map)
+    private IEnumerable<TypeDefinition> GetAllTypes(Settings settings)
     {
-        var allTypes = ModuleDefinition.GetAllTypes().Where(t => !t.IsCompilerGenerated()).ToDictionary(x => x.FullName);
+        IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) => types.Where(t => !t
+            .IsCompilerGenerated());
+
+        foreach(TypeDefinition type in FilterTypes(ModuleDefinition.GetAllTypes()))
+        {
+            yield return type;
+        }
+        foreach (AssemblyNameReference assemblyReference in ModuleDefinition.AssemblyReferences)
+        {
+            if (settings.Assemblies.Any(a => a.Matches(assemblyReference.FullName)))
+            {
+                AssemblyDefinition assembly = AssemblyResolver.Resolve(assemblyReference);
+                if (assembly != null)
+                {
+                    foreach (TypeDefinition type in FilterTypes(assembly.MainModule.GetAllTypes()))
+                    {
+                        yield return type;
+                    }
+                }
+            }
+        }
+    }
+
+    private void AddSettingsMap(Settings settings, Mapping map, IEnumerable<TypeDefinition> types)
+    {
+        var allTypes = types.ToDictionary(x => x.FullName);
 
         foreach (string typeName in allTypes.Keys)
         {
@@ -166,22 +192,22 @@ public class ModuleWeaver
         map.UpdateCreation(settings.Types);
     }
 
-    private void AddClasses(Mapping map)
+    private void AddClasses(Mapping map, IEnumerable<TypeDefinition> types)
     {
-        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && !t.IsCompilerGenerated()))
+        foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract))
         {
             map.Add(type, type, DuplicateKeyBehavior.RemoveAll);
         }
     }
 
-    private void AddDerivedClasses(Mapping map)
+    private void AddDerivedClasses(Mapping map, IEnumerable<TypeDefinition> types)
     {
         TypeDefinition GetBaseType(TypeDefinition type)
         {
             return type.BaseType?.Resolve();
         }
 
-        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && t.BaseType != null && !t.IsCompilerGenerated()))
+        foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract && t.BaseType != null))
         {
             for (TypeDefinition t = GetBaseType(type); t != null; t = GetBaseType(t))
             {
@@ -193,11 +219,11 @@ public class ModuleWeaver
         }
     }
 
-    private void AddSingleInterfaceImplementation(Mapping map)
+    private void AddSingleInterfaceImplementation(Mapping map, IEnumerable<TypeDefinition> allTypes)
     {
         var types = new Dictionary<string, List<TypeDefinition>>();
 
-        foreach (TypeDefinition type in ModuleDefinition.GetAllTypes().Where(t => t.IsClass && !t.IsAbstract && !t.IsCompilerGenerated()))
+        foreach (TypeDefinition type in allTypes.Where(t => t.IsClass && !t.IsAbstract))
         {
             foreach (var @interface in type.Interfaces)
             {

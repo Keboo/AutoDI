@@ -83,5 +83,19 @@ namespace AutoDI.Container.Tests
             Assert.IsTrue(settings.Maps[0].TryGetMap("ViewModels.Test", out mappedType));
             Assert.AreEqual("Views.Test", mappedType);
         }
+
+        [TestMethod]
+        public void CanLoadSettingsWithIncludedAssembly()
+        {
+            var xml = XElement.Parse(@"
+                    <AutoDI.Container>
+                        <assembly name=""MyAssembly.*"" />
+                    </AutoDI.Container>");
+
+            var settings = Settings.Parse(xml);
+
+            Assert.AreEqual(1, settings.Assemblies.Count);
+            Assert.IsTrue(settings.Assemblies[0].Matches("MyAssembly.Test"));
+        }
     }
 }
