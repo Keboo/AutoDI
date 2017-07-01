@@ -134,7 +134,7 @@ namespace AutoDI.AssemblyGenerator
                 if (emitResult.Success)
                 {
                     //ms.Position = 0;
-                    
+                    var assemblyResolver = new DefaultAssemblyResolver();
                     foreach (dynamic weaver in _weavers)
                     {
                         file.Position = 0;
@@ -148,6 +148,7 @@ namespace AutoDI.AssemblyGenerator
                         weaver.LogWarning = new Action<string>(s => Debug.WriteLine($" Warning: {s}"));
                         weaver.LogInfo = new Action<string>(s => Debug.WriteLine($" Info: {s}"));
                         weaver.LogDebug = new Action<string>(s => Debug.WriteLine($" Debug: {s}"));
+                        weaver.AssemblyResolver = assemblyResolver;
                         weaver.Execute();
                         file.Position = 0;
                         module.Write(file);

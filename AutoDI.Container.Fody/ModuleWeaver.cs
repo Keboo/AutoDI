@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
 using AutoDI;
+using DependencyAttribute = AutoDI.DependencyAttribute;
 
 [assembly: InternalsVisibleTo("AutoDI.Container.Tests")]
 // ReSharper disable once CheckNamespace
@@ -113,7 +114,7 @@ public class ModuleWeaver
                 resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
             var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(
                 nameof(DependencyResolver.Set),
-                new[] {typeof(IDependencyResolver)}));
+                new[] { typeof(IDependencyResolver) }));
             var set = Instruction.Create(OpCodes.Call, setMethod);
             entryMethodProcessor.InsertBefore(ModuleDefinition.EntryPoint.Body.Instructions.First(), set);
             entryMethodProcessor.InsertBefore(set, create);
@@ -127,8 +128,8 @@ public class ModuleWeaver
     private Mapping GetMapping(Settings settings)
     {
         var rv = new Mapping();
-        List<TypeDefinition> allTypes = GetAllTypes(settings).ToList();
-
+        ICollection<TypeDefinition> allTypes = GetAllTypes(settings);
+        
         if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
         {
             AddSingleInterfaceImplementation(rv, allTypes);
@@ -147,29 +148,40 @@ public class ModuleWeaver
         return rv;
     }
 
-    private IEnumerable<TypeDefinition> GetAllTypes(Settings settings)
+    private ICollection<TypeDefinition> GetAllTypes(Settings settings)
     {
+        var allTypes = new HashSet<TypeDefinition>(TypeComparer.FullName);
         IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) => types.Where(t => !t
-            .IsCompilerGenerated());
-
-        foreach(TypeDefinition type in FilterTypes(ModuleDefinition.GetAllTypes()))
+            .IsCompilerGenerated() && !allTypes.Remove(t));
+        
+        foreach (TypeDefinition type in FilterTypes(ModuleDefinition.GetAllTypes()))
         {
-            yield return type;
+            allTypes.Add(type);
         }
         foreach (AssemblyNameReference assemblyReference in ModuleDefinition.AssemblyReferences)
         {
-            if (settings.Assemblies.Any(a => a.Matches(assemblyReference.FullName)))
+            bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
+            bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(assemblyReference.FullName));
+            if (useAutoDiAssebmlies || matchesAssembly)
             {
                 AssemblyDefinition assembly = AssemblyResolver.Resolve(assemblyReference);
                 if (assembly != null)
                 {
+                    //Check if it references AutoDI. If it doesn't we will skip
+                    if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a => 
+                            a.FullName != typeof(DependencyAttribute).Assembly.FullName))
+                    {
+                        continue;
+                    }
+                    //Either references AutoDI, or was a config assembly match, include the types.
                     foreach (TypeDefinition type in FilterTypes(assembly.MainModule.GetAllTypes()))
                     {
-                        yield return type;
+                        allTypes.Add(type);
                     }
                 }
             }
         }
+        return allTypes;
     }
 
     private void AddSettingsMap(Settings settings, Mapping map, IEnumerable<TypeDefinition> types)
@@ -192,7 +204,7 @@ public class ModuleWeaver
         map.UpdateCreation(settings.Types);
     }
 
-    private void AddClasses(Mapping map, IEnumerable<TypeDefinition> types)
+    private static void AddClasses(Mapping map, IEnumerable<TypeDefinition> types)
     {
         foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract))
         {
@@ -200,7 +212,7 @@ public class ModuleWeaver
         }
     }
 
-    private void AddDerivedClasses(Mapping map, IEnumerable<TypeDefinition> types)
+    private static void AddDerivedClasses(Mapping map, IEnumerable<TypeDefinition> types)
     {
         TypeDefinition GetBaseType(TypeDefinition type)
         {
@@ -323,9 +335,9 @@ public class ModuleWeaver
 
     private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, Mapping mapping)
     {
-        bool InvokeConstructor(TypeMap map, ILProcessor processor)
+        bool InvokeConstructor(TypeDefinition targetType, ILProcessor processor)
         {
-            foreach (MethodDefinition targetTypeCtor in map.TargetType.GetConstructors().OrderByDescending(c => c.Parameters.Count))
+            foreach (MethodDefinition targetTypeCtor in targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count))
             {
                 if (targetTypeCtor.Parameters.All(pd => pd.HasDefault && pd.Constant == null))
                 {
@@ -333,7 +345,7 @@ public class ModuleWeaver
                     {
                         processor.Emit(OpCodes.Ldnull);
                     }
-                    processor.Emit(OpCodes.Newobj, targetTypeCtor);
+                    processor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
                     return true;
                 }
             }
@@ -358,26 +370,29 @@ public class ModuleWeaver
 
         foreach (TypeMap map in mapping)
         {
+            TypeDefinition targetType = ModuleDefinition.ImportReference(map.TargetType).Resolve();
             staticBody.Emit(OpCodes.Ldsfld, mapField);
 
             switch (map.CreateType)
             {
                 case Create.Singleton:
-                    if (!InvokeConstructor(map, staticBody))
+                    if (!InvokeConstructor(targetType, staticBody))
                     {
                         staticBody.Remove(staticBody.Body.Instructions.Last());
-                        LogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map");
+                        LogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map");
                         continue;
                     }
                     break;
                 default:
-                    var delegateMethod = new MethodDefinition($"<{map.TargetType.Name}>_generated_{delegateMethodCount++}", MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static | MethodAttributes.Private, map.TargetType);
+                    var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
+                        MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
+                        MethodAttributes.Private, targetType);
                     ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
-                    if (!InvokeConstructor(map, delegateProcessor))
+                    if (!InvokeConstructor(targetType, delegateProcessor))
                     {
                         delegateMethodCount--;
                         staticBody.Remove(staticBody.Body.Instructions.Last());
-                        LogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map");
+                        LogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map");
                         continue;
                     }
                     delegateProcessor.Emit(OpCodes.Ret);
@@ -387,7 +402,7 @@ public class ModuleWeaver
                     staticBody.Emit(OpCodes.Ldftn, delegateMethod);
 
                     MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<>).GetConstructors().Single());
-                    funcCtor.DeclaringType = funcType.MakeGenericInstanceType(map.TargetType);
+                    funcCtor.DeclaringType = ModuleDefinition.ImportReference(funcType.MakeGenericInstanceType(targetType));
 
                     staticBody.Emit(OpCodes.Newobj, funcCtor);
                     break;
@@ -400,7 +415,7 @@ public class ModuleWeaver
             foreach (TypeDefinition key in map.Keys)
             {
                 TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                LogDebug($"Mapping {importedKey.FullName} -> {map.TargetType.FullName}");
+                LogDebug($"Mapping {importedKey.FullName} -> {targetType.FullName} ({map.CreateType})");
                 staticBody.Emit(OpCodes.Dup);
                 staticBody.Emit(OpCodes.Ldc_I4, arrayIndex++);
                 staticBody.Emit(OpCodes.Ldtoken, importedKey);
@@ -427,9 +442,9 @@ public class ModuleWeaver
                     throw new InvalidOperationException($"Invalid Crate value '{map.CreateType}'");
             }
             var addGenericMethod = new GenericInstanceMethod(addMethod);
-            addGenericMethod.GenericArguments.Add(map.TargetType);
+            addGenericMethod.GenericArguments.Add(targetType);
 
-            staticBody.Emit(OpCodes.Call, addGenericMethod);
+            staticBody.Emit(OpCodes.Call, ModuleDefinition.ImportReference(addGenericMethod));
             staticBody.Emit(OpCodes.Nop);
 
         }
