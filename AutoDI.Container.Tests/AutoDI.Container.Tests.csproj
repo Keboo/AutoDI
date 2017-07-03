@@ -171,6 +171,7 @@
     <Compile Include="SettingsTests.cs" />
     <Compile Include="ManualMappingTests.cs" />
     <Compile Include="MapTests.cs" />
+    <Compile Include="DependentAssemblyTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

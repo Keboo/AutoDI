@@ -295,29 +295,29 @@ public class ModuleWeaver
             MethodAttributes.NewSlot
             , type);
         resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None, ModuleDefinition.Get<object[]>()));
-
+        
         resolveMethod.Overrides.Add(ModuleDefinition.ImportReference(dependencyResolver.Resolve().Methods.Single()));
-
+        
         var genericParameter = new GenericParameter("T", resolveMethod);
         resolveMethod.GenericParameters.Add(genericParameter);
         resolveMethod.ReturnType = genericParameter;
-
+        
         var lazy = new VariableDefinition(ModuleDefinition.Get<Lazy<object>>());
         resolveMethod.Body.Variables.Add(lazy);
         var genericVariable = new VariableDefinition(genericParameter);
         resolveMethod.Body.Variables.Add(genericVariable);
-
+        
         var body = resolveMethod.Body.GetILProcessor();
         body.Emit(OpCodes.Ldsfld, mapField);
-
+        
         MethodReference getMethod =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get)));
         var genericGetMethod = new GenericInstanceMethod(getMethod);
         genericGetMethod.GenericArguments.Add(genericParameter);
-
+        
         body.Emit(OpCodes.Call, genericGetMethod);
         body.Emit(OpCodes.Ret);
-
+        
         type.Methods.Add(resolveMethod);
 
         return type;
@@ -345,7 +345,7 @@ public class ModuleWeaver
                     {
                         processor.Emit(OpCodes.Ldnull);
                     }
-                    processor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
+                    //processor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
                     return true;
                 }
             }
@@ -370,7 +370,7 @@ public class ModuleWeaver
 
         foreach (TypeMap map in mapping)
         {
-            TypeDefinition targetType = ModuleDefinition.ImportReference(map.TargetType).Resolve();
+            TypeDefinition targetType = map.TargetType;
             staticBody.Emit(OpCodes.Ldsfld, mapField);
 
             switch (map.CreateType)
@@ -386,7 +386,7 @@ public class ModuleWeaver
                 default:
                     var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
                         MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
-                        MethodAttributes.Private, targetType);
+                        MethodAttributes.Private, ModuleDefinition.ImportReference(targetType));
                     ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
                     if (!InvokeConstructor(targetType, delegateProcessor))
                     {
@@ -444,8 +444,8 @@ public class ModuleWeaver
             var addGenericMethod = new GenericInstanceMethod(addMethod);
             addGenericMethod.GenericArguments.Add(targetType);
 
-            staticBody.Emit(OpCodes.Call, ModuleDefinition.ImportReference(addGenericMethod));
-            staticBody.Emit(OpCodes.Nop);
+            //staticBody.Emit(OpCodes.Call, ModuleDefinition.ImportReference(addGenericMethod));
+            //staticBody.Emit(OpCodes.Nop);
 
         }
     }
