@@ -1,4 +1,6 @@
 # AutoDI
+
+[![Join the chat at https://gitter.im/AutoDIContainer/Lobby](https://badges.gitter.im/AutoDIContainer/Lobby.svg)](https://gitter.im/AutoDIContainer/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 A framework for simplifying the creation of objects that only partially depend on resources in your favorite DI container.
 
 [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.Fody.svg?style=flat)](https://www.nuget.org/packages/AutoDI.Fody/)
