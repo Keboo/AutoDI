@@ -4,7 +4,6 @@ using ResolveTestsNamespace;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoDI.Container.Fody;
 
 namespace AutoDI.Container.Tests
 {
@@ -20,12 +19,7 @@ namespace AutoDI.Container.Tests
         {
             var gen = new Generator();
 
-            //Add AutoDI reference
-            gen.AddReference(typeof(DependencyAttribute).Assembly.Location);
-            gen.AddWeaver("AutoDI");
-            gen.AddWeaver("AutoDI.Container");
-
-            _testAssembly = await gen.Execute();
+            _testAssembly = (await gen.Execute()).SingleAssembly();
 
             Type resolverType = _testAssembly.GetType("AutoDI.AutoDIContainer");
             Assert.IsNotNull(resolverType, "Could not find generated AudoDI resolver");
@@ -93,7 +87,10 @@ namespace AutoDI.Container.Tests
     }
 }
 
-//<gen>
+//<assembly>
+//<ref: AutoDI />
+//<weaver: AutoDI />
+//<weaver: AutoDI.Container />
 namespace ResolveTestsNamespace
 {
     public interface IService
@@ -117,4 +114,4 @@ namespace ResolveTestsNamespace
     public class Derived2 : Base2
     { }
 }
-//</gen>
+//</assembly>

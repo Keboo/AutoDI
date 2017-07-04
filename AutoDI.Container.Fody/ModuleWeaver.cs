@@ -129,7 +129,7 @@ public class ModuleWeaver
     {
         var rv = new Mapping();
         ICollection<TypeDefinition> allTypes = GetAllTypes(settings);
-        
+
         if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
         {
             AddSingleInterfaceImplementation(rv, allTypes);
@@ -153,7 +153,7 @@ public class ModuleWeaver
         var allTypes = new HashSet<TypeDefinition>(TypeComparer.FullName);
         IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) => types.Where(t => !t
             .IsCompilerGenerated() && !allTypes.Remove(t));
-        
+
         foreach (TypeDefinition type in FilterTypes(ModuleDefinition.GetAllTypes()))
         {
             allTypes.Add(type);
@@ -168,7 +168,7 @@ public class ModuleWeaver
                 if (assembly != null)
                 {
                     //Check if it references AutoDI. If it doesn't we will skip
-                    if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a => 
+                    if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a =>
                             a.FullName != typeof(DependencyAttribute).Assembly.FullName))
                     {
                         continue;
@@ -233,27 +233,25 @@ public class ModuleWeaver
 
     private void AddSingleInterfaceImplementation(Mapping map, IEnumerable<TypeDefinition> allTypes)
     {
-        var types = new Dictionary<string, List<TypeDefinition>>();
+        var types = new Dictionary<TypeReference, List<TypeDefinition>>(TypeComparer.FullName);
 
         foreach (TypeDefinition type in allTypes.Where(t => t.IsClass && !t.IsAbstract))
         {
             foreach (var @interface in type.Interfaces)
             {
-                if (!types.TryGetValue(@interface.InterfaceType.FullName, out List<TypeDefinition> list))
+                if (!types.TryGetValue(@interface.InterfaceType, out List<TypeDefinition> list))
                 {
-                    types.Add(@interface.InterfaceType.FullName, list = new List<TypeDefinition>());
+                    types.Add(@interface.InterfaceType, list = new List<TypeDefinition>());
                 }
                 list.Add(type);
                 //TODO: Base types
             }
         }
 
-        foreach (KeyValuePair<string, List<TypeDefinition>> kvp in types)
+        foreach (KeyValuePair<TypeReference, List<TypeDefinition>> kvp in types)
         {
             if (kvp.Value.Count != 1) continue;
-            var type = ModuleDefinition.GetType(kvp.Key);
-            if (type == null) continue;
-            map.Add(type, kvp.Value[0], DuplicateKeyBehavior.RemoveAll);
+            map.Add(kvp.Key.Resolve(), kvp.Value[0], DuplicateKeyBehavior.RemoveAll);
         }
     }
 
@@ -264,7 +262,7 @@ public class ModuleWeaver
         {
             BaseType = ModuleDefinition.Get<object>()
         };
-        MethodDefinition ctor = CreateConstructor();
+        MethodDefinition ctor = CreateContainerConstructor();
         type.Methods.Add(ctor);
 
 
@@ -295,37 +293,39 @@ public class ModuleWeaver
             MethodAttributes.NewSlot
             , type);
         resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None, ModuleDefinition.Get<object[]>()));
-        
+
         resolveMethod.Overrides.Add(ModuleDefinition.ImportReference(dependencyResolver.Resolve().Methods.Single()));
-        
+
         var genericParameter = new GenericParameter("T", resolveMethod);
         resolveMethod.GenericParameters.Add(genericParameter);
         resolveMethod.ReturnType = genericParameter;
-        
+
         var lazy = new VariableDefinition(ModuleDefinition.Get<Lazy<object>>());
         resolveMethod.Body.Variables.Add(lazy);
         var genericVariable = new VariableDefinition(genericParameter);
         resolveMethod.Body.Variables.Add(genericVariable);
-        
+
         var body = resolveMethod.Body.GetILProcessor();
         body.Emit(OpCodes.Ldsfld, mapField);
-        
+
         MethodReference getMethod =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get)));
         var genericGetMethod = new GenericInstanceMethod(getMethod);
         genericGetMethod.GenericArguments.Add(genericParameter);
-        
+
         body.Emit(OpCodes.Call, genericGetMethod);
         body.Emit(OpCodes.Ret);
-        
+
         type.Methods.Add(resolveMethod);
 
         return type;
     }
 
-    private MethodDefinition CreateConstructor()
+    private MethodDefinition CreateContainerConstructor()
     {
-        var ctor = new MethodDefinition(".ctor", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, ModuleDefinition.ImportReference(typeof(void)));
+        var ctor = new MethodDefinition(".ctor",
+            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName |
+            MethodAttributes.RTSpecialName, ModuleDefinition.ImportReference(typeof(void)));
         ILProcessor processor = ctor.Body.GetILProcessor();
         processor.Emit(OpCodes.Ldarg_0); //this
         processor.Emit(OpCodes.Call, ModuleDefinition.ImportReference(typeof(object).GetConstructor(new Type[0])));
@@ -345,14 +345,14 @@ public class ModuleWeaver
                     {
                         processor.Emit(OpCodes.Ldnull);
                     }
-                    //processor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
+                    processor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
                     return true;
                 }
             }
             return false;
         }
 
-        //TODO: Make static
+        //TODO: Make static?
         MethodReference addSingleton =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddSingleton)));
         MethodReference addLazySingleton =
@@ -362,7 +362,7 @@ public class ModuleWeaver
         MethodReference addTransient =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddTransient)));
 
-        TypeReference funcType = ModuleDefinition.ImportReference(typeof(Func<>));
+        //MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<>).GetConstructors().Single());
         TypeReference type = ModuleDefinition.ImportReference(typeof(Type));
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
 
@@ -401,10 +401,11 @@ public class ModuleWeaver
                     staticBody.Emit(OpCodes.Ldnull);
                     staticBody.Emit(OpCodes.Ldftn, delegateMethod);
 
-                    MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<>).GetConstructors().Single());
-                    funcCtor.DeclaringType = ModuleDefinition.ImportReference(funcType.MakeGenericInstanceType(targetType));
+                    var funcType = ModuleDefinition.ImportReference(typeof(Func<>)).MakeGenericInstanceType(targetType);
 
-                    staticBody.Emit(OpCodes.Newobj, funcCtor);
+                    var funcCtor = GetGenericTypeConstructor(funcType.Resolve().GetConstructors().Single(), targetType);
+
+                    staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor));
                     break;
             }
 
@@ -442,12 +443,38 @@ public class ModuleWeaver
                     throw new InvalidOperationException($"Invalid Crate value '{map.CreateType}'");
             }
             var addGenericMethod = new GenericInstanceMethod(addMethod);
-            addGenericMethod.GenericArguments.Add(targetType);
+            addGenericMethod.GenericArguments.Add(ModuleDefinition.ImportReference(targetType));
 
-            //staticBody.Emit(OpCodes.Call, ModuleDefinition.ImportReference(addGenericMethod));
-            //staticBody.Emit(OpCodes.Nop);
+            staticBody.Emit(OpCodes.Call, addGenericMethod);
+            staticBody.Emit(OpCodes.Nop);
 
         }
+    }
+
+    //Based on example from here: https://stackoverflow.com/questions/16430947/emit-call-to-system-lazyt-constructor-with-mono-cecil
+    public static MethodReference GetGenericTypeConstructor(MethodReference self, params TypeReference[] args)
+    {
+        var reference = new MethodReference(
+            self.Name,
+            self.ReturnType,
+            self.DeclaringType.MakeGenericInstanceType(args))
+        {
+            HasThis = self.HasThis,
+            ExplicitThis = self.ExplicitThis,
+            CallingConvention = self.CallingConvention
+        };
+
+        foreach (var parameter in self.Parameters)
+        {
+            reference.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
+        }
+
+        foreach (var genericParam in self.GenericParameters)
+        {
+            reference.GenericParameters.Add(new GenericParameter(genericParam.Name, reference));
+        }
+
+        return reference;
     }
 
     private MethodDefinition CreateStaticConstructor()

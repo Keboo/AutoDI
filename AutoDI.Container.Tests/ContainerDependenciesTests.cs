@@ -1,9 +1,8 @@
-﻿using AutoDI.AssemblyGenerator;
-using ContainerDependencyNameSpace;
+﻿using ContainerDependencyNameSpace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
-
+using AutoDI.AssemblyGenerator;
 
 namespace AutoDI.Container.Tests
 {
@@ -14,14 +13,9 @@ namespace AutoDI.Container.Tests
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
         {
-            var gen = new Generator(AssemblyType.ConsoleApplication);
-            
-            //Add AutoDI reference
-            gen.AddReference(typeof(DependencyAttribute).Assembly.Location);
-            gen.AddWeaver("AutoDI");
-            gen.AddWeaver("AutoDI.Container");
+            var gen = new Generator();
 
-            _testAssembly = await gen.Execute();
+            _testAssembly = (await gen.Execute()).SingleAssembly();
         }
 
         [TestMethod]
@@ -34,7 +28,11 @@ namespace AutoDI.Container.Tests
     }
 }
 
-//<gen>
+//<assembly>
+//<type: ConsoleApplication />
+//<ref: AutoDI />
+//<weaver: AutoDI />
+//<weaver: AutoDI.Container />
 namespace ContainerDependencyNameSpace
 {
     using AutoDI;
@@ -67,4 +65,4 @@ namespace ContainerDependencyNameSpace
 
     public class Service : IService { }
 }
-//</gen>
+//</assembly>

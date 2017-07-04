@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using AutoDI.AssemblyGenerator;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Container.Tests
 {
+    using SharedAssembly;
+    using MainAssembly;
+
     [TestClass]
     public class DependentAssemblyTests
     {
@@ -16,52 +17,61 @@ namespace AutoDI.Container.Tests
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
         {
-            var gen = new Generator(AssemblyType.ConsoleApplication);
+            var gen = new Generator();
 
-            var testAssemblies = await gen.Execute2();
-            _sharedAssembly = testAssemblies["shared"];
-            _mainAssembly = testAssemblies["main"];
+            var testAssemblies = await gen.Execute();
+            _sharedAssembly = testAssemblies["shared"].Assembly;
+            _mainAssembly = testAssemblies["main"].Assembly;
         }
 
         [TestMethod]
         public void CanLoadTypesFromDependentAssemblies()
         {
-            
+            ContainerMap map = AutoDIContainer.GetMap(_mainAssembly);
+            Assert.IsNotNull(map);
+            Assert.IsTrue(map.IsMapped<IService, Service>(typeof(DependentAssemblyTests)));
+            Assert.IsTrue(map.IsMapped<Service, Service>(typeof(DependentAssemblyTests)));
+            Assert.IsTrue(map.IsMapped<Manager, Manager>(typeof(DependentAssemblyTests)));
+            Assert.IsTrue(map.IsMapped<Program, Program>(typeof(DependentAssemblyTests)));
         }
     }
-}
 
-//<assembly:shared />
-//<ref: AutoDI/>
-//<weaver: AutoDI />
-namespace SharedAssembly
-{
-    using AutoDI;
-
-    public interface IService { }
-
-    public class Service : IService { }
-
-    public class Manager
+    //<assembly:shared />
+    //<ref: AutoDI/>
+    //<weaver: AutoDI />
+    namespace SharedAssembly
     {
-        public Manager([Dependency] IService service = null)
-        { }
-    }
-}
+        using AutoDI;
 
-//<assembly:main />
-//<type:consoleApplication />
-//<ref: shared />
-//<weaver: AutoDI.Container />
-namespace MainAssembly
-{
-    using SharedAssembly;
+        public interface IService { }
 
-    public class Program
-    {
-        public static void Main(string[] args)
+        public class Service : IService { }
+
+        public class Manager
         {
-            var manager = new Manager();
+            public Manager([Dependency] IService service = null)
+            { }
         }
     }
+
+    //<assembly:main />
+    //<type:consoleApplication />
+    //<ref: shared />
+    //<weaver: AutoDI.Container />
+    namespace MainAssembly
+    {
+        using SharedAssembly;
+
+        public class Program
+        {
+            public static void Main(string[] args)
+            {
+                var manager = new Manager();
+            }
+        }
+    }
+    //</assembly>
 }
+
+
+

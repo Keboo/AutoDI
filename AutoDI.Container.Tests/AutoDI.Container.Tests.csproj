@@ -166,6 +166,7 @@
   <ItemGroup>
     <Compile Include="ContainerDependenciesTests.cs" />
     <Compile Include="ManualInjectionOfContainer.cs" />
+    <Compile Include="MapMixins.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResolverTests.cs" />
     <Compile Include="SettingsTests.cs" />

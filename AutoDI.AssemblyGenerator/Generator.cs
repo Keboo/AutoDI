@@ -17,79 +17,24 @@ namespace AutoDI.AssemblyGenerator
 {
     public class Generator
     {
+        public event EventHandler<WeaverAddedEventArgs> WeaverAdded; 
+
         private static int _instanceCount = 1;
-        private readonly AssemblyType _assebmlyType;
-        //private readonly string _assemblyName = $"AssemblyToTest{_instanceCount++}";
         private const string WeaverName = "ModuleWeaver";
 
-        private readonly List<object> _weavers = new List<object>();
-        private readonly List<MetadataReference> _references = new List<MetadataReference>
-        {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
-        };
-
-        public Generator(AssemblyType assebmlyType = AssemblyType.DynamicallyLinkedLibrary)
-        {
-            _assebmlyType = assebmlyType;
-        }
-
-        public object AddWeaver(string weaverName)
-        {
-            object ProcessAssembly(Assembly assembly)
-            {
-                Type weaverType = assembly.GetType(WeaverName);
-                if (weaverType == null) return null;
-                object weaver = Activator.CreateInstance(weaverType);
-                _weavers.Add(weaver);
-                return weaver;
-            }
-
-            string assemblyName = $"{weaverName}.Fody";
-
-            try
-            {
-                object weaver = ProcessAssembly(Assembly.Load(assemblyName));
-                if (weaver != null)
-                    return weaver;
-            }
-            catch (Exception ex)
-            {
-                // ignored
-            }
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => a.FullName == assemblyName))
-            {
-                object weaver = ProcessAssembly(assembly);
-                if (weaver != null)
-                    return weaver;
-            }
-            throw new Exception($"Failed to add weaver '{weaverName}'. Could not locate {weaverName}.Fody assembly.");
-        }
-
-        public void AddReference(string filePath)
-        {
-            if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
-            if (!File.Exists(filePath)) throw new ArgumentException($"Could not find file '{filePath}'");
-            _references.Add(MetadataReference.CreateFromFile(filePath));
-        }
-
-        public async Task<Assembly> Execute([CallerFilePath] string sourceFile = null)
-        {
-            return null;
-        }
-
-        public async Task<Dictionary<string, Assembly>> Execute2([CallerFilePath] string sourceFile = null)
+        public async Task<Dictionary<string, AssemblyInfo>> Execute([CallerFilePath] string sourceFile = null)
         {
             if (sourceFile == null) throw new ArgumentNullException(nameof(sourceFile));
 
-            var builtAssemblies = new Dictionary<string, Assembly>();
+            var builtAssemblies = new Dictionary<string, AssemblyInfo>();
 
             IEnumerable<AssemblyInfo> GetAssemblies()
             {
-                var assemblyRegex = new Regex(@"<assembly(:\s*(?<Name>\w+))?\s*/>");
-                var typeRegex = new Regex(@"<type:\s*(?<Name>\w+)\s*/>");
-                var referenceRegex = new Regex(@"<ref:\s*(?<Name>\w+)\s*/>");
-                var weaverRegex = new Regex(@"<weaver:\s*(?<Name>[\w_\.]+)\s*/>");
+                var assemblyRegex = new Regex(@"<\s*assembly(:\s*(?<Name>\w+))?\s*/?>");
+                var endAssemblyRegex = new Regex(@"</\s*assembly\s*>");
+                var typeRegex = new Regex(@"<\s*type:\s*(?<Name>\w+)\s*/>");
+                var referenceRegex = new Regex(@"<\s*ref:\s*(?<Name>\w+)\s*/>");
+                var weaverRegex = new Regex(@"<\s*weaver:\s*(?<Name>[\w_\.]+)\s*/>");
 
                 using (var sr = new StreamReader(sourceFile))
                 {
@@ -112,7 +57,12 @@ namespace AutoDI.AssemblyGenerator
                             }
                             else if (currentAssembly != null)
                             {
-                                if ((typeMatch = typeRegex.Match(trimmed)).Success)
+                                if (endAssemblyRegex.IsMatch(trimmed))
+                                {
+                                    yield return currentAssembly;
+                                    currentAssembly = null;
+                                }
+                                else if ((typeMatch = typeRegex.Match(trimmed)).Success)
                                 {
                                     if (Enum.TryParse(typeMatch.Groups["Name"].Value, true, out OutputKind output))
                                     {
@@ -123,9 +73,9 @@ namespace AutoDI.AssemblyGenerator
                                 {
                                     MetadataReference GetReference(string name)
                                     {
-                                        if (builtAssemblies.TryGetValue(name, out Assembly builtAssembly))
+                                        if (builtAssemblies.TryGetValue(name, out AssemblyInfo builtAssembly))
                                         {
-                                            return MetadataReference.CreateFromFile(builtAssembly.Location);
+                                            return MetadataReference.CreateFromFile(builtAssembly.Assembly.Location);
                                         }
                                         string filePath = $@".\{name}.dll";
                                         if (File.Exists(filePath))
@@ -149,15 +99,13 @@ namespace AutoDI.AssemblyGenerator
                                 }
                                 else if ((weaverMatch = weaverRegex.Match(trimmed)).Success)
                                 {
-                                    object GetWeaver(string weaverName)
+                                    Weaver GetWeaver(string weaverName)
                                     {
                                         object ProcessAssembly(Assembly assembly)
                                         {
                                             Type weaverType = assembly.GetType(WeaverName);
                                             if (weaverType == null) return null;
-                                            object weaverInstance = Activator.CreateInstance(weaverType);
-                                            _weavers.Add(weaverInstance);
-                                            return weaverInstance;
+                                            return Activator.CreateInstance(weaverType);
                                         }
 
                                         string assemblyName = $"{weaverName}.Fody";
@@ -166,7 +114,7 @@ namespace AutoDI.AssemblyGenerator
                                         {
                                             object weaverInstance = ProcessAssembly(Assembly.Load(assemblyName));
                                             if (weaverInstance != null)
-                                                return weaverInstance;
+                                                return new Weaver(weaverName, weaverInstance);
                                         }
                                         catch (Exception ex)
                                         {
@@ -177,14 +125,15 @@ namespace AutoDI.AssemblyGenerator
                                         {
                                             object weaverInstance = ProcessAssembly(assembly);
                                             if (weaverInstance != null)
-                                                return weaverInstance;
+                                                return new Weaver(weaverName, weaverInstance);
                                         }
                                         throw new Exception($"Failed to add weaver '{weaverName}'. Could not locate {weaverName}.Fody assembly.");
                                     }
 
-                                    object weaver = GetWeaver(weaverMatch.Groups["Name"].Value);
+                                    Weaver weaver = GetWeaver(weaverMatch.Groups["Name"].Value);
                                     if (weaver != null)
                                     {
+                                        WeaverAdded?.Invoke(this, new WeaverAddedEventArgs(weaver));
                                         currentAssembly.AddWeaver(weaver);
                                     }
                                     //TODO: Else
@@ -252,40 +201,10 @@ namespace AutoDI.AssemblyGenerator
                         throw new Exception(string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => d.GetMessage())));
                     }
                 }
-                builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, Assembly.LoadFile(filePath));
+                assemblyInfo.Assembly = Assembly.LoadFile(filePath);
+                builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
             }
             return builtAssemblies;
-        }
-
-        private class AssemblyInfo
-        {
-            private readonly StringBuilder _contents = new StringBuilder();
-            private readonly List<object> _weavers = new List<object>();
-            private readonly List<MetadataReference> _references = new List<MetadataReference>
-            {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
-            };
-
-            public string Name { get; }
-
-            public IReadOnlyList<MetadataReference> References => _references;
-
-            public IReadOnlyList<object> Weavers => _weavers;
-
-            public OutputKind OutputKind { get; set; } = OutputKind.DynamicallyLinkedLibrary;
-
-            public AssemblyInfo(string name)
-            {
-                Name = name;
-            }
-
-            public void AppendLine(string line) => _contents.AppendLine(line);
-
-            public void AddReference(MetadataReference reference) => _references.Add(reference);
-
-            public void AddWeaver(object weaver) => _weavers.Add(weaver);
-
-            public string GetContents() => _contents.ToString();
         }
     }
 }

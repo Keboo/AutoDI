@@ -1,5 +1,4 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Container.Fody;
 using ManualInjectionNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
@@ -8,6 +7,8 @@ using System.Xml.Linq;
 
 namespace AutoDI.Container.Tests
 {
+
+
     [TestClass]
     public class ManualInjectionOfContainer
     {
@@ -16,16 +17,17 @@ namespace AutoDI.Container.Tests
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
         {
-            var gen = new Generator(AssemblyType.ConsoleApplication);
-
-            //Add AutoDI reference
-            gen.AddReference(typeof(DependencyAttribute).Assembly.Location);
-            gen.AddWeaver("AutoDI");
-            dynamic container = gen.AddWeaver("AutoDI.Container");
-
-            container.Config = XElement.Parse(@"<AutoDI.Container InjectContainer=""false"" />");
-
-            _testAssembly = await gen.Execute();
+            var gen = new Generator();
+            gen.WeaverAdded += (sender, args) =>
+            {
+                if (args.Weaver.Name == "AutoDI.Container")
+                {
+                    dynamic weaver = args.Weaver;
+                    weaver.Config = XElement.Parse(@"<AutoDI.Container InjectContainer=""false"" />");
+                }
+            };
+            
+            _testAssembly = (await gen.Execute()).SingleAssembly();
         }
 
         [TestMethod]
@@ -45,7 +47,11 @@ namespace AutoDI.Container.Tests
     }
 }
 
-//<gen>
+//<assembly />
+//<type:ConsoleApplication/>
+//<ref: AutoDI />
+//<weaver: AutoDI />
+//<weaver: AutoDI.Container />
 namespace ManualInjectionNamespace
 {
     using AutoDI;
@@ -70,4 +76,4 @@ namespace ManualInjectionNamespace
 
     public class Service : IService { }
 }
-//</gen>
+//</assembly>

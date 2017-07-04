@@ -1,6 +1,5 @@
 ﻿using AutoDI.AssemblyGenerator;
 using AutoDI.Container.Fody;
-using ManualMappingTests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 using System.Reflection;
@@ -9,6 +8,8 @@ using System.Xml.Linq;
 
 namespace AutoDI.Container.Tests
 {
+    using TestAssembly;
+
     [TestClass]
     public class ManualMappingTests
     {
@@ -18,13 +19,12 @@ namespace AutoDI.Container.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
-
-            //Add AutoDI reference
-            gen.AddReference(typeof(DependencyAttribute).Assembly.Location);
-            gen.AddWeaver("AutoDI");
-            dynamic container = gen.AddWeaver("AutoDI.Container");
-            
-            container.Config = XElement.Parse($@"
+            gen.WeaverAdded += (sender, args) =>
+            {
+                if (args.Weaver.Name == "AutoDI.Container")
+                {
+                    dynamic containerWeaver = args.Weaver;
+                    containerWeaver.Config = XElement.Parse($@"
     <AutoDI.Container Behavior=""{Behaviors.None}"">
         <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from="".*"" to=""$0"" />
@@ -34,7 +34,10 @@ namespace AutoDI.Container.Tests
         <type name=""Service2"" Create=""{Create.None}"" />
         <type name=""My.*"" Create=""{Create.Transient}"" />
     </AutoDI.Container>");
-            _testAssembly = await gen.Execute();
+                }
+            };
+
+            _testAssembly = (await gen.Execute()).SingleAssembly();
         }
 
         [TestMethod]
@@ -42,21 +45,21 @@ namespace AutoDI.Container.Tests
         {
             AutoDIContainer.Inject(_testAssembly);
 
-            dynamic sut = _testAssembly.CreateInstance<Manager>();
-            Assert.IsTrue(((object)sut.Service).Is<Service>());
+            dynamic sut = _testAssembly.CreateInstance<Manager>(typeof(ManualMappingTests));
+            Assert.IsTrue(((object)sut.Service).Is<Service>(typeof(ManualMappingTests)));
             Assert.IsNull(sut.Service2);
 
             var map = AutoDIContainer.GetMap(_testAssembly);
             var mappings = map.GetMappings().ToArray();
 
-            Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService2>() || m.TargetType.Is<Service2>()));
+            Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService2>(typeof(ManualMappingTests)) || m.TargetType.Is<Service2>(typeof(ManualMappingTests))));
         }
 
         [TestMethod]
         public void TransientTypesAlwaysCreateNewInstances()
         {
-            object dog1 = _testAssembly.Resolve<MyDog>();
-            object dog2 = _testAssembly.Resolve<MyDog>();
+            object dog1 = _testAssembly.Resolve<MyDog>(typeof(ManualMappingTests));
+            object dog2 = _testAssembly.Resolve<MyDog>(typeof(ManualMappingTests));
 
             Assert.IsNotNull(dog1);
             Assert.IsNotNull(dog2);
@@ -66,8 +69,8 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void SingletonInstanceAlwaysReturnsTheSameInstance()
         {
-            object instance1 = _testAssembly.Resolve<IService>();
-            object instance2 = _testAssembly.Resolve<IService>();
+            object instance1 = _testAssembly.Resolve<IService>(typeof(ManualMappingTests));
+            object instance2 = _testAssembly.Resolve<IService>(typeof(ManualMappingTests));
 
             Assert.IsNotNull(instance1);
             Assert.IsNotNull(instance2);
@@ -80,8 +83,8 @@ namespace AutoDI.Container.Tests
             var map = AutoDIContainer.GetMap(_testAssembly);
             var mapings = map.GetMappings().ToArray();
             
-            Assert.IsFalse(mapings.Any(m => m.SourceType.Is<IService3>() && m.TargetType.Is<Service3>()));
-            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service3>() && m.TargetType.Is<Service3>()));
+            Assert.IsFalse(mapings.Any(m => m.SourceType.Is<IService3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
+            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
         }
 
         [TestMethod]
@@ -90,64 +93,67 @@ namespace AutoDI.Container.Tests
             var map = AutoDIContainer.GetMap(_testAssembly);
             var mapings = map.GetMappings().ToArray();
 
-            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<IService4>() && m.TargetType.Is<Service4>()));
-            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service4>() && m.TargetType.Is<Service4>()));
+            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<IService4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
+            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
 
             //Just because you can map them, doesn't mean you can actually get anything back!
-            Assert.IsNull(_testAssembly.Resolve<IService4>());
+            Assert.IsNull(_testAssembly.Resolve<IService4>(typeof(ManualMappingTests)));
         }
 
         [TestMethod]
         public void CanMapFromBaseClassToDerivedClass()
         {
-            Assert.IsTrue(_testAssembly.Resolve<Service5>().Is<Service5Extended>());
+            Assert.IsTrue(_testAssembly.Resolve<Service5>(typeof(ManualMappingTests)).Is<Service5Extended>(typeof(ManualMappingTests)));
         }
     }
-}
 
-//<gen>
-namespace ManualMappingTests
-{
-    using AutoDI;
-
-    public interface IService
-    { }
-
-    public class Service : IService
-    { }
-
-    public interface IService2 { }
-
-    public class Service2 : IService2
-    { }
-
-    public interface IService3 { }
-
-    public class Service3 { }
-
-    public interface IService4 { }
-
-    public class Service4 { }
-
-    public class Service5 { }
-
-    public class Service5Extended : Service5 { }
-
-    public class MyDog { }
-
-    public class Manager
+    //<assembly />
+    //<ref: AutoDI />
+    //<weaver: AutoDI />
+    //<weaver: AutoDI.Container />
+    namespace TestAssembly
     {
-        public Manager([Dependency] IService service = null, [Dependency] IService2 service2 = null)
+        using AutoDI;
+
+        public interface IService
+        { }
+
+        public class Service : IService
+        { }
+
+        public interface IService2 { }
+
+        public class Service2 : IService2
+        { }
+
+        public interface IService3 { }
+
+        public class Service3 { }
+
+        public interface IService4 { }
+
+        public class Service4 { }
+
+        public class Service5 { }
+
+        public class Service5Extended : Service5 { }
+
+        public class MyDog { }
+
+        public class Manager
         {
-            Service = service;
-            Service2 = service2;
+            public Manager([Dependency] IService service = null, [Dependency] IService2 service2 = null)
+            {
+                Service = service;
+                Service2 = service2;
+            }
+
+            public IService Service { get; }
+
+            public IService2 Service2 { get; }
         }
-
-        public IService Service { get; }
-
-        public IService2 Service2 { get; }
-
-
     }
+    //</assembly>
 }
-//</gen>
+
+

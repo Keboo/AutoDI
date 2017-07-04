@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace AutoDI.AssemblyGenerator
 {
@@ -27,13 +28,20 @@ namespace AutoDI.AssemblyGenerator
 
         public static object InvokeGeneric<TGeneric>(this Assembly assembly, object target, string methodName, params object[] parameters)
         {
-            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
-            if (target == null) throw new ArgumentNullException(nameof(target));
-            if (methodName == null) throw new ArgumentNullException(nameof(methodName));
-
             Type genericType = assembly.GetType(typeof(TGeneric).FullName);
             if (genericType == null)
                 throw new AssemblyInvocationExcetion($"Could not find generic parameter type '{typeof(TGeneric).FullName}' in '{assembly.FullName}'");
+
+            return InvokeGeneric(assembly, genericType, target, methodName, parameters);
+        }
+
+        public static object InvokeGeneric(this Assembly assembly, Type genericType, object target, string methodName, params object[] parameters)
+        {
+            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+            if (genericType == null) throw new ArgumentNullException(nameof(genericType));
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (methodName == null) throw new ArgumentNullException(nameof(methodName));
+            
 
             Type targetType = target.GetType();
 
@@ -57,13 +65,14 @@ namespace AutoDI.AssemblyGenerator
             return genericMethod.Invoke(target, parameters);
         }
 
-        public static object CreateInstance<T>(this Assembly assembly)
+        public static object CreateInstance<T>(this Assembly assembly, Type containerType = null)
         {
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
 
-            Type type = assembly.GetType(typeof(T).FullName);
+            string typeName = TypeMixins.GetTypeName(typeof(T), containerType);
+            Type type = assembly.GetType(typeName);
             if (type == null)
-                throw new AssemblyCreateInstanceException($"Could not find '{typeof(T).FullName}' in '{assembly.FullName}'");
+                throw new AssemblyCreateInstanceException($"Could not find '{typeName}' in '{assembly.FullName}'");
 
             foreach (ConstructorInfo ctor in type.GetConstructors().OrderBy(c => c.GetParameters().Length))
             {
@@ -74,7 +83,7 @@ namespace AutoDI.AssemblyGenerator
             throw new AssemblyCreateInstanceException($"Could not find valid constructor for '{typeof(T).FullName}'");
         }
 
-        public static object Resolve<T>(this Assembly assembly)
+        public static object Resolve<T>(this Assembly assembly, Type containerType = null)
         {
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
 
@@ -87,8 +96,17 @@ namespace AutoDI.AssemblyGenerator
             if (resolver == null)
                 throw new InvalidOperationException($"Failed to create resolver '{resolverType.FullName}'");
 
+            string genericTypeName = TypeMixins.GetTypeName(typeof(T), containerType);
+            Type genericType = assembly.GetType(genericTypeName);
+            if (genericType == null)
+                throw new AssemblyInvocationExcetion($"Could not find generic parameter type '{genericTypeName}' in '{assembly.FullName}'");
 
-            return assembly.InvokeGeneric<T>(resolver, nameof(IDependencyResolver.Resolve), (object) new object[0]);
+            return assembly.InvokeGeneric(genericType, resolver, nameof(IDependencyResolver.Resolve), (object) new object[0]);
+        }
+
+        public static Assembly SingleAssembly(this IDictionary<string, AssemblyInfo> assemblies)
+        {
+            return assemblies?.Select(x => x.Value.Assembly).Single();
         }
     }
 }
