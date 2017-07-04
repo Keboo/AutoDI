@@ -253,3 +253,5 @@ paket-files/
 *.sln.iml
 
 
+/nuget.exe
+/Examples/AutoDI.Container/Web.NetCore/wwwroot/lib

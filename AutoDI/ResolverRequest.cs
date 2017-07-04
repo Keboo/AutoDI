@@ -8,7 +8,7 @@ namespace AutoDI
 
         public Type[] Dependencies { get; }
 
-        public ResolverRequest( Type callerType, Type[] dependencies )
+        public ResolverRequest(Type callerType, Type[] dependencies)
         {
             CallerType = callerType;
             Dependencies = dependencies;

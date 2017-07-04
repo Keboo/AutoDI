@@ -42,8 +42,10 @@
     <Compile Include="ClassWithDependencies.cs" />
     <Compile Include="ClassWithInitData.cs" />
     <Compile Include="ClassWithSingleDependency.cs" />
+    <Compile Include="ClassWtihNestedType.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="IService2.cs" />
+    <Compile Include="Manager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -52,7 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AutoDI\AutoDI.csproj">
-      <Project>{712610e5-f444-4a93-9c40-a478cefa8ee2}</Project>
+      <Project>{13e2fd78-569f-479a-8af4-39412a3a9578}</Project>
       <Name>AutoDI</Name>
     </ProjectReference>
   </ItemGroup>

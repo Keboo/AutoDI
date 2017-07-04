@@ -11,8 +11,7 @@ namespace AutoDI.Fody
 
         public Injector(MethodDefinition constructor)
         {
-            if (constructor == null) throw new ArgumentNullException(nameof(constructor));
-            _constructor = constructor;
+            _constructor = constructor ?? throw new ArgumentNullException(nameof(constructor));
         }
 
         public void Insert(OpCode code, TypeReference type)

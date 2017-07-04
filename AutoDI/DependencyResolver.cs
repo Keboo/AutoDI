@@ -4,17 +4,17 @@
     {
         private static IGetResolverBehavior _behavior;
 
-        public static IDependencyResolver Get( ResolverRequest request )
+        public static IDependencyResolver Get(ResolverRequest request)
         {
-            return _behavior?.Get( request );
+            return _behavior?.Get(request);
         }
 
-        public static void Set( IDependencyResolver resolver )
+        public static void Set(IDependencyResolver resolver)
         {
-            Set( new StaticInstanceBehavior( resolver ) );
+            Set(new StaticInstanceBehavior(resolver));
         }
 
-        public static void Set( IGetResolverBehavior behavior )
+        public static void Set(IGetResolverBehavior behavior)
         {
             _behavior = behavior;
         }

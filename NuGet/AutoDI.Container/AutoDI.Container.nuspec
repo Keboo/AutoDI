@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>AutoDI.Container</id>
+    <version>0.0.0</version>
+    <title>AutoDI Container</title>
+    <authors>Keboo</authors>
+    <owners>Keboo</owners>
+    <licenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>AutoDI.Container support classes. These are expected to be used with the AutoDI.Container.Fody extension.</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <tags>AutoDI, AutoDI.Container, Dependency Injection, DI</tags>
+    <dependencies>
+      <dependency id="AutoDI" version ="2.0"/>
+    </dependencies>
+  </metadata>
+</package>
