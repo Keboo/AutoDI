@@ -53,6 +53,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\AutoDI.Fody\AutoDI.Fody.csproj">
+      <Project>{1f9dd248-14da-41c7-8f5f-71bdb8d60adb}</Project>
+      <Name>AutoDI.Fody</Name>
+    </ProjectReference>
     <ProjectReference Include="..\AutoDI\AutoDI.csproj">
       <Project>{13e2fd78-569f-479a-8af4-39412a3a9578}</Project>
       <Name>AutoDI</Name>
