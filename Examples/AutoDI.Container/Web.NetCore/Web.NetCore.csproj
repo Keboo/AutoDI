@@ -14,10 +14,10 @@
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="1.1.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.2" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="1.1.2" />
-    <PackageReference Include="AutoDI" Version="2.1.28" />
-    <PackageReference Include="AutoDI.Container" Version="2.1.28" />
-    <PackageReference Include="AutoDI.Container.Fody" Version="2.1.28" />
-    <PackageReference Include="AutoDI.Fody" Version="2.1.28" />
+    <PackageReference Include="AutoDI" Version="2.1.29" />
+    <PackageReference Include="AutoDI.Container" Version="2.1.29" />
+    <PackageReference Include="AutoDI.Container.Fody" Version="2.1.29" />
+    <PackageReference Include="AutoDI.Fody" Version="2.1.29" />
   </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="1.0.1" />

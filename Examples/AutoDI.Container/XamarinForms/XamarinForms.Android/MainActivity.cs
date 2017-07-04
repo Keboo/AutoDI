@@ -6,6 +6,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Android.OS;
+using AutoDI.Container;
 
 namespace XamarinForms.Droid
 {
@@ -19,6 +20,7 @@ namespace XamarinForms.Droid
 
             base.OnCreate(bundle);
 
+            AutoDIContainer.Inject(typeof(MainActivity).Assembly);
             global::Xamarin.Forms.Forms.Init(this, bundle);
             LoadApplication(new App());
         }
