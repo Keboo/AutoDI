@@ -373,9 +373,9 @@ public class ModuleWeaver
             TypeDefinition targetType = map.TargetType;
             staticBody.Emit(OpCodes.Ldsfld, mapField);
 
-            switch (map.CreateType)
+            switch (map.LifetimeType)
             {
-                case Create.Singleton:
+                case Lifetime.Singleton:
                     if (!InvokeConstructor(targetType, staticBody))
                     {
                         staticBody.Remove(staticBody.Body.Instructions.Last());
@@ -416,7 +416,7 @@ public class ModuleWeaver
             foreach (TypeDefinition key in map.Keys)
             {
                 TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                LogDebug($"Mapping {importedKey.FullName} -> {targetType.FullName} ({map.CreateType})");
+                LogDebug($"Mapping {importedKey.FullName} -> {targetType.FullName} ({map.LifetimeType})");
                 staticBody.Emit(OpCodes.Dup);
                 staticBody.Emit(OpCodes.Ldc_I4, arrayIndex++);
                 staticBody.Emit(OpCodes.Ldtoken, importedKey);
@@ -425,22 +425,22 @@ public class ModuleWeaver
             }
 
             MethodReference addMethod;
-            switch (map.CreateType)
+            switch (map.LifetimeType)
             {
-                case Create.Singleton:
+                case Lifetime.Singleton:
                     addMethod = addSingleton;
                     break;
-                case Create.LazySingleton:
+                case Lifetime.LazySingleton:
                     addMethod = addLazySingleton;
                     break;
-                case Create.WeakTransient:
+                case Lifetime.WeakTransient:
                     addMethod = addWeakTransient;
                     break;
-                case Create.Transient:
+                case Lifetime.Transient:
                     addMethod = addTransient;
                     break;
                 default:
-                    throw new InvalidOperationException($"Invalid Crate value '{map.CreateType}'");
+                    throw new InvalidOperationException($"Invalid Crate value '{map.LifetimeType}'");
             }
             var addGenericMethod = new GenericInstanceMethod(addMethod);
             addGenericMethod.GenericArguments.Add(ModuleDefinition.ImportReference(targetType));
@@ -521,7 +521,7 @@ public class ModuleWeaver
             TargetType = targetType;
         }
 
-        public Create CreateType { get; set; } = Create.LazySingleton;
+        public Lifetime LifetimeType { get; set; } = Lifetime.LazySingleton;
 
         public TypeDefinition TargetType { get; }
 
@@ -575,13 +575,13 @@ public class ModuleWeaver
                 {
                     if (type.Matches(targetType))
                     {
-                        switch (type.Create)
+                        switch (type.Lifetime)
                         {
-                            case Create.None:
+                            case Lifetime.None:
                                 _maps.Remove(targetType);
                                 break;
                             default:
-                                _maps[targetType].CreateType = type.Create;
+                                _maps[targetType].LifetimeType = type.Lifetime;
                                 break;
                         }
                     }

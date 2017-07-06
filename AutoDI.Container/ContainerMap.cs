@@ -11,19 +11,19 @@ namespace AutoDI.Container
 
         public void AddSingleton<T>(T instance, Type[] keys)
         {
-            Add(Create.Singleton, () => instance, keys);
+            Add(Lifetime.Singleton, () => instance, keys);
         }
 
         public void AddLazySingleton<T>(Func<T> create, Type[] keys)
         {
             var lazy = new Lazy<T>(create);
-            Add(Create.LazySingleton, () => lazy.Value, keys);
+            Add(Lifetime.LazySingleton, () => lazy.Value, keys);
         }
 
         public void AddWeakTransient<T>(Func<T> create, Type[] keys) where T : class
         {
             var weakRef = new WeakReference<T>(default(T));
-            Add(Create.WeakTransient, () =>
+            Add(Lifetime.WeakTransient, () =>
             {
                 lock (weakRef)
                 {
@@ -39,7 +39,7 @@ namespace AutoDI.Container
 
         public void AddTransient<T>(Func<T> create, Type[] keys)
         {
-            Add(Create.Transient, create, keys);
+            Add(Lifetime.Transient, create, keys);
         }
 
         public T Get<T>()
@@ -52,11 +52,11 @@ namespace AutoDI.Container
             return default(T);
         }
 
-        private void Add<T>(Create createMode, Func<T> @delegate, Type[] keys)
+        private void Add<T>(Lifetime lifetimeMode, Func<T> @delegate, Type[] keys)
         {
             foreach (Type key in keys)
             {
-                _accessors[key] = new DelegateContainer<T>(@delegate, createMode);
+                _accessors[key] = new DelegateContainer<T>(@delegate, lifetimeMode);
             }
         }
 
@@ -66,7 +66,7 @@ namespace AutoDI.Container
             {
                 var delegateType = ((Delegate)kvp.Value).GetType();
                 var targetType = delegateType.IsConstructedGenericType ? delegateType.GenericTypeArguments.FirstOrDefault() : null;
-                yield return new Map(kvp.Key, targetType, kvp.Value.CreateMode);
+                yield return new Map(kvp.Key, targetType, kvp.Value.LifetimeMode);
             }
         }
 
@@ -80,18 +80,18 @@ namespace AutoDI.Container
 
             foreach (Map map in maps)
             {
-                sb.AppendLine($"  {map.SourceType.FullName.PadRight(padSize)} -> {map.TargetType?.FullName ?? "<unknown>"} as {map.CreateMode}");
+                sb.AppendLine($"  {map.SourceType.FullName.PadRight(padSize)} -> {map.TargetType?.FullName ?? "<unknown>"} as {map.LifetimeMode}");
             }
             return sb.ToString();
         }
 
         private abstract class DelegateContainer
         {
-            public Create CreateMode { get; }
+            public Lifetime LifetimeMode { get; }
 
-            protected DelegateContainer(Create createMode)
+            protected DelegateContainer(Lifetime lifetimeMode)
             {
-                CreateMode = createMode;
+                LifetimeMode = lifetimeMode;
             }
 
             public static explicit operator Delegate(DelegateContainer container)
@@ -106,7 +106,7 @@ namespace AutoDI.Container
         {
             private readonly Func<T> _func;
 
-            public DelegateContainer(Func<T> func, Create createMode) : base(createMode)
+            public DelegateContainer(Func<T> func, Lifetime lifetimeMode) : base(lifetimeMode)
             {
                 _func = func;
             }
@@ -118,18 +118,18 @@ namespace AutoDI.Container
         {
             public Type SourceType { get; }
             public Type TargetType { get; }
-            public Create CreateMode { get; }
+            public Lifetime LifetimeMode { get; }
 
-            internal Map(Type sourceType, Type targetType, Create createMode)
+            internal Map(Type sourceType, Type targetType, Lifetime lifetimeMode)
             {
                 SourceType = sourceType;
                 TargetType = targetType;
-                CreateMode = createMode;
+                LifetimeMode = lifetimeMode;
             }
 
             public override string ToString()
             {
-                return $"{SourceType.FullName} -> {TargetType.FullName} ({CreateMode})";
+                return $"{SourceType.FullName} -> {TargetType.FullName} ({LifetimeMode})";
             }
         }
 

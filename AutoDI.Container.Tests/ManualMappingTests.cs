@@ -31,8 +31,8 @@ namespace AutoDI.Container.Tests
         <map from=""IService4"" to=""Service4"" force=""true"" />
         <map from=""Service5"" to=""Service5Extended"" />
 
-        <type name=""Service2"" Create=""{Create.None}"" />
-        <type name=""My.*"" Create=""{Create.Transient}"" />
+        <type name=""Service2"" Lifetime=""{Lifetime.None}"" />
+        <type name=""My.*"" Lifetime=""{Lifetime.Transient}"" />
     </AutoDI.Container>");
                 }
             };

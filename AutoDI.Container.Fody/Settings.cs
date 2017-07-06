@@ -62,14 +62,14 @@ namespace AutoDI.Container.Fody
             {
                 string typePattern = typeNode.GetAttributeValue("Name");
                 if (string.IsNullOrWhiteSpace(typePattern)) continue;
-                string createStr = typeNode.GetAttributeValue("Create");
-                Create create;
-                if (createStr == null || !Enum.TryParse(createStr, out create))
+                string createStr = typeNode.GetAttributeValue(nameof(Lifetime));
+                Lifetime lifetime;
+                if (createStr == null || !Enum.TryParse(createStr, out lifetime))
                 {
-                    create = Create.LazySingleton;
+                    lifetime = Lifetime.LazySingleton;
                 }
 
-                rv.Types.Add(new MatchType(typePattern, create));
+                rv.Types.Add(new MatchType(typePattern, lifetime));
             }
 
             foreach (XElement mapNode in rootElement.DescendantNodes().OfType<XElement>()
@@ -79,7 +79,7 @@ namespace AutoDI.Container.Fody
                 if (string.IsNullOrWhiteSpace(from)) continue;
                 string to = mapNode.GetAttributeValue("To");
                 if (string.IsNullOrWhiteSpace(to)) continue;
-                if (!bool.TryParse(mapNode.GetAttributeValue("force") ?? bool.FalseString, out bool force))
+                if (!bool.TryParse(mapNode.GetAttributeValue("Force") ?? bool.FalseString, out bool force))
                 {
                     force = false;
                 }

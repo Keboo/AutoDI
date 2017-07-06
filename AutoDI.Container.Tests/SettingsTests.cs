@@ -20,7 +20,7 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanLoadIndividualBehavior()
         {
-            var xml = XElement.Parse($@"<AutoDI.Container Behavior=""{Behaviors.SingleInterfaceImplementation}""/>");
+            var xml = XElement.Parse($@"<AutoDI.Container behavior=""{Behaviors.SingleInterfaceImplementation}""/>");
 
             var settings = Settings.Parse(xml);
 
@@ -30,7 +30,7 @@ namespace AutoDI.Container.Tests
         [TestMethod]
         public void CanLoadCompositeBehavior()
         {
-            var xml = XElement.Parse($@"<AutoDI.Container Behavior=""{Behaviors.SingleInterfaceImplementation},{Behaviors.IncludeClasses}""/>");
+            var xml = XElement.Parse($@"<AutoDI.Container behavior=""{Behaviors.SingleInterfaceImplementation},{Behaviors.IncludeClasses}""/>");
 
             var settings = Settings.Parse(xml);
 
@@ -42,14 +42,14 @@ namespace AutoDI.Container.Tests
         {
             var xml = XElement.Parse(@"
                     <AutoDI.Container>
-                        <type name=""MyType.*"" Create=""Transient"" />
+                        <type name=""MyType.*"" lifetime=""Transient"" />
                     </AutoDI.Container>");
 
             var settings = Settings.Parse(xml);
 
             Assert.AreEqual(1, settings.Types.Count);
             Assert.IsTrue(settings.Types[0].Matches("MyType2"));
-            Assert.AreEqual(Create.Transient, settings.Types[0].Create);
+            Assert.AreEqual(Lifetime.Transient, settings.Types[0].Lifetime);
         }
 
         [TestMethod]

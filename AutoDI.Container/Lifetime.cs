@@ -1,6 +1,6 @@
 namespace AutoDI.Container
 {
-    public enum Create
+    public enum Lifetime
     {
         None,
         LazySingleton,
