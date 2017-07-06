@@ -29,11 +29,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AssemblyGenerator", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container.Tests", "AutoDI.Container.Tests\AutoDI.Container.Tests.csproj", "{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container", "AutoDI.Container\AutoDI.Container.csproj", "{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Container", "AutoDI.Container\AutoDI.Container.csproj", "{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI", "AutoDI\AutoDI.csproj", "{13E2FD78-569F-479A-8AF4-39412A3A9578}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI", "AutoDI\AutoDI.csproj", "{13E2FD78-569F-479A-8AF4-39412A3A9578}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Fody", "AutoDI.Fody\AutoDI.Fody.csproj", "{1F9DD248-14DA-41C7-8F5F-71BDB8D60ADB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Fody", "AutoDI.Fody\AutoDI.Fody.csproj", "{1F9DD248-14DA-41C7-8F5F-71BDB8D60ADB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{1A6636EB-C26C-4F4D-9644-EC1BD8A725C0}"
+	ProjectSection(SolutionItems) = preProject
+		Icons\needle.ico = Icons\needle.ico
+		Icons\needle.png = Icons\needle.png
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -76,5 +82,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1A6636EB-C26C-4F4D-9644-EC1BD8A725C0} = {D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}
 	EndGlobalSection
 EndGlobal

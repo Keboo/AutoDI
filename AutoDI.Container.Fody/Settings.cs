@@ -40,7 +40,7 @@ namespace AutoDI.Container.Fody
                 }
             }
 
-            if (!bool.TryParse(rootElement.GetAttributeValue("InjectContainer") ?? bool.TrueString,
+            if (!bool.TryParse(rootElement.GetAttributeValue(nameof(InjectContainer)) ?? bool.TrueString,
                 out bool injectContainer))
             {
                 injectContainer = true;

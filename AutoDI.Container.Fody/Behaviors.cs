@@ -8,8 +8,8 @@ namespace AutoDI.Container.Fody
         None = 0,
         SingleInterfaceImplementation = 1,
         IncludeClasses = 2,
-        IncludeDerivedClasses = 4,
+        IncludeBaseClasses = 4,
         IncludeDependentAutoDIAssemblies = 8,
-        Default = SingleInterfaceImplementation | IncludeClasses | IncludeDerivedClasses | IncludeDependentAutoDIAssemblies
+        Default = SingleInterfaceImplementation | IncludeClasses | IncludeBaseClasses | IncludeDependentAutoDIAssemblies
     }
 }

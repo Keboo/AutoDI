@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
+    <ApplicationIcon>needle.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

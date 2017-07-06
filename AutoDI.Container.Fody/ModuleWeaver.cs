@@ -138,9 +138,9 @@ public class ModuleWeaver
         {
             AddClasses(rv, allTypes);
         }
-        if (settings.Behavior.HasFlag(Behaviors.IncludeDerivedClasses))
+        if (settings.Behavior.HasFlag(Behaviors.IncludeBaseClasses))
         {
-            AddDerivedClasses(rv, allTypes);
+            AddBaseClasses(rv, allTypes);
         }
 
         AddSettingsMap(settings, rv, allTypes);
@@ -212,7 +212,7 @@ public class ModuleWeaver
         }
     }
 
-    private static void AddDerivedClasses(Mapping map, IEnumerable<TypeDefinition> types)
+    private static void AddBaseClasses(Mapping map, IEnumerable<TypeDefinition> types)
     {
         TypeDefinition GetBaseType(TypeDefinition type)
         {

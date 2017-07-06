@@ -8,6 +8,7 @@
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <licenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
+    <iconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</iconUrl>
     <description>A Fody extension build on top of the AutoDI.Fody extension that automatically builds a simple DI container at build time. Simplying the process of adding DI into any project.</description>
     <releaseNotes>Initial release</releaseNotes>
     <copyright>Copyright 2017</copyright>
