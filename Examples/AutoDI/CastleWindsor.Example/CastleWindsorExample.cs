@@ -12,20 +12,20 @@ namespace CastleWindsor.Example
         [TestMethod]
         public void CanUseCastleWindsor()
         {
-            using ( var container = new WindsorContainer() )
+            using (var container = new WindsorContainer())
             {
-                container.Register( Component.For<IService>().ImplementedBy<Service>() );
+                container.Register(Component.For<IService>().ImplementedBy<Service>());
                 try
                 {
-                    DependencyResolver.Set( new CastleWindsorResolver( container ) );
+                    DependencyResolver.Set(new CastleWindsorResolver(container));
 
                     var @class = new Class();
 
-                    Assert.IsTrue( @class.Service is Service );
+                    Assert.IsTrue(@class.Service is Service);
                 }
                 finally
                 {
-                    DependencyResolver.Set( (IDependencyResolver)null );
+                    DependencyResolver.Set((IDependencyResolver)null);
                 }
             }
         }

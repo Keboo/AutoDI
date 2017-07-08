@@ -11,21 +11,21 @@ namespace Unity.Example
         [TestMethod]
         public void CanUseUnity()
         {
-            using ( var container = new UnityContainer() )
+            using (var container = new UnityContainer())
             {
                 container.RegisterType<IService, Service>();
 
                 try
                 {
-                    DependencyResolver.Set( new UnityResolver(container) );
+                    DependencyResolver.Set(new UnityResolver(container));
 
                     var @class = new Class();
 
-                    Assert.IsTrue( @class.Service is Service );
+                    Assert.IsTrue(@class.Service is Service);
                 }
                 finally
                 {
-                    DependencyResolver.Set( (IDependencyResolver)null );
+                    DependencyResolver.Set((IDependencyResolver)null);
                 }
             }
         }
