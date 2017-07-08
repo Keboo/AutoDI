@@ -36,10 +36,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AutoDI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=11e8ae7f3e8c05af, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\AutoDI.2.1.29\lib\net45\AutoDI.dll</HintPath>
+      <HintPath>..\..\packages\AutoDI.2.1.0\lib\net45\AutoDI.dll</HintPath>
     </Reference>
     <Reference Include="AutoDI.Container, Version=1.0.0.0, Culture=neutral, PublicKeyToken=11e8ae7f3e8c05af, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\AutoDI.Container.2.1.29\lib\net45\AutoDI.Container.dll</HintPath>
+      <HintPath>..\..\packages\AutoDI.Container.2.1.0\lib\net45\AutoDI.Container.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>..\..\packages\FodyCecil.2.1.0\lib\net40\Mono.Cecil.dll</HintPath>
@@ -75,17 +75,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="FodyWeavers.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\..\packages\Fody.2.1.0\build\netstandard1.0\Fody.targets" Condition="Exists('..\..\packages\Fody.2.1.0\build\netstandard1.0\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\packages\Fody.2.1.0\build\netstandard1.0\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Fody.2.1.0\build\netstandard1.0\Fody.targets'))" />
   </Target>
-  <Import Project="..\..\packages\Fody.2.1.0\build\netstandard1.0\Fody.targets" Condition="Exists('..\..\packages\Fody.2.1.0\build\netstandard1.0\Fody.targets')" />
 </Project>
