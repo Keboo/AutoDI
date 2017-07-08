@@ -16,7 +16,7 @@
     <tags>AutoDI, Fody</tags>
     <dependencies>
       <dependency id="Fody" version="2.1.0" />
-      <dependency id="AutoDI" version ="2.0"/>
+      <dependency id="AutoDI" version ="[2.1.1,2.2.0)"/>
     </dependencies>
   </metadata>
 </package>

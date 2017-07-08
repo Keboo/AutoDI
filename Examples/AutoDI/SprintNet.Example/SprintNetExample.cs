@@ -12,21 +12,21 @@ namespace SprintNet.Example
         [TestMethod]
         public void CanUseSprintNet()
         {
-            using ( var context = new StaticApplicationContext() )
+            using (var context = new StaticApplicationContext())
             {
-                context.RegisterPrototype( typeof( IService ).FullName, typeof( Service ), new MutablePropertyValues() );
+                context.RegisterPrototype(typeof(IService).FullName, typeof(Service), new MutablePropertyValues());
 
                 try
                 {
-                    DependencyResolver.Set( new SprintNetResolver( context ) );
+                    DependencyResolver.Set(new SprintNetResolver(context));
 
                     var @class = new Class();
 
-                    Assert.IsTrue( @class.Service is Service );
+                    Assert.IsTrue(@class.Service is Service);
                 }
                 finally
                 {
-                    DependencyResolver.Set( (IDependencyResolver)null );
+                    DependencyResolver.Set((IDependencyResolver)null);
                 }
             }
         }
