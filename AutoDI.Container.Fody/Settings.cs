@@ -7,15 +7,11 @@ namespace AutoDI.Container.Fody
 {
     internal class Settings
     {
-        internal Settings(Behaviors behavior, bool injectContainer)
-        {
-            Behavior = behavior;
-            InjectContainer = injectContainer;
-        }
+        public Behaviors Behavior { get; set; } = Behaviors.Default;
 
-        public Behaviors Behavior { get; }
+        public bool InjectContainer { get; set; } = true;
 
-        public bool InjectContainer { get; }
+        public DebugLogLevel DebugLogLevel { get; set; } = DebugLogLevel.Default;
 
         public IList<MatchType> Types { get; } = new List<MatchType>();
 
@@ -25,28 +21,32 @@ namespace AutoDI.Container.Fody
 
         public static Settings Parse(XElement rootElement)
         {
-            Behaviors behavior = Behaviors.Default;
-            if (rootElement == null) return new Settings(behavior, true);
-            
+            var rv = new Settings();
+            if (rootElement == null) return rv;
 
-            string behaviorAttribute = rootElement.GetAttributeValue("Behavior");
+            string behaviorAttribute = rootElement.GetAttributeValue(nameof(Behavior));
             if (behaviorAttribute != null)
             {
-                behavior = Behaviors.None;
+                Behaviors behavior = Behaviors.None;
                 foreach (string value in behaviorAttribute.Split(','))
                 {
                     if (Enum.TryParse(value, out Behaviors @enum))
                         behavior |= @enum;
                 }
+                rv.Behavior = behavior;
             }
 
             if (!bool.TryParse(rootElement.GetAttributeValue(nameof(InjectContainer)) ?? bool.TrueString,
                 out bool injectContainer))
             {
-                injectContainer = true;
+                rv.InjectContainer = injectContainer;
             }
 
-            var rv = new Settings(behavior, injectContainer);
+            if (Enum.TryParse(rootElement.GetAttributeValue(nameof(DebugLogLevel)) ?? nameof(DebugLogLevel.Default),
+                out DebugLogLevel debugLogLevel))
+            {
+                rv.DebugLogLevel = debugLogLevel;
+            }
 
             foreach (XElement assemblyNode in rootElement.DescendantNodes().OfType<XElement>()
                 .Where(x => string.Equals(x.Name.LocalName, "Assembly", StringComparison.OrdinalIgnoreCase)))
