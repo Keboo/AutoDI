@@ -352,8 +352,7 @@ public class ModuleWeaver
             }
             return false;
         }
-
-        //TODO: Make static?
+        
         MethodReference addSingleton =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddSingleton)));
         MethodReference addLazySingleton =
@@ -363,7 +362,20 @@ public class ModuleWeaver
         MethodReference addTransient =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddTransient)));
 
-        //MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<>).GetConstructors().Single());
+        TypeReference funcType = ModuleDefinition.ImportReference(typeof(Func<>));
+        //NB: This null fall back is due to an issue with Mono.Cecil 0.10.0
+        //From GitHub issues it looks like it make be resolved in some of the beta builds, however this would require modifying Fody.
+        //For now we will just manually resolve this way. Since we know Func<>> lives in the core library.
+        TypeDefinition funcDefinition = funcType.Resolve() ?? ModuleDefinition.AssemblyResolver
+                                            .Resolve((AssemblyNameReference) ModuleDefinition.TypeSystem.CoreLibrary)
+                                            .MainModule.GetType(typeof(Func<>).FullName);
+        if (funcDefinition == null)
+        {
+            LogError($"Failed to resolve type '{typeof(Func<>).FullName}'");
+            return;
+        }
+        MethodDefinition funcCtor = funcDefinition.GetConstructors().Single();
+
         TypeReference type = ModuleDefinition.ImportReference(typeof(Type));
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
 
@@ -405,11 +417,7 @@ public class ModuleWeaver
                         staticBody.Emit(OpCodes.Ldnull);
                         staticBody.Emit(OpCodes.Ldftn, delegateMethod);
 
-                        var funcType = ModuleDefinition.ImportReference(typeof(Func<>)).MakeGenericInstanceType(targetType);
-
-                        var funcCtor = GetGenericTypeConstructor(funcType.Resolve().GetConstructors().Single(), targetType);
-
-                        staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor));
+                        staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(GetGenericTypeConstructor(funcCtor, targetType)));
                         break;
                 }
 
@@ -454,7 +462,7 @@ public class ModuleWeaver
             }
             catch (Exception e)
             {
-                InternalLogDebug($"Failed to create map for {map}\r\n{e}", DebugLogLevel.Default);
+                LogWarning($"Failed to create map for {map}\r\n{e}");
             }
         }
     }
