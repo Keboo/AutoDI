@@ -1,6 +1,7 @@
 
 [CmdletBinding()]
-Param([Parameter(Mandatory=$true)][string]$Version)
+Param([Parameter(Mandatory=$true)][string]$Version,
+[Parameter()][System.IO.DirectoryInfo]$TargetDir)
 
 
 if (!(Test-Path "nuget.exe")) {
@@ -11,3 +12,9 @@ if (!(Test-Path "nuget.exe")) {
 .\nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version $Version
 .\nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version $Version
 .\nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version $Version
+
+if ($TargetDir){
+    Move-Item "AutoDI.*.nupkg" $TargetDir -Force
+
+    Write-Verbose "Moved nugets to $TargetDir"
+}
