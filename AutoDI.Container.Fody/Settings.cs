@@ -36,7 +36,7 @@ namespace AutoDI.Container.Fody
                 rv.Behavior = behavior;
             }
 
-            if (!bool.TryParse(rootElement.GetAttributeValue(nameof(InjectContainer)) ?? bool.TrueString,
+            if (bool.TryParse(rootElement.GetAttributeValue(nameof(InjectContainer)) ?? bool.TrueString,
                 out bool injectContainer))
             {
                 rv.InjectContainer = injectContainer;

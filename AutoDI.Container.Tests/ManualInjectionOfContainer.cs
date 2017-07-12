@@ -23,7 +23,7 @@ namespace AutoDI.Container.Tests
                 if (args.Weaver.Name == "AutoDI.Container")
                 {
                     dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse(@"<AutoDI.Container InjectContainer=""false"" />");
+                    weaver.Config = XElement.Parse(@"<AutoDI.Container InjectContainer=""False"" />");
                 }
             };
             
@@ -34,7 +34,7 @@ namespace AutoDI.Container.Tests
         public void CanManuallyInjectTheGeneratedContainer()
         {
             //Invoke the entry point, since this is where the automatic injdection would occur
-            _testAssembly.InvokeStatic<Program>(nameof(Program.Main), (object)new string[0]);
+            _testAssembly.InvokeEntryPoint();
 
             dynamic sut = _testAssembly.CreateInstance<Sut>();
             Assert.IsFalse(((object)sut.Service).Is<Service>());
