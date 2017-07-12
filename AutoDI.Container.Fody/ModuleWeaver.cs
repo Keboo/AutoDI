@@ -280,6 +280,16 @@ public class ModuleWeaver
 
         BuildMap(mapField, staticBody, type, mapping);
 
+        //Pass map to setup method if one exists
+        MethodDefinition setupMethod = FindSetupMethod();
+        if (setupMethod != null)
+        {
+            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Diagnostic);
+            staticBody.Emit(OpCodes.Ldsfld, mapField);
+            staticBody.Emit(OpCodes.Call, setupMethod);
+            staticBody.Emit(OpCodes.Nop);
+        }
+
         staticBody.Emit(OpCodes.Ret);
 
         type.Methods.Add(staticConstructor);
@@ -322,6 +332,18 @@ public class ModuleWeaver
         return type;
     }
 
+    private MethodDefinition FindSetupMethod()
+    {
+        return ModuleDefinition
+            .GetAllTypes()
+            .SelectMany(t => t.GetMethods())
+            .FirstOrDefault(md => md.IsStatic &&
+                                  (md.IsPublic || md.IsFamilyOrAssembly) &&
+                                  md.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>()) &&
+                                  md.Parameters.Count == 1 &&
+                                  md.Parameters[0].ParameterType.IsType<ContainerMap>());
+    }
+
     private MethodDefinition CreateContainerConstructor()
     {
         var ctor = new MethodDefinition(".ctor",
@@ -352,7 +374,7 @@ public class ModuleWeaver
             }
             return false;
         }
-        
+
         MethodReference addSingleton =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddSingleton)));
         MethodReference addLazySingleton =
@@ -367,7 +389,7 @@ public class ModuleWeaver
         //From GitHub issues it looks like it make be resolved in some of the beta builds, however this would require modifying Fody.
         //For now we will just manually resolve this way. Since we know Func<>> lives in the core library.
         TypeDefinition funcDefinition = funcType.Resolve() ?? ModuleDefinition.AssemblyResolver
-                                            .Resolve((AssemblyNameReference) ModuleDefinition.TypeSystem.CoreLibrary)
+                                            .Resolve((AssemblyNameReference)ModuleDefinition.TypeSystem.CoreLibrary)
                                             .MainModule.GetType(typeof(Func<>).FullName);
         if (funcDefinition == null)
         {

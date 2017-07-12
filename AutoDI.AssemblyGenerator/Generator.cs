@@ -26,10 +26,11 @@ namespace AutoDI.AssemblyGenerator
 
             IEnumerable<AssemblyInfo> GetAssemblies()
             {
+
                 var assemblyRegex = new Regex(@"<\s*assembly(:\s*(?<Name>\w+))?\s*/?>");
                 var endAssemblyRegex = new Regex(@"</\s*assembly\s*>");
                 var typeRegex = new Regex(@"<\s*type:\s*(?<Name>\w+)\s*/>");
-                var referenceRegex = new Regex(@"<\s*ref:\s*(?<Name>\w+)\s*/>");
+                var referenceRegex = new Regex(@"<\s*ref:\s*(?<Name>[\w_\.]+)\s*/>");
                 var weaverRegex = new Regex(@"<\s*weaver:\s*(?<Name>[\w_\.]+)\s*/>");
 
                 using (var sr = new StreamReader(sourceFile))

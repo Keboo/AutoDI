@@ -26,6 +26,13 @@ namespace AutoDI.AssemblyGenerator
             return method.Invoke(null, parameters);
         }
 
+        public static void InvokeEntryPoint(this Assembly assembly)
+        {
+            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+            
+            assembly.EntryPoint.Invoke(null, new object[assembly.EntryPoint.GetParameters().Length]);
+        }
+
         public static object InvokeGeneric<TGeneric>(this Assembly assembly, object target, string methodName, params object[] parameters)
         {
             Type genericType = assembly.GetType(typeof(TGeneric).FullName);
