@@ -25,13 +25,13 @@ namespace AutoDI.Container
             Add(Lifetime.Singleton, () => instance, keys);
         }
 
-        public void AddLazySingleton<T>(Func<T> create, Type[] keys)
+        public void AddLazySingleton<T>(Func<T> factory, Type[] keys)
         {
-            var lazy = new Lazy<T>(create);
+            var lazy = new Lazy<T>(factory);
             Add(Lifetime.LazySingleton, () => lazy.Value, keys);
         }
 
-        public void AddWeakTransient<T>(Func<T> create, Type[] keys) where T : class
+        public void AddWeakTransient<T>(Func<T> factory, Type[] keys) where T : class
         {
             var weakRef = new WeakReference<T>(default(T));
             Add(Lifetime.WeakTransient, () =>
@@ -40,7 +40,7 @@ namespace AutoDI.Container
                 {
                     if (!weakRef.TryGetTarget(out T value))
                     {
-                        value = create();
+                        value = factory();
                         weakRef.SetTarget(value);
                     }
                     return value;
@@ -48,10 +48,25 @@ namespace AutoDI.Container
             }, keys);
         }
 
-        public void AddTransient<T>(Func<T> create, Type[] keys)
+        public void AddTransient<T>(Func<T> factory, Type[] keys)
         {
-            Add(Lifetime.Transient, create, keys);
+            Add(Lifetime.Transient, factory, keys);
         }
+
+        public bool Remove<T>()
+        {
+            bool rv = false; 
+            foreach (Type key in _accessors.Keys.ToList())
+            {
+                if (_accessors[key] is DelegateContainer<T>)
+                {
+                    rv |= _accessors.Remove(key);
+                }
+            }
+            return rv;
+        }
+        
+        public bool RemoveKey(Type key) => _accessors.Remove(key);
 
         public T Get<T>()
         {
@@ -110,7 +125,7 @@ namespace AutoDI.Container
             return sb.ToString();
         }
 
-        private Lazy<T> MakeLazy<T>() =>  new Lazy<T>(Get<T>);
+        private Lazy<T> MakeLazy<T>() => new Lazy<T>(Get<T>);
 
         private Func<T> MakeFunc<T>() => () => Get<T>();
 
