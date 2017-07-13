@@ -1,12 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace AutoDI.Container
 {
     public sealed class ContainerMap
     {
+        private static readonly MethodInfo MakeLazyMethod;
+        private static readonly MethodInfo MakeFuncMethod;
+
+        static ContainerMap()
+        {
+            var methods = typeof(ContainerMap).GetRuntimeMethods().ToList();
+            MakeLazyMethod = methods.Single(m => m.Name == nameof(MakeLazy));
+            MakeFuncMethod = methods.Single(m => m.Name == nameof(MakeFunc));
+        }
+
         private readonly Dictionary<Type, DelegateContainer> _accessors = new Dictionary<Type, DelegateContainer>();
 
         public void AddSingleton<T>(T instance, Type[] keys)
@@ -14,13 +25,13 @@ namespace AutoDI.Container
             Add(Lifetime.Singleton, () => instance, keys);
         }
 
-        public void AddLazySingleton<T>(Func<T> create, Type[] keys)
+        public void AddLazySingleton<T>(Func<T> factory, Type[] keys)
         {
-            var lazy = new Lazy<T>(create);
+            var lazy = new Lazy<T>(factory);
             Add(Lifetime.LazySingleton, () => lazy.Value, keys);
         }
 
-        public void AddWeakTransient<T>(Func<T> create, Type[] keys) where T : class
+        public void AddWeakTransient<T>(Func<T> factory, Type[] keys) where T : class
         {
             var weakRef = new WeakReference<T>(default(T));
             Add(Lifetime.WeakTransient, () =>
@@ -29,7 +40,7 @@ namespace AutoDI.Container
                 {
                     if (!weakRef.TryGetTarget(out T value))
                     {
-                        value = create();
+                        value = factory();
                         weakRef.SetTarget(value);
                     }
                     return value;
@@ -37,17 +48,46 @@ namespace AutoDI.Container
             }, keys);
         }
 
-        public void AddTransient<T>(Func<T> create, Type[] keys)
+        public void AddTransient<T>(Func<T> factory, Type[] keys)
         {
-            Add(Lifetime.Transient, create, keys);
+            Add(Lifetime.Transient, factory, keys);
         }
+
+        public bool Remove<T>()
+        {
+            bool rv = false; 
+            foreach (Type key in _accessors.Keys.ToList())
+            {
+                if (_accessors[key] is DelegateContainer<T>)
+                {
+                    rv |= _accessors.Remove(key);
+                }
+            }
+            return rv;
+        }
+        
+        public bool RemoveKey(Type key) => _accessors.Remove(key);
 
         public T Get<T>()
         {
-            if (_accessors.TryGetValue(typeof(T), out DelegateContainer container)
+            Type requestedType = typeof(T);
+            if (_accessors.TryGetValue(requestedType, out DelegateContainer container)
                 && (Delegate)container is Func<T> func)
             {
                 return func();
+            }
+            if (requestedType.IsConstructedGenericType)
+            {
+                if (requestedType.GetGenericTypeDefinition() == typeof(Lazy<>))
+                {
+                    return (T)MakeLazyMethod.MakeGenericMethod(requestedType.GenericTypeArguments[0])
+                        .Invoke(this, new object[0]);
+                }
+                if (requestedType.GetGenericTypeDefinition() == typeof(Func<>))
+                {
+                    return (T)MakeFuncMethod.MakeGenericMethod(requestedType.GenericTypeArguments[0])
+                        .Invoke(this, new object[0]);
+                }
             }
             return default(T);
         }
@@ -84,6 +124,10 @@ namespace AutoDI.Container
             }
             return sb.ToString();
         }
+
+        private Lazy<T> MakeLazy<T>() => new Lazy<T>(Get<T>);
+
+        private Func<T> MakeFunc<T>() => () => Get<T>();
 
         private abstract class DelegateContainer
         {

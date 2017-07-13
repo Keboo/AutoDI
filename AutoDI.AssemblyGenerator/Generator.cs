@@ -1,26 +1,22 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.CSharp;
-using Mono.Cecil;
 
 namespace AutoDI.AssemblyGenerator
 {
     public class Generator
     {
-        public event EventHandler<WeaverAddedEventArgs> WeaverAdded; 
+        public event EventHandler<WeaverAddedEventArgs> WeaverAdded;
 
         private static int _instanceCount = 1;
-        private const string WeaverName = "ModuleWeaver";
 
         public async Task<Dictionary<string, AssemblyInfo>> Execute([CallerFilePath] string sourceFile = null)
         {
@@ -30,10 +26,11 @@ namespace AutoDI.AssemblyGenerator
 
             IEnumerable<AssemblyInfo> GetAssemblies()
             {
+
                 var assemblyRegex = new Regex(@"<\s*assembly(:\s*(?<Name>\w+))?\s*/?>");
                 var endAssemblyRegex = new Regex(@"</\s*assembly\s*>");
                 var typeRegex = new Regex(@"<\s*type:\s*(?<Name>\w+)\s*/>");
-                var referenceRegex = new Regex(@"<\s*ref:\s*(?<Name>\w+)\s*/>");
+                var referenceRegex = new Regex(@"<\s*ref:\s*(?<Name>[\w_\.]+)\s*/>");
                 var weaverRegex = new Regex(@"<\s*weaver:\s*(?<Name>[\w_\.]+)\s*/>");
 
                 using (var sr = new StreamReader(sourceFile))
@@ -99,38 +96,7 @@ namespace AutoDI.AssemblyGenerator
                                 }
                                 else if ((weaverMatch = weaverRegex.Match(trimmed)).Success)
                                 {
-                                    Weaver GetWeaver(string weaverName)
-                                    {
-                                        object ProcessAssembly(Assembly assembly)
-                                        {
-                                            Type weaverType = assembly.GetType(WeaverName);
-                                            if (weaverType == null) return null;
-                                            return Activator.CreateInstance(weaverType);
-                                        }
-
-                                        string assemblyName = $"{weaverName}.Fody";
-
-                                        try
-                                        {
-                                            object weaverInstance = ProcessAssembly(Assembly.Load(assemblyName));
-                                            if (weaverInstance != null)
-                                                return new Weaver(weaverName, weaverInstance);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            // ignored
-                                        }
-                                        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()
-                                            .Where(a => a.FullName == assemblyName))
-                                        {
-                                            object weaverInstance = ProcessAssembly(assembly);
-                                            if (weaverInstance != null)
-                                                return new Weaver(weaverName, weaverInstance);
-                                        }
-                                        throw new Exception($"Failed to add weaver '{weaverName}'. Could not locate {weaverName}.Fody assembly.");
-                                    }
-
-                                    Weaver weaver = GetWeaver(weaverMatch.Groups["Name"].Value);
+                                    Weaver weaver = Weaver.FindWeaver(weaverMatch.Groups["Name"].Value);
                                     if (weaver != null)
                                     {
                                         WeaverAdded?.Invoke(this, new WeaverAddedEventArgs(weaver));
@@ -171,29 +137,10 @@ namespace AutoDI.AssemblyGenerator
                     var emitResult = compile.Emit(file);
                     if (emitResult.Success)
                     {
-                        //ms.Position = 0;
-                        var assemblyResolver = new DefaultAssemblyResolver();
-                        foreach (dynamic weaver in assemblyInfo.Weavers)
+                        foreach (Weaver weaver in assemblyInfo.Weavers)
                         {
                             file.Position = 0;
-                            var module = ModuleDefinition.ReadModule(file);
-                            weaver.ModuleDefinition = module;
-                            var errors = new StringBuilder();
-                            weaver.LogError = new Action<string>(s =>
-                            {
-                                errors.AppendLine(s);
-                            });
-                            weaver.LogWarning = new Action<string>(s => Debug.WriteLine($" Warning: {s}"));
-                            weaver.LogInfo = new Action<string>(s => Debug.WriteLine($" Info: {s}"));
-                            weaver.LogDebug = new Action<string>(s => Debug.WriteLine($" Debug: {s}"));
-                            weaver.AssemblyResolver = assemblyResolver;
-                            weaver.Execute();
-                            file.Position = 0;
-                            module.Write(file);
-                            if (errors.Length > 0)
-                            {
-                                throw new Exception($"Weaver Error {errors}");
-                            }
+                            weaver.ApplyToAssembly(file);
                         }
                     }
                     else

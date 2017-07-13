@@ -1,17 +1,16 @@
-﻿using AutoDI.Container.Fody;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
 namespace AutoDI.Container.Tests
 {
     [TestClass]
-    public class MapTests
+    public class ContainerMapTests
     {
         [TestMethod]
         public void TestGetSingleton()
         {
             var map = new ContainerMap();
-            map.AddSingleton(new Class(), new[] { typeof(IInterface) });
+            map.AddSingleton<IInterface, Class>();
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -21,7 +20,7 @@ namespace AutoDI.Container.Tests
         public void TestGetLazySingleton()
         {
             var map = new ContainerMap();
-            map.AddLazySingleton(() => new Class(), new[]{typeof(IInterface)});
+            map.AddLazySingleton<IInterface, Class>();
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -31,7 +30,7 @@ namespace AutoDI.Container.Tests
         public void TestGetWeakTransient()
         {
             var map = new ContainerMap();
-            map.AddWeakTransient(() => new Class(), new[] { typeof(IInterface) });
+            map.AddWeakTransient<IInterface, Class>();
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -41,7 +40,7 @@ namespace AutoDI.Container.Tests
         public void TestGetTransient()
         {
             var map = new ContainerMap();
-            map.AddTransient(() => new Class(), new[] { typeof(IInterface) });
+            map.AddTransient<IInterface, Class>();
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -52,7 +51,7 @@ namespace AutoDI.Container.Tests
         {
             var map = new ContainerMap();
             var instance = new Class();
-            map.AddSingleton(instance, new[] { typeof(IInterface) });
+            map.AddSingleton<IInterface, Class>(instance);
 
             IInterface c1 = map.Get<IInterface>();
             IInterface c2 = map.Get<IInterface>();
@@ -65,7 +64,7 @@ namespace AutoDI.Container.Tests
         public void GetLazySingletonDoesNotCreateObjectUntilRequested()
         {
             var map = new ContainerMap();
-            map.AddLazySingleton<Class>(() => throw new Exception(), new[] { typeof(IInterface) });
+            map.AddLazySingleton<IInterface, Class>(() => throw new Exception());
 
             try
             {
@@ -96,11 +95,11 @@ namespace AutoDI.Container.Tests
         {
             var map = new ContainerMap();
             int instanceCount = 0;
-            map.AddWeakTransient(() =>
+            map.AddWeakTransient<IInterface, Class>(() =>
             {
                 instanceCount++;
                 return new Class();
-            }, new []{typeof(IInterface)});
+            });
 
             var instance = map.Get<IInterface>();
 
@@ -123,11 +122,11 @@ namespace AutoDI.Container.Tests
         {
             var map = new ContainerMap();
             int instanceCount = 0;
-            map.AddTransient(() =>
+            map.AddTransient<IInterface, Class>(() =>
             {
                 instanceCount++;
                 return new Class();
-            }, new[] {typeof(IInterface)});
+            });
 
             var a = map.Get<IInterface>();
             var b = map.Get<IInterface>();
@@ -138,22 +137,58 @@ namespace AutoDI.Container.Tests
             Assert.AreEqual(3, instanceCount);
         }
 
-        public class AutoDiContainer : IDependencyResolver
+        [TestMethod]
+        [Description("Issue 22")]
+        public void ContainerMapCanGenerateLazyInstances()
         {
-            private static readonly ContainerMap _map = new ContainerMap();
+            var map = new ContainerMap();
+            var @class = new Class();
+            map.AddSingleton<IInterface, Class>(@class);
 
-            static AutoDiContainer()
-            {
-                _map.AddSingleton(new Class(), new[] {typeof(IInterface)});
+            Lazy<IInterface> lazy = map.Get<Lazy<IInterface>>();
+            Assert.IsNotNull(lazy);
+            Assert.IsTrue(ReferenceEquals(@class, lazy.Value));
+        }
 
-                _map.AddLazySingleton(() => new Class(), new[] {typeof(IInterface), typeof(IInterface)});
-            }
+        [TestMethod]
+        [Description("Issue 22")]
+        public void ContainerMapCanGenerateFuncInstances()
+        {
+            var map = new ContainerMap();
+            var @class = new Class();
+            map.AddSingleton<IInterface, Class>(@class);
 
+            Func<IInterface> func = map.Get<Func<IInterface>>();
+            Assert.IsNotNull(func);
+            Assert.IsTrue(ReferenceEquals(@class, func()));
+        }
 
-            T IDependencyResolver.Resolve<T>(params object[] parameters)
-            {
-                return _map.Get<T>();
-            }
+        [TestMethod]
+        [Description("Issue 22")]
+        public void CanRemoveMappedType()
+        {
+            var map = new ContainerMap();
+            map.AddSingleton<IInterface, Class>();
+            map.AddSingleton<IInterface2, Derived>();
+
+            Assert.IsTrue(map.Remove<Class>());
+
+            Assert.IsNull(map.Get<IInterface>());
+            Assert.IsTrue(map.Get<IInterface2>() is Derived);
+        }
+
+        [TestMethod]
+        [Description("Issue 22")]
+        public void CanRemoveMappedTypeKeys()
+        {
+            var map = new ContainerMap();
+
+            map.AddSingleton(new Class(), new[] {typeof(IInterface), typeof(IInterface2)});
+
+            Assert.IsTrue(map.RemoveKey(typeof(IInterface)));
+
+            Assert.IsNull(map.Get<IInterface>());
+            Assert.IsTrue(map.Get<IInterface2>() is Class);
         }
 
         private interface IInterface { }
@@ -161,5 +196,7 @@ namespace AutoDI.Container.Tests
         private interface IInterface2 { }
 
         public class Class : IInterface, IInterface2 { }
+
+        public class Derived : Class { }
     }
 }

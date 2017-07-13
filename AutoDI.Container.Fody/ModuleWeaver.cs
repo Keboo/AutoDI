@@ -21,22 +21,22 @@ public class ModuleWeaver
     public XElement Config { get; set; }
 
     // Will log an MessageImportance.Normal message to MSBuild. OPTIONAL
-    public Action<string> LogDebug { get; set; }
+    public Action<string> LogDebug { get; set; } = s => { };
 
     // Will log an MessageImportance.High message to MSBuild. OPTIONAL
-    public Action<string> LogInfo { get; set; }
+    public Action<string> LogInfo { get; set; } = s => { };
 
     // Will log an warning message to MSBuild. OPTIONAL
-    public Action<string> LogWarning { get; set; }
+    public Action<string> LogWarning { get; set; } = s => { };
 
     // Will log an warning message to MSBuild at a specific point in the code. OPTIONAL
-    public Action<string, SequencePoint> LogWarningPoint { get; set; }
+    public Action<string, SequencePoint> LogWarningPoint { get; set; } = (s, p) => { };
 
     // Will log an error message to MSBuild. OPTIONAL
-    public Action<string> LogError { get; set; }
+    public Action<string> LogError { get; set; } = s => { };
 
     // Will log an error message to MSBuild at a specific point in the code. OPTIONAL
-    public Action<string, SequencePoint> LogErrorPoint { get; set; }
+    public Action<string, SequencePoint> LogErrorPoint { get; set; } = (s, p) => { };
 
     // An instance of Mono.Cecil.IAssemblyResolver for resolving assembly references. OPTIONAL
     public IAssemblyResolver AssemblyResolver { get; set; }
@@ -73,21 +73,22 @@ public class ModuleWeaver
 
     public string AssemblyToProcess { get; set; }
 
-    public ModuleWeaver()
-    {
-        LogWarning = s => { };
-        LogInfo = s => { };
-        LogDebug = s => { };
-        LogError = s => { };
-    }
+    private Action<string, DebugLogLevel> InternalLogDebug { get; set; } = (s, l) => { };
 
     public void Execute()
     {
         try
         {
             Settings settings = Settings.Parse(Config);
+            InternalLogDebug = (s, l) =>
+            {
+                if (l <= settings.DebugLogLevel)
+                {
+                    LogDebug(s);
+                }
+            };
             Mapping mapping = GetMapping(settings);
-
+            InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
             TypeDefinition resolverType = CreateAutoDIContainer(mapping);
             ModuleDefinition.Types.Add(resolverType);
 
@@ -121,7 +122,7 @@ public class ModuleWeaver
         }
         else
         {
-            LogDebug($"No entry point in {ModuleDefinition.FileName}. Skipping container injection.");
+            InternalLogDebug($"No entry point in {ModuleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
         }
     }
 
@@ -279,6 +280,16 @@ public class ModuleWeaver
 
         BuildMap(mapField, staticBody, type, mapping);
 
+        //Pass map to setup method if one exists
+        MethodDefinition setupMethod = FindSetupMethod();
+        if (setupMethod != null)
+        {
+            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Verbose);
+            staticBody.Emit(OpCodes.Ldsfld, mapField);
+            staticBody.Emit(OpCodes.Call, setupMethod);
+            staticBody.Emit(OpCodes.Nop);
+        }
+
         staticBody.Emit(OpCodes.Ret);
 
         type.Methods.Add(staticConstructor);
@@ -321,6 +332,18 @@ public class ModuleWeaver
         return type;
     }
 
+    private MethodDefinition FindSetupMethod()
+    {
+        return ModuleDefinition
+            .GetAllTypes()
+            .SelectMany(t => t.GetMethods())
+            .FirstOrDefault(md => md.IsStatic &&
+                                  (md.IsPublic || md.IsFamilyOrAssembly) &&
+                                  md.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>()) &&
+                                  md.Parameters.Count == 1 &&
+                                  md.Parameters[0].ParameterType.IsType<ContainerMap>());
+    }
+
     private MethodDefinition CreateContainerConstructor()
     {
         var ctor = new MethodDefinition(".ctor",
@@ -352,7 +375,6 @@ public class ModuleWeaver
             return false;
         }
 
-        //TODO: Make static?
         MethodReference addSingleton =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddSingleton)));
         MethodReference addLazySingleton =
@@ -362,92 +384,108 @@ public class ModuleWeaver
         MethodReference addTransient =
             ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddTransient)));
 
-        //MethodReference funcCtor = ModuleDefinition.ImportReference(typeof(Func<>).GetConstructors().Single());
+        TypeReference funcType = ModuleDefinition.ImportReference(typeof(Func<>));
+        //NB: This null fall back is due to an issue with Mono.Cecil 0.10.0
+        //From GitHub issues it looks like it make be resolved in some of the beta builds, however this would require modifying Fody.
+        //For now we will just manually resolve this way. Since we know Func<>> lives in the core library.
+        TypeDefinition funcDefinition = funcType.Resolve() ?? ModuleDefinition.AssemblyResolver
+                                            .Resolve((AssemblyNameReference)ModuleDefinition.TypeSystem.CoreLibrary)
+                                            .MainModule.GetType(typeof(Func<>).FullName);
+        if (funcDefinition == null)
+        {
+            LogError($"Failed to resolve type '{typeof(Func<>).FullName}'");
+            return;
+        }
+        MethodDefinition funcCtor = funcDefinition.GetConstructors().Single();
+
         TypeReference type = ModuleDefinition.ImportReference(typeof(Type));
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
 
         int delegateMethodCount = 0;
-
         foreach (TypeMap map in mapping)
         {
-            TypeDefinition targetType = map.TargetType;
-            staticBody.Emit(OpCodes.Ldsfld, mapField);
-
-            switch (map.LifetimeType)
+            try
             {
-                case Lifetime.Singleton:
-                    if (!InvokeConstructor(targetType, staticBody))
-                    {
-                        staticBody.Remove(staticBody.Body.Instructions.Last());
-                        LogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map");
-                        continue;
-                    }
-                    break;
-                default:
-                    var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
-                        MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
-                        MethodAttributes.Private, ModuleDefinition.ImportReference(targetType));
-                    ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
-                    if (!InvokeConstructor(targetType, delegateProcessor))
-                    {
-                        delegateMethodCount--;
-                        staticBody.Remove(staticBody.Body.Instructions.Last());
-                        LogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map");
-                        continue;
-                    }
-                    delegateProcessor.Emit(OpCodes.Ret);
-                    delegateContainer.Methods.Add(delegateMethod);
+                InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
 
-                    staticBody.Emit(OpCodes.Ldnull);
-                    staticBody.Emit(OpCodes.Ldftn, delegateMethod);
+                TypeDefinition targetType = map.TargetType;
+                staticBody.Emit(OpCodes.Ldsfld, mapField);
 
-                    var funcType = ModuleDefinition.ImportReference(typeof(Func<>)).MakeGenericInstanceType(targetType);
+                switch (map.Lifetime)
+                {
+                    case Lifetime.Singleton:
+                        if (!InvokeConstructor(targetType, staticBody))
+                        {
+                            staticBody.Remove(staticBody.Body.Instructions.Last());
+                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
+                            continue;
+                        }
+                        break;
+                    default:
+                        var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
+                            MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
+                            MethodAttributes.Private, ModuleDefinition.ImportReference(targetType));
+                        ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
+                        if (!InvokeConstructor(targetType, delegateProcessor))
+                        {
+                            delegateMethodCount--;
+                            staticBody.Remove(staticBody.Body.Instructions.Last());
+                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
+                            continue;
+                        }
+                        delegateProcessor.Emit(OpCodes.Ret);
+                        delegateContainer.Methods.Add(delegateMethod);
 
-                    var funcCtor = GetGenericTypeConstructor(funcType.Resolve().GetConstructors().Single(), targetType);
+                        staticBody.Emit(OpCodes.Ldnull);
+                        staticBody.Emit(OpCodes.Ldftn, delegateMethod);
 
-                    staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor));
-                    break;
+                        staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(GetGenericTypeConstructor(funcCtor, targetType)));
+                        break;
+                }
+
+                staticBody.Emit(OpCodes.Ldc_I4, map.Keys.Count);
+                staticBody.Emit(OpCodes.Newarr, type);
+
+                int arrayIndex = 0;
+                foreach (TypeDefinition key in map.Keys)
+                {
+                    TypeReference importedKey = ModuleDefinition.ImportReference(key);
+                    InternalLogDebug($"Mapping {importedKey.FullName} => {targetType.FullName} ({map.Lifetime})", DebugLogLevel.Default);
+                    staticBody.Emit(OpCodes.Dup);
+                    staticBody.Emit(OpCodes.Ldc_I4, arrayIndex++);
+                    staticBody.Emit(OpCodes.Ldtoken, importedKey);
+                    staticBody.Emit(OpCodes.Call, getTypeMethod);
+                    staticBody.Emit(OpCodes.Stelem_Ref);
+                }
+
+                MethodReference addMethod;
+                switch (map.Lifetime)
+                {
+                    case Lifetime.Singleton:
+                        addMethod = addSingleton;
+                        break;
+                    case Lifetime.LazySingleton:
+                        addMethod = addLazySingleton;
+                        break;
+                    case Lifetime.WeakTransient:
+                        addMethod = addWeakTransient;
+                        break;
+                    case Lifetime.Transient:
+                        addMethod = addTransient;
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Invalid Crate value '{map.Lifetime}'");
+                }
+                var addGenericMethod = new GenericInstanceMethod(addMethod);
+                addGenericMethod.GenericArguments.Add(ModuleDefinition.ImportReference(targetType));
+
+                staticBody.Emit(OpCodes.Call, addGenericMethod);
+                staticBody.Emit(OpCodes.Nop);
             }
-
-            staticBody.Emit(OpCodes.Ldc_I4, map.Keys.Count);
-            staticBody.Emit(OpCodes.Newarr, type);
-
-            int arrayIndex = 0;
-            foreach (TypeDefinition key in map.Keys)
+            catch (Exception e)
             {
-                TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                LogDebug($"Mapping {importedKey.FullName} -> {targetType.FullName} ({map.LifetimeType})");
-                staticBody.Emit(OpCodes.Dup);
-                staticBody.Emit(OpCodes.Ldc_I4, arrayIndex++);
-                staticBody.Emit(OpCodes.Ldtoken, importedKey);
-                staticBody.Emit(OpCodes.Call, getTypeMethod);
-                staticBody.Emit(OpCodes.Stelem_Ref);
+                LogWarning($"Failed to create map for {map}\r\n{e}");
             }
-
-            MethodReference addMethod;
-            switch (map.LifetimeType)
-            {
-                case Lifetime.Singleton:
-                    addMethod = addSingleton;
-                    break;
-                case Lifetime.LazySingleton:
-                    addMethod = addLazySingleton;
-                    break;
-                case Lifetime.WeakTransient:
-                    addMethod = addWeakTransient;
-                    break;
-                case Lifetime.Transient:
-                    addMethod = addTransient;
-                    break;
-                default:
-                    throw new InvalidOperationException($"Invalid Crate value '{map.LifetimeType}'");
-            }
-            var addGenericMethod = new GenericInstanceMethod(addMethod);
-            addGenericMethod.GenericArguments.Add(ModuleDefinition.ImportReference(targetType));
-
-            staticBody.Emit(OpCodes.Call, addGenericMethod);
-            staticBody.Emit(OpCodes.Nop);
-
         }
     }
 
@@ -510,7 +548,7 @@ public class ModuleWeaver
                 return true;
             }
         }
-        LogDebug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring");
+        InternalLogDebug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring", DebugLogLevel.Verbose);
         return false;
     }
 
@@ -521,11 +559,21 @@ public class ModuleWeaver
             TargetType = targetType;
         }
 
-        public Lifetime LifetimeType { get; set; } = Lifetime.LazySingleton;
+        public Lifetime Lifetime { get; set; } = Lifetime.LazySingleton;
 
         public TypeDefinition TargetType { get; }
 
         public ICollection<TypeDefinition> Keys { get; } = new HashSet<TypeDefinition>(TypeComparer.FullName);
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            foreach (TypeDefinition key in Keys)
+            {
+                sb.AppendLine($"{key.FullName} => {TargetType.FullName} ({Lifetime})");
+            }
+            return sb.ToString();
+        }
     }
 
     private enum DuplicateKeyBehavior
@@ -581,7 +629,7 @@ public class ModuleWeaver
                                 _maps.Remove(targetType);
                                 break;
                             default:
-                                _maps[targetType].LifetimeType = type.Lifetime;
+                                _maps[targetType].Lifetime = type.Lifetime;
                                 break;
                         }
                     }
@@ -603,6 +651,16 @@ public class ModuleWeaver
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            foreach (TypeMap map in this)
+            {
+                sb.AppendLine(map.ToString());
+            }
+            return sb.ToString();
         }
     }
 
