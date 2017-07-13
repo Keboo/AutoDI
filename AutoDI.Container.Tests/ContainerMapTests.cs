@@ -1,11 +1,10 @@
-﻿using AutoDI.Container.Fody;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
 namespace AutoDI.Container.Tests
 {
     [TestClass]
-    public class MapTests
+    public class ContainerMapTests
     {
         [TestMethod]
         public void TestGetSingleton()
@@ -21,7 +20,7 @@ namespace AutoDI.Container.Tests
         public void TestGetLazySingleton()
         {
             var map = new ContainerMap();
-            map.AddLazySingleton(() => new Class(), new[]{typeof(IInterface)});
+            map.AddLazySingleton(() => new Class(), new[] { typeof(IInterface) });
 
             IInterface c = map.Get<IInterface>();
             Assert.IsTrue(c is Class);
@@ -100,7 +99,7 @@ namespace AutoDI.Container.Tests
             {
                 instanceCount++;
                 return new Class();
-            }, new []{typeof(IInterface)});
+            }, new[] { typeof(IInterface) });
 
             var instance = map.Get<IInterface>();
 
@@ -127,7 +126,7 @@ namespace AutoDI.Container.Tests
             {
                 instanceCount++;
                 return new Class();
-            }, new[] {typeof(IInterface)});
+            }, new[] { typeof(IInterface) });
 
             var a = map.Get<IInterface>();
             var b = map.Get<IInterface>();
@@ -138,22 +137,30 @@ namespace AutoDI.Container.Tests
             Assert.AreEqual(3, instanceCount);
         }
 
-        public class AutoDiContainer : IDependencyResolver
+        [TestMethod]
+        [Description("Issue 22")]
+        public void ContainerMapCanGenerateLazyInstances()
         {
-            private static readonly ContainerMap _map = new ContainerMap();
+            var map = new ContainerMap();
+            var @class = new Class();
+            map.AddSingleton(@class, new[] { typeof(IInterface) });
 
-            static AutoDiContainer()
-            {
-                _map.AddSingleton(new Class(), new[] {typeof(IInterface)});
+            Lazy<IInterface> lazy = map.Get<Lazy<IInterface>>();
+            Assert.IsNotNull(lazy);
+            Assert.IsTrue(ReferenceEquals(@class, lazy.Value));
+        }
 
-                _map.AddLazySingleton(() => new Class(), new[] {typeof(IInterface), typeof(IInterface)});
-            }
+        [TestMethod]
+        [Description("Issue 22")]
+        public void ContainerMapCanGenerateFuncInstances()
+        {
+            var map = new ContainerMap();
+            var @class = new Class();
+            map.AddSingleton(@class, new[] { typeof(IInterface) });
 
-
-            T IDependencyResolver.Resolve<T>(params object[] parameters)
-            {
-                return _map.Get<T>();
-            }
+            Func<IInterface> func = map.Get<Func<IInterface>>();
+            Assert.IsNotNull(func);
+            Assert.IsTrue(ReferenceEquals(@class, func()));
         }
 
         private interface IInterface { }
