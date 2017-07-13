@@ -88,7 +88,7 @@ public class ModuleWeaver
                 }
             };
             Mapping mapping = GetMapping(settings);
-            InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Diagnostic);
+            InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
             TypeDefinition resolverType = CreateAutoDIContainer(mapping);
             ModuleDefinition.Types.Add(resolverType);
 
@@ -284,7 +284,7 @@ public class ModuleWeaver
         MethodDefinition setupMethod = FindSetupMethod();
         if (setupMethod != null)
         {
-            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Diagnostic);
+            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Verbose);
             staticBody.Emit(OpCodes.Ldsfld, mapField);
             staticBody.Emit(OpCodes.Call, setupMethod);
             staticBody.Emit(OpCodes.Nop);
@@ -406,7 +406,7 @@ public class ModuleWeaver
         {
             try
             {
-                InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Diagnostic);
+                InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
 
                 TypeDefinition targetType = map.TargetType;
                 staticBody.Emit(OpCodes.Ldsfld, mapField);
@@ -417,7 +417,7 @@ public class ModuleWeaver
                         if (!InvokeConstructor(targetType, staticBody))
                         {
                             staticBody.Remove(staticBody.Body.Instructions.Last());
-                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Diagnostic);
+                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
                             continue;
                         }
                         break;
@@ -430,7 +430,7 @@ public class ModuleWeaver
                         {
                             delegateMethodCount--;
                             staticBody.Remove(staticBody.Body.Instructions.Last());
-                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Diagnostic);
+                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
                             continue;
                         }
                         delegateProcessor.Emit(OpCodes.Ret);
@@ -548,7 +548,7 @@ public class ModuleWeaver
                 return true;
             }
         }
-        InternalLogDebug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring", DebugLogLevel.Diagnostic);
+        InternalLogDebug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring", DebugLogLevel.Verbose);
         return false;
     }
 

@@ -4,6 +4,6 @@
     {
         None,
         Default,
-        Diagnostic
+        Verbose
     }
 }
