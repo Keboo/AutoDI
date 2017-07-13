@@ -38,7 +38,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AutoDI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=11e8ae7f3e8c05af, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\AutoDI.2.1.0\lib\net45\AutoDI.dll</HintPath>
+      <HintPath>..\..\packages\AutoDI.2.1.1.1\lib\net45\AutoDI.dll</HintPath>
     </Reference>
     <Reference Include="Common.Logging, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Common.Logging.3.3.1\lib\net40\Common.Logging.dll</HintPath>
