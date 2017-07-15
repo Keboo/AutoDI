@@ -3,7 +3,9 @@
   environment:
     autodi_version: 2.1.1
   init:
-    - ps: Update-AppveyorBuild -Version "$env:autodi_version.$env:appveyor_build_number"
+  - ps: >-
+    Update-AppveyorBuild -Version "$env:autodi_version.$env:appveyor_build_number"
+    Write-Host "$env:autodi_version.$env:appveyor_build_number"""
   pull_requests:
     do_not_increment_build_number: true
   branches:
@@ -40,10 +42,13 @@
   artifacts:
   - path: '*.nupkg'
     name: NuGets
+
+#Configuration for releases
 -
-  version: 2.1.2
-  pull_requests:
-    do_not_increment_build_number: true
+  environment:
+    autodi_version: 2.1.2
+  init:
+    - ps: Update-AppveyorBuild -Version "$env:autodi_version"
   branches:
     only:
     - release
@@ -56,6 +61,7 @@
     assembly_version: '{version}'
     assembly_file_version: '{version}'
     assembly_informational_version: '{version}'
+  cache: packages
   nuget:
     account_feed: true
     project_feed: true
@@ -67,13 +73,13 @@
     verbosity: minimal
   after_build:
   - ps: >-
-      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version $env:appveyor_build_version -Symbols
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
     
-      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version $env:appveyor_build_version  -Symbols
+      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
     
-      nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version  $env:appveyor_build_version -Symbols
+      nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version  "$env:autodi_version" -Symbols
     
-      nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version  $env:appveyor_build_version -Symbols
+      nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version  "$env:autodi_version" -Symbols
   artifacts:
   - path: '*.nupkg'
     name: NuGets
