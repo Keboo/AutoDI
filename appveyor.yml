@@ -3,7 +3,9 @@
   environment:
     autodi_version: 2.1.1
   init:
-  - ps: Update-AppveyorBuild -Version "$env:autodi_version.$env:appveyor_build_number"
+  - ps: >- 
+    Update-AppveyorBuild -Version "$env:autodi_version-ci$env:appveyor_build_number"
+    $env:autodi_version_full = ""$env:autodi_version.$env:appveyor_build_number""
   pull_requests:
     do_not_increment_build_number: true
   branches:
@@ -15,9 +17,9 @@
   assembly_info:
     patch: true
     file: '**\AssemblyInfo.*'
-    assembly_version: '{version}'
-    assembly_file_version: '{version}'
-    assembly_informational_version: '{version}'
+    assembly_version: '$env:autodi_version_full'
+    assembly_file_version: '$env:autodi_version_full'
+    assembly_informational_version: '$env:autodi_version_full'
   cache: packages
   nuget:
     account_feed: true
@@ -27,7 +29,7 @@
   - ps: nuget restore
   build:
     project: AutoDI.sln
-    verbosity: minimal
+    verbosity: normal
   after_build:
   - ps: >-
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols

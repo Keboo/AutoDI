@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
     <ApplicationIcon>needle.ico</ApplicationIcon>
+    <Version Condition="'$(AUTODI_VERSION_FULL)' != ''">$(AUTODI_VERSION_FULL)</Version>
   </PropertyGroup>
 
   <ItemGroup>

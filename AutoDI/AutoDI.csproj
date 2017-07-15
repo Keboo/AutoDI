@@ -5,6 +5,7 @@
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>AutoDI.snk</AssemblyOriginatorKeyFile>
     <ApplicationIcon>needle.ico</ApplicationIcon>
+    <Version Condition="'$(AUTODI_VERSION_FULL)' != ''">$(AUTODI_VERSION_FULL)</Version>
   </PropertyGroup>
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
