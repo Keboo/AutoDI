@@ -1,0 +1,76 @@
+# configuration for master/CI branch
+-
+  version: 2.1.1.ci{build}
+  pull_requests:
+    do_not_increment_build_number: true
+  branches:
+    only:
+    - master
+  image: Visual Studio 2017
+  configuration: Release
+  platform: Any CPU
+  assembly_info:
+    patch: true
+    file: '**\AssemblyInfo.*'
+    assembly_version: '{version}'
+    assembly_file_version: '{version}'
+    assembly_informational_version: '{version}'
+  cache: packages
+  nuget:
+    account_feed: true
+    project_feed: true
+    disable_publish_on_pr: true
+  before_build:
+  - ps: nuget restore
+  build:
+    project: AutoDI.sln
+    verbosity: minimal
+  after_build:
+  - ps: >-
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version $env:appveyor_build_version -Symbols
+    
+      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version $env:appveyor_build_version  -Symbols
+    
+      nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version  $env:appveyor_build_version -Symbols
+    
+      nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version  $env:appveyor_build_version -Symbols
+  artifacts:
+  - path: '*.nupkg'
+    name: NuGets
+-
+  version: 2.1.2
+  pull_requests:
+    do_not_increment_build_number: true
+  branches:
+    only:
+    - release
+  image: Visual Studio 2017
+  configuration: Release
+  platform: Any CPU
+  assembly_info:
+    patch: true
+    file: '**\AssemblyInfo.*'
+    assembly_version: '{version}'
+    assembly_file_version: '{version}'
+    assembly_informational_version: '{version}'
+  nuget:
+    account_feed: true
+    project_feed: true
+    disable_publish_on_pr: true
+  before_build:
+  - ps: nuget restore
+  build:
+    project: AutoDI.sln
+    verbosity: minimal
+  after_build:
+  - ps: >-
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version $env:appveyor_build_version -Symbols
+    
+      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version $env:appveyor_build_version  -Symbols
+    
+      nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version  $env:appveyor_build_version -Symbols
+    
+      nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version  $env:appveyor_build_version -Symbols
+  artifacts:
+  - path: '*.nupkg'
+    name: NuGets
