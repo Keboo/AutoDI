@@ -16,7 +16,7 @@
     
       Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version.$env:appveyor_build_number"
   assembly_info:
-    patch: true
+    patch: false
     file: '**\AssemblyInfo.*'
     assembly_version: '$env:autodi_version_full'
     assembly_file_version: '$env:autodi_version_full'
