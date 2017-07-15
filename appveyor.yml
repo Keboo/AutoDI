@@ -17,10 +17,6 @@
       Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version.$env:appveyor_build_number"
   assembly_info:
     patch: false
-    file: '**\AssemblyInfo.*'
-    assembly_version: '$env:autodi_version_full'
-    assembly_file_version: '$env:autodi_version_full'
-    assembly_informational_version: '$env:autodi_version_full'
   cache: packages
   nuget:
     account_feed: true
@@ -45,42 +41,43 @@
     name: NuGets
 
 #Configuration for releases
-#-
-#  environment:
-#    autodi_version: 2.1.2
-#  init:
-#    - ps: Update-AppveyorBuild -Version "$env:autodi_version"
-#  branches:
-#    only:
-#    - release
-#  image: Visual Studio 2017
-#  configuration: Release
-#  platform: Any CPU
-#  assembly_info:
-#    patch: true
-#    file: '**\AssemblyInfo.*'
-#    assembly_version: '{version}'
-#    assembly_file_version: '{version}'
-#    assembly_informational_version: '{version}'
-#  cache: packages
-#  nuget:
-#    account_feed: true
-#    project_feed: true
-#    disable_publish_on_pr: true
-#  before_build:
-#  - ps: nuget restore
-#  build:
-#    project: AutoDI.sln
-#    verbosity: minimal
-#  after_build:
-#  - ps: >-
-#      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
-#    
-#      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
-#    
-#      nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version  "$env:autodi_version" -Symbols
-#    
-#      nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version  "$env:autodi_version" -Symbols
-#  artifacts:
-#  - path: '*.nupkg'
-#    name: NuGets
+-
+  environment:
+    autodi_version: 2.1.2
+  pull_requests:
+    do_not_increment_build_number: true
+  branches:
+    only:
+    - release
+  image: Visual Studio 2017
+  configuration: Release
+  platform: Any CPU
+  init:
+  - ps: >-
+      Update-AppveyorBuild -Version "$env:autodi_version"
+    
+      Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version"
+  assembly_info:
+    patch: false
+  cache: packages
+  nuget:
+    account_feed: true
+    project_feed: true
+    disable_publish_on_pr: true
+  before_build:
+  - ps: nuget restore
+  build:
+    project: AutoDI.sln
+    verbosity: normal
+  after_build:
+  - ps: >-
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
+    
+      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
+    
+      nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version  "$env:autodi_version" -Symbols
+    
+      nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version  "$env:autodi_version" -Symbols
+  artifacts:
+  - path: '*.nupkg'
+    name: NuGets
