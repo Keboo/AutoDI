@@ -1,8 +1,8 @@
 # configuration for master/CI branch
 -
-  version: {autodi_version}.{build}
   environment:
     autodi_version: 2.1.1
+  version: $(env:autodi_version).{build}
   pull_requests:
     do_not_increment_build_number: true
   branches:
