@@ -5,7 +5,7 @@
   init:
   - ps: >- 
     Update-AppveyorBuild -Version "$env:autodi_version-ci$env:appveyor_build_number"
-    $env:autodi_version_full = ""$env:autodi_version.$env:appveyor_build_number""
+    $env:autodi_version_full = "$env:autodi_version.$env:appveyor_build_number"
   pull_requests:
     do_not_increment_build_number: true
   branches:
