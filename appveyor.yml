@@ -13,8 +13,7 @@
   init:
   - ps: >-
       Update-AppveyorBuild -Version "$env:autodi_version-ci$env:appveyor_build_number"
-
-      $env:autodi_version_full = "$env:autodi_version.$env:appveyor_build_number"
+      Set-AppveyorBuildVariable -Name autodi_version_full -Value "$env:autodi_version.$env:appveyor_build_number"
   assembly_info:
     patch: true
     file: '**\AssemblyInfo.*'
