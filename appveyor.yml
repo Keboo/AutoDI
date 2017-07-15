@@ -3,9 +3,7 @@
   environment:
     autodi_version: 2.1.1
   init:
-  - ps: >-
-    Update-AppveyorBuild -Version "$env:autodi_version.$env:appveyor_build_number"
-    Write-Host "$env:autodi_version.$env:appveyor_build_number"
+  - ps: Update-AppveyorBuild -Version "$env:autodi_version.$env:appveyor_build_number.foo"
   pull_requests:
     do_not_increment_build_number: true
   branches:
