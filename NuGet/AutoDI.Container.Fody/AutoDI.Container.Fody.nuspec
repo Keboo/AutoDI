@@ -14,9 +14,9 @@
     <copyright>Copyright 2017</copyright>
     <tags>AutoDI, Fody, Container, Dependency Injdection, DI</tags>
     <dependencies>
-        <dependency id="AutoDI" version="[2.1.1,2.2.0)" />
-        <dependency id="AutoDI.Container" version="[2.1.1,2.2.0)" />
-        <dependency id="AutoDI.Fody" version="[2.1.1,2.2.0)" />
+        <dependency id="AutoDI" version="[2.1.2,2.2.0)" />
+        <dependency id="AutoDI.Container" version="[2.1.2,2.2.0)" />
+        <dependency id="AutoDI.Fody" version="[2.1.2,2.2.0)" />
         <dependency id="Fody" version="2.1.0" />
     </dependencies>
   </metadata>
