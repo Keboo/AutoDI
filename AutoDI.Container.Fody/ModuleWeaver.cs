@@ -338,7 +338,7 @@ public class ModuleWeaver
             .GetAllTypes()
             .SelectMany(t => t.GetMethods())
             .FirstOrDefault(md => md.IsStatic &&
-                                  (md.IsPublic || md.IsFamilyOrAssembly) &&
+                                  (md.IsPublic || md.IsAssembly) &&
                                   md.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>()) &&
                                   md.Parameters.Count == 1 &&
                                   md.Parameters[0].ParameterType.IsType<ContainerMap>());
