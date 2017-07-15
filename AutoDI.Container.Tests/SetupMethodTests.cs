@@ -1,44 +1,64 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SetupMethodTests;
 
 namespace AutoDI.Container.Tests
 {
     [TestClass]
     public class SetupMethodTests
     {
-        private static Assembly _assembly;
+        private static Assembly _publicAssembly;
+        private static Assembly _internalAssembly;
 
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
-            _assembly = (await gen.Execute()).SingleAssembly();
+            Dictionary<string, AssemblyInfo> result = await gen.Execute();
+            _publicAssembly = result["public"].Assembly;
+            _internalAssembly = result["internal"].Assembly;
         }
 
         [TestMethod]
         [Description("Issue 23")]
-        public void SetupMethodIsInvoked()
+        public void PublicSetupMethodIsInvoked()
         {
             ContainerMap GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
-                return (ContainerMap) _assembly.GetType(typeof(Program).FullName).GetProperty(nameof(Program.InitMap)).GetValue(null);
+                return (ContainerMap) _publicAssembly.GetType(typeof(SetupMethodPublicTests.Program).FullName)
+                    .GetProperty(nameof(SetupMethodPublicTests.Program.InitMap)).GetValue(null);
             }
             
             Assert.IsNull(GetInitMap());
-            _assembly.InvokeEntryPoint();
+            _publicAssembly.InvokeEntryPoint();
+            Assert.IsNotNull(GetInitMap());
+        }
+
+        [TestMethod]
+        [Description("Issue 38")]
+        public void InternalSetupMethodIsInvoked()
+        {
+            ContainerMap GetInitMap()
+            {
+                // ReSharper disable once PossibleNullReferenceException
+                return (ContainerMap)_internalAssembly.GetType(typeof(SetupMethodInternalTests.Program).FullName)
+                    .GetProperty(nameof(SetupMethodInternalTests.Program.InitMap)).GetValue(null);
+            }
+
+            Assert.IsNull(GetInitMap());
+            _internalAssembly.InvokeEntryPoint();
             Assert.IsNotNull(GetInitMap());
         }
     }
 }
-//<assembly />
+//<assembly:public />
 //<type: ConsoleApplication />
 //<ref: AutoDI.Container />
 //<weaver: AutoDI.Container />
-namespace SetupMethodTests
+namespace SetupMethodPublicTests
 {
     using AutoDI.Container;
 
@@ -53,6 +73,43 @@ namespace SetupMethodTests
 
         [SetupMethod]
         public static void InitializeContainer(ContainerMap map)
+        {
+            InitMap = map;
+        }
+    }
+
+    public class Container
+    {
+        private static readonly ContainerMap _map;
+        static Container()
+        {
+            _map = new ContainerMap();
+
+            Program.InitializeContainer(_map);
+        }
+    }
+}
+//</assembly>
+
+//<assembly:internal />
+//<type: ConsoleApplication />
+//<ref: AutoDI.Container />
+//<weaver: AutoDI.Container />
+namespace SetupMethodInternalTests
+{
+    using AutoDI.Container;
+
+    public class Program
+    {
+        public static ContainerMap InitMap { get; set; }
+
+        public static void Main(string[] args)
+        {
+
+        }
+
+        [SetupMethod]
+        internal static void InitializeContainer(ContainerMap map)
         {
             InitMap = map;
         }
