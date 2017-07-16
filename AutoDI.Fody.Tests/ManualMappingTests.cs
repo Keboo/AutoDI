@@ -1,6 +1,7 @@
 ﻿using AutoDI.AssemblyGenerator;
 using AutoDI.Fody;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -21,11 +22,11 @@ namespace AutoDI.Fody.Tests
             var gen = new Generator();
             gen.WeaverAdded += (sender, args) =>
             {
-                if (args.Weaver.Name == "AutoDI.Container")
+                if (args.Weaver.Name == "AutoDI")
                 {
                     dynamic containerWeaver = args.Weaver;
                     containerWeaver.Config = XElement.Parse($@"
-    <AutoDI.Container Behavior=""{Behaviors.None}"">
+    <AutoDI Behavior=""{Behaviors.None}"">
         <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from="".*"" to=""$0"" />
         <map from=""IService4"" to=""Service4"" force=""true"" />
@@ -33,7 +34,7 @@ namespace AutoDI.Fody.Tests
 
         <type name=""Service2"" Lifetime=""{Lifetime.None}"" />
         <type name=""My.*"" Lifetime=""{Lifetime.Transient}"" />
-    </AutoDI.Container>");
+    </AutoDI>");
                 }
             };
 
@@ -82,7 +83,7 @@ namespace AutoDI.Fody.Tests
         {
             var map = AutoDIContainer.GetMap(_testAssembly);
             var mapings = map.GetMappings().ToArray();
-            
+
             Assert.IsFalse(mapings.Any(m => m.SourceType.Is<IService3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
             Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
         }

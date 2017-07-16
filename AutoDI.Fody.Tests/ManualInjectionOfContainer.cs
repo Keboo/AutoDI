@@ -20,10 +20,10 @@ namespace AutoDI.Fody.Tests
             var gen = new Generator();
             gen.WeaverAdded += (sender, args) =>
             {
-                if (args.Weaver.Name == "AutoDI.Container")
+                if (args.Weaver.Name == "AutoDI")
                 {
                     dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse(@"<AutoDI.Container InjectContainer=""False"" />");
+                    weaver.Config = XElement.Parse(@"<AutoDI InjectContainer=""False"" />");
                 }
             };
             

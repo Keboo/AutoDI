@@ -56,8 +56,8 @@ namespace AutoDI.Fody.Tests
 }
 //<assembly:public />
 //<type: ConsoleApplication />
-//<ref: AutoDI.Container />
-//<weaver: AutoDI.Container />
+//<ref: AutoDI />
+//<weaver: AutoDI />
 namespace SetupMethodPublicTests
 {
     using AutoDI;
