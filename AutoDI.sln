@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "Assemb
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
-		NuGet\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec = NuGet\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec
-		NuGet\AutoDI.Container\AutoDI.Container.nuspec = NuGet\AutoDI.Container\AutoDI.Container.nuspec
 		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
 	EndProjectSection
@@ -18,6 +16,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		appveyor.yml = appveyor.yml
 		Nuget\build\AutoDI.Fody.nuspec = Nuget\build\AutoDI.Fody.nuspec
 		AutoDI.snk = AutoDI.snk
+		BuildLocalNugets.ps1 = BuildLocalNugets.ps1
 		local.testsettings = local.testsettings
 		README.md = README.md
 	EndProjectSection
@@ -38,7 +37,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{1A6636EB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Fody.Tests", "AutoDI.Fody.Tests\AutoDI.Fody.Tests.csproj", "{BE841CC3-5817-4F04-A776-B1A319E216E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Tests", "AutoDI.Tests\AutoDI.Tests.csproj", "{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Tests", "AutoDI.Tests\AutoDI.Tests.csproj", "{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
