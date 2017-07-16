@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="ConstructorInjectionTests.cs" />
     <Compile Include="ConstructorWithDependencyParametersTests.cs" />
+    <Compile Include="ContainerMapTests.cs" />
     <Compile Include="CustomResolverResolutionTests.cs" />
     <Compile Include="ConstructorWithInitDataTests.cs" />
     <Compile Include="InheritanceTests.cs" />

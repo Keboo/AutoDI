@@ -8,5 +8,10 @@ namespace AutoDI.Fody
         {
             return module.ImportReference(typeof(T));
         }
+
+        public static TypeDefinition Resolve<T>(this ModuleDefinition module)
+        {
+            return module.Get<T>().Resolve();
+        }
     }
 }
