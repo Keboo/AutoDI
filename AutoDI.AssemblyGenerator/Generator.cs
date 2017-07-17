@@ -114,56 +114,49 @@ namespace AutoDI.AssemblyGenerator
                 }
             }
 
-            try
+            var workspace = new AdhocWorkspace();
+
+            foreach (AssemblyInfo assemblyInfo in GetAssemblies())
             {
-                var workspace = new AdhocWorkspace();
+                string assemblyName = $"AssemblyToTest{_instanceCount++}";
 
-                foreach (AssemblyInfo assemblyInfo in GetAssemblies())
+                var projectId = ProjectId.CreateNewId();
+
+                var document = DocumentInfo.Create(DocumentId.CreateNewId(projectId), "Generated.cs",
+                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents()),
+                        VersionStamp.Create())));
+
+                var project = workspace.AddProject(ProjectInfo.Create(projectId,
+                    VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
+                    compilationOptions: new CSharpCompilationOptions(assemblyInfo.OutputKind),
+                    documents: new[] { document }, metadataReferences: assemblyInfo.References,
+                    filePath: Path.GetFullPath(
+                        $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
+
+                Compilation compile = await project.GetCompilationAsync();
+                string filePath = Path.GetFullPath($"{assemblyName}.dll");
+                using (var file = File.Create(filePath))
                 {
-                    string assemblyName = $"AssemblyToTest{_instanceCount++}";
-
-                    var projectId = ProjectId.CreateNewId();
-
-                    var document = DocumentInfo.Create(DocumentId.CreateNewId(projectId), "Generated.cs",
-                        loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents()),
-                            VersionStamp.Create())));
-
-                    var project = workspace.AddProject(ProjectInfo.Create(projectId,
-                        VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
-                        compilationOptions: new CSharpCompilationOptions(assemblyInfo.OutputKind),
-                        documents: new[] {document}, metadataReferences: assemblyInfo.References,
-                        filePath: Path.GetFullPath(
-                            $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
-
-                    Compilation compile = await project.GetCompilationAsync();
-                    string filePath = Path.GetFullPath($"{assemblyName}.dll");
-                    using (var file = File.Create(filePath))
+                    var emitResult = compile.Emit(file);
+                    if (emitResult.Success)
                     {
-                        var emitResult = compile.Emit(file);
-                        if (emitResult.Success)
+                        foreach (Weaver weaver in assemblyInfo.Weavers)
                         {
-                            foreach (Weaver weaver in assemblyInfo.Weavers)
-                            {
-                                file.Position = 0;
-                                weaver.ApplyToAssembly(file);
-                            }
-                        }
-                        else
-                        {
-                            throw new Exception(string.Join(Environment.NewLine,
-                                emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)
-                                    .Select(d => d.GetMessage())));
+                            file.Position = 0;
+                            weaver.ApplyToAssembly(file);
                         }
                     }
-                    assemblyInfo.Assembly = Assembly.LoadFile(filePath);
-                    builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
+                    else
+                    {
+                        throw new Exception(string.Join(Environment.NewLine,
+                            emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)
+                                .Select(d => d.GetMessage())));
+                    }
                 }
-                return builtAssemblies;
+                assemblyInfo.Assembly = Assembly.LoadFile(filePath);
+                builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
             }
-            catch (Exception e)
-            {
-                throw;
-            }
+            return builtAssemblies;
         }
     }
 }
