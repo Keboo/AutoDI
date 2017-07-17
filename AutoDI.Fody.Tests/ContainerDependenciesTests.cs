@@ -56,7 +56,7 @@ namespace ContainerDependencyNameSpace
 
         private static void SomeLambda(Action<int> doStuff)
         {
-            
+            if (doStuff == null) throw new ArgumentNullException(nameof(doStuff));
         }
     }
 
