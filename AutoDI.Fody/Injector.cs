@@ -24,6 +24,11 @@ namespace AutoDI.Fody
             Insert(Instruction.Create(code, method));
         }
 
+        public void Insert(OpCode code, FieldReference field)
+        {
+            Insert(Instruction.Create(code, field));
+        }
+
         public void Insert(OpCode code, int value)
         {
             Insert(Instruction.Create(code, value));

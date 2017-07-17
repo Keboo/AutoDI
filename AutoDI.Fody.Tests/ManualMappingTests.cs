@@ -1,7 +1,6 @@
 ﻿using AutoDI.AssemblyGenerator;
 using AutoDI.Fody;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;

@@ -14,21 +14,21 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service1 = mocker.Get<IService>();
             var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup( x => x.Resolve<IService>( It.IsAny<object[]>() ) ).Returns( service1 ).Verifiable();
+            dr.Setup(x => x.Resolve<IService>(It.IsAny<object[]>())).Returns(service1).Verifiable();
             var initData = new InitData();
 
             try
             {
-                DependencyResolver.Set( dr.Object );
+                DependencyResolver.Set(dr.Object);
 
-                var sut = new ClassWithInitData( initData );
-                Assert.AreEqual( service1, sut.Service );
-                Assert.AreEqual( initData, sut.Data );
+                var sut = new ClassWithInitData(initData);
+                Assert.AreEqual(service1, sut.Service);
+                Assert.AreEqual(initData, sut.Data);
                 dr.Verify();
             }
             finally
             {
-                DependencyResolver.Set( (IDependencyResolver)null );
+                DependencyResolver.Set(null);
             }
         }
     }
