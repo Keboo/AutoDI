@@ -24,16 +24,12 @@
   - ps: nuget restore
   build:
     project: AutoDI.sln
-    verbosity: normal
+    verbosity: minimal
   after_build:
   - ps: >-
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
       nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number"  -Symbols
-    
-      nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version  "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
-    
-      nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version  "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
   artifacts:
   - path: '*.nupkg'
     name: NuGets
@@ -64,16 +60,12 @@
   - ps: nuget restore
   build:
     project: AutoDI.sln
-    verbosity: normal
+    verbosity: minimal
   after_build:
   - ps: >-
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
     
       nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
-    
-      nuget pack Nuget\AutoDI.Container\AutoDI.Container.nuspec -Version  "$env:autodi_version" -Symbols
-    
-      nuget pack Nuget\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec -Version  "$env:autodi_version" -Symbols
   artifacts:
   - path: '*.nupkg'
     name: NuGets

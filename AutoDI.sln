@@ -5,12 +5,8 @@ VisualStudioVersion = 15.0.26430.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Tests", "AutoDI.Tests\AutoDI.Tests.csproj", "{47947EDA-C588-4F2A-94DB-0AE713F35AA7}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
-		NuGet\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec = NuGet\AutoDI.Container.Fody\AutoDI.Container.Fody.nuspec
-		NuGet\AutoDI.Container\AutoDI.Container.nuspec = NuGet\AutoDI.Container\AutoDI.Container.nuspec
 		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
 	EndProjectSection
@@ -20,17 +16,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		appveyor.yml = appveyor.yml
 		Nuget\build\AutoDI.Fody.nuspec = Nuget\build\AutoDI.Fody.nuspec
 		AutoDI.snk = AutoDI.snk
+		BuildLocalNugets.ps1 = BuildLocalNugets.ps1
 		local.testsettings = local.testsettings
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Container.Fody", "AutoDI.Container.Fody\AutoDI.Container.Fody.csproj", "{0026AAF0-FBFD-42CB-B1DC-54F8C41CA126}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AssemblyGenerator", "AutoDI.AssemblyGenerator\AutoDI.AssemblyGenerator.csproj", "{8167477F-2716-49C2-AFB5-357E51DF6F9D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container.Tests", "AutoDI.Container.Tests\AutoDI.Container.Tests.csproj", "{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Container", "AutoDI.Container\AutoDI.Container.csproj", "{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI", "AutoDI\AutoDI.csproj", "{13E2FD78-569F-479A-8AF4-39412A3A9578}"
 EndProject
@@ -42,6 +33,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{1A6636EB
 		Icons\needle.png = Icons\needle.png
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Fody.Tests", "AutoDI.Fody.Tests\AutoDI.Fody.Tests.csproj", "{BE841CC3-5817-4F04-A776-B1A319E216E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Tests", "AutoDI.Tests\AutoDI.Tests.csproj", "{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,26 +47,10 @@ Global
 		{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{47947EDA-C588-4F2A-94DB-0AE713F35AA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{47947EDA-C588-4F2A-94DB-0AE713F35AA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{47947EDA-C588-4F2A-94DB-0AE713F35AA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{47947EDA-C588-4F2A-94DB-0AE713F35AA7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0026AAF0-FBFD-42CB-B1DC-54F8C41CA126}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0026AAF0-FBFD-42CB-B1DC-54F8C41CA126}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0026AAF0-FBFD-42CB-B1DC-54F8C41CA126}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0026AAF0-FBFD-42CB-B1DC-54F8C41CA126}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D8D21081-DCEA-4FA6-98B6-8E34400D20BB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -80,6 +59,14 @@ Global
 		{1F9DD248-14DA-41C7-8F5F-71BDB8D60ADB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F9DD248-14DA-41C7-8F5F-71BDB8D60ADB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F9DD248-14DA-41C7-8F5F-71BDB8D60ADB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE841CC3-5817-4F04-A776-B1A319E216E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE841CC3-5817-4F04-A776-B1A319E216E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE841CC3-5817-4F04-A776-B1A319E216E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE841CC3-5817-4F04-A776-B1A319E216E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

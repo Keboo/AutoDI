@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -122,13 +123,15 @@ namespace AutoDI.AssemblyGenerator
                 var projectId = ProjectId.CreateNewId();
 
                 var document = DocumentInfo.Create(DocumentId.CreateNewId(projectId), "Generated.cs",
-                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents()), VersionStamp.Create())));
+                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents()),
+                        VersionStamp.Create())));
 
                 var project = workspace.AddProject(ProjectInfo.Create(projectId,
                     VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
                     compilationOptions: new CSharpCompilationOptions(assemblyInfo.OutputKind),
                     documents: new[] { document }, metadataReferences: assemblyInfo.References,
-                    filePath: Path.GetFullPath($"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
+                    filePath: Path.GetFullPath(
+                        $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
 
                 Compilation compile = await project.GetCompilationAsync();
                 string filePath = Path.GetFullPath($"{assemblyName}.dll");
@@ -145,7 +148,9 @@ namespace AutoDI.AssemblyGenerator
                     }
                     else
                     {
-                        throw new Exception(string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => d.GetMessage())));
+                        throw new Exception(string.Join(Environment.NewLine,
+                            emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)
+                                .Select(d => d.GetMessage())));
                     }
                 }
                 assemblyInfo.Assembly = Assembly.LoadFile(filePath);
