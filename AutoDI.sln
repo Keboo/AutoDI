@@ -23,8 +23,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AssemblyGenerator", "AutoDI.AssemblyGenerator\AutoDI.AssemblyGenerator.csproj", "{8167477F-2716-49C2-AFB5-357E51DF6F9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Container.Tests", "AutoDI.Container.Tests\AutoDI.Container.Tests.csproj", "{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI", "AutoDI\AutoDI.csproj", "{13E2FD78-569F-479A-8AF4-39412A3A9578}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Fody", "AutoDI.Fody\AutoDI.Fody.csproj", "{1F9DD248-14DA-41C7-8F5F-71BDB8D60ADB}"
@@ -53,10 +51,6 @@ Global
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A0725D73-13A0-4E8B-A6AE-CF79F4E6BDC3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13E2FD78-569F-479A-8AF4-39412A3A9578}.Release|Any CPU.ActiveCfg = Release|Any CPU
