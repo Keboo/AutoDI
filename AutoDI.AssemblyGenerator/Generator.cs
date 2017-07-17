@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -113,45 +114,56 @@ namespace AutoDI.AssemblyGenerator
                 }
             }
 
-            var workspace = new AdhocWorkspace();
-
-            foreach (AssemblyInfo assemblyInfo in GetAssemblies())
+            try
             {
-                string assemblyName = $"AssemblyToTest{_instanceCount++}";
+                var workspace = new AdhocWorkspace();
 
-                var projectId = ProjectId.CreateNewId();
-
-                var document = DocumentInfo.Create(DocumentId.CreateNewId(projectId), "Generated.cs",
-                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents()), VersionStamp.Create())));
-
-                var project = workspace.AddProject(ProjectInfo.Create(projectId,
-                    VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
-                    compilationOptions: new CSharpCompilationOptions(assemblyInfo.OutputKind),
-                    documents: new[] { document }, metadataReferences: assemblyInfo.References,
-                    filePath: Path.GetFullPath($"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
-
-                Compilation compile = await project.GetCompilationAsync();
-                string filePath = Path.GetFullPath($"{assemblyName}.dll");
-                using (var file = File.Create(filePath))
+                foreach (AssemblyInfo assemblyInfo in GetAssemblies())
                 {
-                    var emitResult = compile.Emit(file);
-                    if (emitResult.Success)
+                    string assemblyName = $"AssemblyToTest{_instanceCount++}";
+
+                    var projectId = ProjectId.CreateNewId();
+
+                    var document = DocumentInfo.Create(DocumentId.CreateNewId(projectId), "Generated.cs",
+                        loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents()),
+                            VersionStamp.Create())));
+
+                    var project = workspace.AddProject(ProjectInfo.Create(projectId,
+                        VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
+                        compilationOptions: new CSharpCompilationOptions(assemblyInfo.OutputKind),
+                        documents: new[] {document}, metadataReferences: assemblyInfo.References,
+                        filePath: Path.GetFullPath(
+                            $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
+
+                    Compilation compile = await project.GetCompilationAsync();
+                    string filePath = Path.GetFullPath($"{assemblyName}.dll");
+                    using (var file = File.Create(filePath))
                     {
-                        foreach (Weaver weaver in assemblyInfo.Weavers)
+                        var emitResult = compile.Emit(file);
+                        if (emitResult.Success)
                         {
-                            file.Position = 0;
-                            weaver.ApplyToAssembly(file);
+                            foreach (Weaver weaver in assemblyInfo.Weavers)
+                            {
+                                file.Position = 0;
+                                weaver.ApplyToAssembly(file);
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception(string.Join(Environment.NewLine,
+                                emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)
+                                    .Select(d => d.GetMessage())));
                         }
                     }
-                    else
-                    {
-                        throw new Exception(string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => d.GetMessage())));
-                    }
+                    assemblyInfo.Assembly = Assembly.LoadFile(filePath);
+                    builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
                 }
-                assemblyInfo.Assembly = Assembly.LoadFile(filePath);
-                builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
+                return builtAssemblies;
             }
-            return builtAssemblies;
+            catch (Exception e)
+            {
+                throw;
+            }
         }
     }
 }
