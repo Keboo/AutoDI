@@ -21,10 +21,9 @@
     disable_publish_on_pr: true
   before_build:
   - ps: >-
-    Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "nuget.exe"
+      Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "nuget.exe"
     
-    .\nuget.exe restore
-
+      .\nuget.exe restore
   build:
     project: AutoDI.sln
     verbosity: minimal
