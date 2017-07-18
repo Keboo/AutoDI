@@ -19,8 +19,14 @@
     account_feed: false
     project_feed: true
     disable_publish_on_pr: true
-  build_script:
-  - ps: msbuild /t:Restore,Build /p:Configuration=Release
+  before_build:
+  - ps: >-
+    Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "nuget.exe"
+
+    .\nuget.exe restore
+  build:
+    project: AutoDI.sln
+    verbosity: minimal
   after_build:
   - ps: >-
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
