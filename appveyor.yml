@@ -23,7 +23,8 @@
   - ps: >-
     Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "nuget.exe"
     
-    nuget.exe restore
+    .\nuget.exe restore
+
   build:
     project: AutoDI.sln
     verbosity: minimal
@@ -31,7 +32,7 @@
   - ps: >-
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
-      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number"  -Symbols
+      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
   artifacts:
   - path: '*.nupkg'
     name: NuGets
