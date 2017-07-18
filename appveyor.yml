@@ -19,11 +19,11 @@
     account_feed: false
     project_feed: true
     disable_publish_on_pr: true
+  #Temp work around for issues with nuget server.
+  hosts:
+    api.nuget.org: 93.184.221.200
   before_build:
-  - ps: >-
-      Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "nuget.exe"
-    
-      .\nuget.exe restore
+  - ps: nuget restore
   build:
     project: AutoDI.sln
     verbosity: minimal
