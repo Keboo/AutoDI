@@ -21,9 +21,8 @@
     disable_publish_on_pr: true
   before_build:
   - ps: nuget restore
-  build:
-    project: AutoDI.sln
-    verbosity: minimal
+  build_script:
+  - ps: msbuild /t:Restore,Build /p:Configuration=Release
   after_build:
   - ps: >-
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
