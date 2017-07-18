@@ -172,7 +172,7 @@ public partial class ModuleWeaver
         {
             var resolverType = ModuleDefinition.Get<IDependencyResolver>();
             var dependencyResolverType = ModuleDefinition.ImportReference(typeof(DependencyResolver));
-            
+
             var injector = new Injector(constructor);
 
             var end = Instruction.Create(OpCodes.Nop);
@@ -204,57 +204,13 @@ public partial class ModuleWeaver
                         $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
                 }
 
-                TypeReference parameterType = ModuleDefinition.ImportReference(parameter.ParameterType);
-                var afterParam = Instruction.Create(OpCodes.Nop);
-                //Push dependency parameter onto the stack
-                injector.Insert(OpCodes.Ldarg, parameter);
-                //Push null onto the stack
-                injector.Insert(OpCodes.Ldnull);
-                //Push 1 if the values are equal, 0 if they are not equal
-                injector.Insert(OpCodes.Ceq);
-                //Branch if the value is false (0), the dependency was set by the caller we wont replace it
-                injector.Insert(OpCodes.Brfalse_S, afterParam);
-                //Push the dependency resolver onto the stack
-                injector.Insert(OpCodes.Ldloc, resolverVariable);
-
-                //Create parameters array
-                var dependencyAttribute = parameter.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
-                var values =
-                    (dependencyAttribute.ConstructorArguments?.FirstOrDefault().Value as CustomAttributeArgument[])
-                        ?.Select(x => x.Value)
-                        .OfType<CustomAttributeArgument>()
-                        .ToArray();
-                //Create array of appropriate length
-                injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
-                injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
-                if (values?.Length > 0)
-                {
-                    for (int i = 0; i < values.Length; ++i)
-                    {
-                        injector.Insert(OpCodes.Dup);
-                        //Push the array index to insert
-                        injector.Insert(OpCodes.Ldc_I4, i);
-                        //Insert constant value with any boxing/conversion needed
-                        InsertObjectConstant(injector, values[i].Value, values[i].Type.Resolve());
-                        //Push the object into the array at index
-                        injector.Insert(OpCodes.Stelem_Ref);
-                    }
-                }
-
-                //Call the resolve method
-                var resolveMethod = ModuleDefinition.ImportReference(
-                        typeof(IDependencyResolver).GetMethod(nameof(IDependencyResolver.Resolve)));
-                resolveMethod = new GenericInstanceMethod(resolveMethod)
-                {
-                    GenericArguments = { parameterType }
-                };
-                injector.Insert(OpCodes.Callvirt, resolveMethod);
-                //Set the return from the resolve method into the parameter
-                injector.Insert(OpCodes.Starg, parameter);
-                injector.Insert(afterParam);
+                ResolveDependency(parameter.ParameterType, parameter,
+                    new[] { Instruction.Create(OpCodes.Ldarg, parameter) },
+                    null,
+                    Instruction.Create(OpCodes.Starg, parameter));
             }
 
-            
+
             foreach (PropertyDefinition property in dependencyProperties)
             {
                 FieldDefinition backingField = null;
@@ -271,23 +227,46 @@ public partial class ModuleWeaver
                     }
                 }
 
-                TypeReference parameterType = ModuleDefinition.ImportReference(property.PropertyType);
+                //injector.Insert(OpCodes.Call, property.GetMethod);
+                ResolveDependency(property.PropertyType, property,
+                    new[]
+                    {
+                        Instruction.Create(OpCodes.Ldarg_0),
+                        Instruction.Create(OpCodes.Call, property.GetMethod),
+                    },
+                    Instruction.Create(OpCodes.Ldarg_0),
+                    property.SetMethod != null
+                        ? Instruction.Create(OpCodes.Call, property.SetMethod)
+                        : Instruction.Create(OpCodes.Stfld, backingField));
+            }
+
+
+            injector.Insert(end);
+
+
+            void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source, 
+                IEnumerable<Instruction> loadSource, 
+                Instruction resolveAssignmentTarget,
+                Instruction setResult)
+            {
+                //Push dependency parameter onto the stack
+                injector.Insert(loadSource);
                 var afterParam = Instruction.Create(OpCodes.Nop);
-                //if (Property != null)
-                injector.Insert(OpCodes.Ldarg_0);
-                injector.Insert(OpCodes.Call, property.GetMethod);
+                //Push null onto the stack
                 injector.Insert(OpCodes.Ldnull);
                 //Push 1 if the values are equal, 0 if they are not equal
                 injector.Insert(OpCodes.Ceq);
-                //Branch if the value is false (0), the dependency was set elsewhere (prior ctor or static ctor?)
+                //Branch if the value is false (0), the dependency was set by the caller we wont replace it
                 injector.Insert(OpCodes.Brfalse_S, afterParam);
-
                 //Push the dependency resolver onto the stack
-                injector.Insert(OpCodes.Ldarg_0);
+                if (resolveAssignmentTarget != null)
+                {
+                    injector.Insert(resolveAssignmentTarget);
+                }
                 injector.Insert(OpCodes.Ldloc, resolverVariable);
 
                 //Create parameters array
-                var dependencyAttribute = property.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
+                var dependencyAttribute = source.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
                 var values =
                     (dependencyAttribute.ConstructorArguments?.FirstOrDefault().Value as CustomAttributeArgument[])
                     ?.Select(x => x.Value)
@@ -295,7 +274,6 @@ public partial class ModuleWeaver
                     .ToArray();
                 //Create array of appropriate length
                 injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
-                //TODO: This would be more efficient to use Array.Empty for that case
                 injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
                 if (values?.Length > 0)
                 {
@@ -316,23 +294,13 @@ public partial class ModuleWeaver
                     typeof(IDependencyResolver).GetMethod(nameof(IDependencyResolver.Resolve)));
                 resolveMethod = new GenericInstanceMethod(resolveMethod)
                 {
-                    GenericArguments = { parameterType }
+                    GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
                 };
                 injector.Insert(OpCodes.Callvirt, resolveMethod);
-                //Store the return from the resolve method in the method parameter
-                if (property.SetMethod != null)
-                {
-                    injector.Insert(OpCodes.Call, property.SetMethod);
-                }
-                else
-                {
-                    injector.Insert(OpCodes.Stfld, backingField);
-                }
+                //Set the return from the resolve method into the parameter
+                injector.Insert(setResult);
                 injector.Insert(afterParam);
             }
-            
-
-            injector.Insert(end);
         }
 
         constructor.Body.OptimizeMacros();

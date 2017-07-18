@@ -113,7 +113,7 @@ namespace AutoDI.Fody.Tests
         public class PropertyWithImplementation
         {
             private IService _service;
-
+        
             [Dependency]
             public IService Service
             {
