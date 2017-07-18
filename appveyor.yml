@@ -16,7 +16,7 @@
   assembly_info:
     patch: false
   nuget:
-    account_feed: true
+    account_feed: false
     project_feed: true
     disable_publish_on_pr: true
   before_build:
@@ -51,7 +51,7 @@
   assembly_info:
     patch: false
   nuget:
-    account_feed: true
+    account_feed: false
     project_feed: true
     disable_publish_on_pr: true
   before_build:
