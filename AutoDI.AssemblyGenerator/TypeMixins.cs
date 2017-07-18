@@ -20,7 +20,7 @@ namespace AutoDI.AssemblyGenerator
                 StringComparison.Ordinal);
         }
 
-        internal static string GetTypeName(Type type, Type containerType)
+        public static string GetTypeName(Type type, Type containerType)
         {
             if (type == null) return null;
             string rv = type.FullName;

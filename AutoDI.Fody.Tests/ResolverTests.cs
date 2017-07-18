@@ -1,6 +1,6 @@
 ﻿using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ResolveTestsNamespace;
+using AutoDI.Fody.Tests.ResolveTestsNamespace;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -29,13 +29,15 @@ namespace AutoDI.Fody.Tests
 
         private object Resolve<T>()
         {
-            return _testAssembly.InvokeGeneric<T>(_resolver, nameof(_resolver.Resolve), (object)new object[0]);
+            string genericTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
+            Type resolveType = _testAssembly.GetType(genericTypeName);
+            return _testAssembly.InvokeGeneric(resolveType, _resolver, nameof(_resolver.Resolve), (object) new object[0]);
         }
 
         [TestMethod]
         public void CanResolveSingleInterfaceImplementationsByInterface()
         {
-            Assert.IsTrue(Resolve<IService>().Is<Service>());
+            Assert.IsTrue(Resolve<IService>().Is<Service>(GetType()));
         }
 
         [TestMethod]
@@ -75,8 +77,7 @@ namespace AutoDI.Fody.Tests
         public void CanResolveClassByBaseType()
         {
             //This works because it is the only derived class from Base2
-            Assert.IsTrue(Resolve<Base2>().Is<Derived2>());
-            string foo = AutoDIContainer.GetMap(_testAssembly).ToString();
+            Assert.IsTrue(Resolve<Base2>().Is<Derived2>(GetType()));
         }
 
         [TestMethod]
@@ -85,32 +86,32 @@ namespace AutoDI.Fody.Tests
             Assert.IsNull(Resolve<Base>());
         }
     }
+
+    //<assembly>
+    //<ref: AutoDI />
+    //<weaver: AutoDI />
+    namespace ResolveTestsNamespace
+    {
+        public interface IService
+        { }
+
+        public interface IService2
+        { }
+
+        public class Service : IService, IService2
+        { }
+
+        public abstract class Base
+        { }
+
+        public abstract class Base2 : Base
+        { }
+
+        public class Derived1 : Base
+        { }
+
+        public class Derived2 : Base2
+        { }
+    }
+    //</assembly>
 }
-
-//<assembly>
-//<ref: AutoDI />
-//<weaver: AutoDI />
-namespace ResolveTestsNamespace
-{
-    public interface IService
-    { }
-
-    public interface IService2
-    { }
-
-    public class Service : IService, IService2
-    { }
-
-    public abstract class Base
-    { }
-
-    public abstract class Base2 : Base
-    { }
-
-    public class Derived1 : Base
-    { }
-
-    public class Derived2 : Base2
-    { }
-}
-//</assembly>

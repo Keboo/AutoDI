@@ -15,7 +15,6 @@
       Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version.$env:appveyor_build_number"
   assembly_info:
     patch: false
-  cache: packages
   nuget:
     account_feed: true
     project_feed: true
@@ -51,7 +50,6 @@
       Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version"
   assembly_info:
     patch: false
-  cache: packages
   nuget:
     account_feed: true
     project_feed: true

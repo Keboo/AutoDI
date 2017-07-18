@@ -20,24 +20,17 @@ namespace AssemblyToProcess
     public interface IManager { }
 }
 
-public class AutoDIContainer : IDependencyResolver
+public class AutoDIContainer
 {
-    private static readonly Dictionary<Type, Lazy<object>> _objects = new Dictionary<Type, Lazy<object>>();
+    public IService Service { get; }
+    public IService2 Service2 { get; }
 
-    static AutoDIContainer()
+    public AutoDIContainer()
     {
-        _objects[typeof(IManager)] = new Lazy<object>(() => new Manager());
-        //_objects[typeof(object)] = new Lazy<object>(() => Get<object>());
-    }
-
-    T IDependencyResolver.Resolve<T>(params object[] parameters) => Get<T>();
-
-    private static T Get<T>()
-    {
-        if (_objects.TryGetValue(typeof(T), out Lazy<object> lazy))
+        IDependencyResolver resolver = DependencyResolver.Get();
+        if (Service != null)
         {
-            return (T)lazy.Value;
+            Service = resolver.Resolve<IService>();
         }
-        return default(T);
     }
 }

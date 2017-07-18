@@ -106,7 +106,7 @@ namespace AutoDI.AssemblyGenerator
             string genericTypeName = TypeMixins.GetTypeName(typeof(T), containerType);
             Type genericType = assembly.GetType(genericTypeName);
             if (genericType == null)
-                throw new AssemblyInvocationExcetion($"Could not find generic parameter type '{genericTypeName}' in '{assembly.FullName}'");
+                throw new AssemblyInvocationExcetion($"Could not find '{genericTypeName}' in '{assembly.FullName}'");
 
             return assembly.InvokeGeneric(genericType, resolver, nameof(IDependencyResolver.Resolve), (object) new object[0]);
         }

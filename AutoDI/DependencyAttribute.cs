@@ -2,7 +2,7 @@
 
 namespace AutoDI
 {
-    [AttributeUsage( AttributeTargets.Parameter )]
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
     public sealed class DependencyAttribute : Attribute
     {
         public DependencyAttribute(params object[] parameters)
