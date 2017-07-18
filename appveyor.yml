@@ -19,8 +19,6 @@
     account_feed: false
     project_feed: true
     disable_publish_on_pr: true
-  before_build:
-  - ps: nuget restore
   build_script:
   - ps: msbuild /t:Restore,Build /p:Configuration=Release
   after_build:
