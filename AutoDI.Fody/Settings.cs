@@ -11,6 +11,8 @@ namespace AutoDI.Fody
 
         public bool InjectContainer { get; set; } = true;
 
+        public bool GenerateContainer { get; set; } = true;
+
         public DebugLogLevel DebugLogLevel { get; set; } = DebugLogLevel.Default;
 
         public IList<MatchType> Types { get; } = new List<MatchType>();
@@ -40,6 +42,12 @@ namespace AutoDI.Fody
                 out bool injectContainer))
             {
                 rv.InjectContainer = injectContainer;
+            }
+
+            if (bool.TryParse(rootElement.GetAttributeValue(nameof(GenerateContainer)) ?? bool.TrueString,
+                out bool generateContainer))
+            {
+                rv.GenerateContainer = generateContainer;
             }
 
             if (Enum.TryParse(rootElement.GetAttributeValue(nameof(DebugLogLevel)) ?? nameof(DebugLogLevel.Default),
