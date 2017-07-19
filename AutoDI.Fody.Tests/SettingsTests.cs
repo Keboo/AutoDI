@@ -10,7 +10,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanLoadBasicSettings()
         {
-            var xml = XElement.Parse(@"<AutoDI.Container />");
+            var xml = XElement.Parse(@"<AutoDI />");
 
             var settings = Settings.Parse(xml);
 
@@ -96,6 +96,16 @@ namespace AutoDI.Fody.Tests
 
             Assert.AreEqual(1, settings.Assemblies.Count);
             Assert.IsTrue(settings.Assemblies[0].Matches("MyAssembly.Test"));
+        }
+
+        [TestMethod]
+        public void CanSkipContainerGeneration()
+        {
+            var xml = XElement.Parse(@"<AutoDI GenerateContainer=""False"" />");
+
+            var settings = Settings.Parse(xml);
+
+            Assert.IsFalse(settings.GenerateContainer);
         }
     }
 }

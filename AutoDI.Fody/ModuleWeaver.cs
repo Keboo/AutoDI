@@ -89,16 +89,19 @@ public partial class ModuleWeaver
             };
 
             ICollection<TypeDefinition> allTypes = GetAllTypes(settings);
-            Mapping mapping = GetMapping(settings, allTypes);
-
-            InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
-            TypeDefinition resolverType = CreateAutoDIContainer(mapping);
-
-            ModuleDefinition.Types.Add(resolverType);
-
-            if (settings.InjectContainer)
+            if (settings.GenerateContainer)
             {
-                InjectContainer(resolverType);
+                Mapping mapping = GetMapping(settings, allTypes);
+
+                InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
+                TypeDefinition resolverType = CreateAutoDIContainer(mapping);
+
+                ModuleDefinition.Types.Add(resolverType);
+
+                if (settings.InjectContainer)
+                {
+                    InjectContainer(resolverType);
+                }
             }
 
             foreach (TypeDefinition type in allTypes)
