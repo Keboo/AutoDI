@@ -12,13 +12,13 @@ partial class ModuleWeaver
 {
     private TypeDefinition CreateAutoDIContainer(Mapping mapping)
     {
-        var type = new TypeDefinition("AutoDI", "AutoDIContainer",
+        var containerType = new TypeDefinition("AutoDI", "AutoDIContainer",
             TypeAttributes.Class | TypeAttributes.Public)
         {
             BaseType = ModuleDefinition.Get<BaseResolver>()
         };
         MethodDefinition ctor = ModuleDefinition.CreateDefaultConstructor(typeof(BaseResolver));
-        type.Methods.Add(ctor);
+        containerType.Methods.Add(ctor);
 
 
         //Create static constructor
@@ -27,12 +27,12 @@ partial class ModuleWeaver
 
         //Declare and initialize dictionary map
         FieldDefinition mapField = CreateStaticReadonlyField<ContainerMap>("_items", false);
-        type.Fields.Add(mapField);
+        containerType.Fields.Add(mapField);
         MethodReference mapConstructor = ModuleDefinition.ImportReference(typeof(ContainerMap).GetConstructor(new Type[0]));
         staticBody.Emit(OpCodes.Newobj, mapConstructor);
         staticBody.Emit(OpCodes.Stsfld, mapField);
 
-        BuildMap(mapField, staticBody, type, mapping);
+        BuildMap(mapField, staticBody, containerType, mapping);
 
         //Pass map to setup method if one exists
         MethodDefinition setupMethod = FindSetupMethod();
@@ -46,44 +46,36 @@ partial class ModuleWeaver
 
         staticBody.Emit(OpCodes.Ret);
 
-        type.Methods.Add(staticConstructor);
+        containerType.Methods.Add(staticConstructor);
 
-        //Implement IDependencyResolver interface
-        TypeReference dependencyResolver = ModuleDefinition.Get<IDependencyResolver>();
-        type.Interfaces.Add(new InterfaceImplementation(dependencyResolver));
-
+        //Override BaseResolver.Resolve(Type, params object[]) method.
+        
         //Create resolve method
         var resolveMethod = new MethodDefinition("Resolve",
-            MethodAttributes.Private | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual |
-            MethodAttributes.NewSlot
-            , type);
+            MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual 
+            , containerType);
+        resolveMethod.Parameters.Add(new ParameterDefinition("desiredType", ParameterAttributes.None, ModuleDefinition.Get<Type>()));
         resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None, ModuleDefinition.Get<object[]>()));
-
-        resolveMethod.Overrides.Add(ModuleDefinition.ImportReference(dependencyResolver.Resolve().Methods.Single(m => m.HasGenericParameters)));
-
-        var genericParameter = new GenericParameter("T", resolveMethod);
-        resolveMethod.GenericParameters.Add(genericParameter);
-        resolveMethod.ReturnType = genericParameter;
-
-        var lazy = new VariableDefinition(ModuleDefinition.Get<Lazy<object>>());
-        resolveMethod.Body.Variables.Add(lazy);
-        var genericVariable = new VariableDefinition(genericParameter);
-        resolveMethod.Body.Variables.Add(genericVariable);
+        resolveMethod.ReturnType = ModuleDefinition.Get<object>();
+        
+        TypeReference paramsAttribute = ModuleDefinition.Get<ParamArrayAttribute>();
+        MethodReference paramsArrayCtor =
+            ModuleDefinition.ImportReference(paramsAttribute.Resolve().GetConstructors().Single());
+        resolveMethod.CustomAttributes.Add(new CustomAttribute(paramsArrayCtor));
 
         var body = resolveMethod.Body.GetILProcessor();
         body.Emit(OpCodes.Ldsfld, mapField);
 
         MethodReference getMethod =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get)));
-        var genericGetMethod = new GenericInstanceMethod(getMethod);
-        genericGetMethod.GenericArguments.Add(genericParameter);
-
-        body.Emit(OpCodes.Call, genericGetMethod);
+            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] { typeof(Type) }));
+        //TODO: parameters too
+        body.Emit(OpCodes.Ldarg_1);
+        body.Emit(OpCodes.Call, getMethod);
         body.Emit(OpCodes.Ret);
 
-        type.Methods.Add(resolveMethod);
+        containerType.Methods.Add(resolveMethod);
 
-        return type;
+        return containerType;
     }
 
     private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, Mapping mapping)

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using MethodAttributes = Mono.Cecil.MethodAttributes;
 
 namespace AutoDI.Fody
 {
@@ -16,7 +18,6 @@ namespace AutoDI.Fody
             return module.Get<T>().Resolve();
         }
 
-        //NB: Assumes the base class is System.Object
         public static MethodDefinition CreateDefaultConstructor(this ModuleDefinition module, Type baseType = null)
         {
             var ctor = new MethodDefinition(".ctor",
@@ -24,7 +25,13 @@ namespace AutoDI.Fody
                 MethodAttributes.RTSpecialName, module.ImportReference(typeof(void)));
             ILProcessor processor = ctor.Body.GetILProcessor();
             processor.Emit(OpCodes.Ldarg_0); //this
-            processor.Emit(OpCodes.Call, module.ImportReference((baseType ?? typeof(object)).GetConstructor(new Type[0])));
+
+            ConstructorInfo baseCtor = (baseType ?? typeof(object))
+                .GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[0],
+                    null);
+            if (baseCtor == null)
+                throw new Exception($"Could not find constructor for '{(baseType ?? typeof(object)).FullName}'");
+            processor.Emit(OpCodes.Call, module.ImportReference(baseCtor));
             processor.Emit(OpCodes.Ret);
             return ctor;
         }

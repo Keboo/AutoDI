@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using AssemblyToProcess;
-using AutoDI;
+﻿using AutoDI;
+using System;
 
 namespace AssemblyToProcess
 {
@@ -18,19 +16,4 @@ namespace AssemblyToProcess
     }
 
     public interface IManager { }
-}
-
-public class AutoDIContainer
-{
-    public IService Service { get; }
-    public IService2 Service2 { get; }
-
-    public AutoDIContainer()
-    {
-        IDependencyResolver resolver = DependencyResolver.Get();
-        if (Service != null)
-        {
-            Service = resolver.Resolve<IService>();
-        }
-    }
 }
