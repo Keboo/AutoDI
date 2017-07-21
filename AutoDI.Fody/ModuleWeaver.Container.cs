@@ -15,9 +15,9 @@ partial class ModuleWeaver
         var type = new TypeDefinition("AutoDI", "AutoDIContainer",
             TypeAttributes.Class | TypeAttributes.Public)
         {
-            BaseType = ModuleDefinition.Get<object>()
+            BaseType = ModuleDefinition.Get<BaseResolver>()
         };
-        MethodDefinition ctor = ModuleDefinition.CreateDefaultConstructor();
+        MethodDefinition ctor = ModuleDefinition.CreateDefaultConstructor(typeof(BaseResolver));
         type.Methods.Add(ctor);
 
 
@@ -59,7 +59,7 @@ partial class ModuleWeaver
             , type);
         resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None, ModuleDefinition.Get<object[]>()));
 
-        resolveMethod.Overrides.Add(ModuleDefinition.ImportReference(dependencyResolver.Resolve().Methods.Single()));
+        resolveMethod.Overrides.Add(ModuleDefinition.ImportReference(dependencyResolver.Resolve().Methods.Single(m => m.HasGenericParameters)));
 
         var genericParameter = new GenericParameter("T", resolveMethod);
         resolveMethod.GenericParameters.Add(genericParameter);
