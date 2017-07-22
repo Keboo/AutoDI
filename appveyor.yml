@@ -1,8 +1,7 @@
-environment:
-  autodi_version: 2.1.2
-
 # configuration for master/CI branch
 -
+  environment:
+    autodi_version: 2.1.2
   branches:
     only:
     - master
