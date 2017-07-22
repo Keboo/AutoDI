@@ -70,26 +70,35 @@ namespace AutoDI
 
         public T Get<T>()
         {
-            Type requestedType = typeof(T);
-            if (_accessors.TryGetValue(requestedType, out DelegateContainer container)
-                && (Delegate)container is Func<T> func)
+            //https://github.com/Keboo/DoubleDownWat
+            object value = Get(typeof(T));
+            if (value is T result)
             {
-                return func();
-            }
-            if (requestedType.IsConstructedGenericType)
-            {
-                if (requestedType.GetGenericTypeDefinition() == typeof(Lazy<>))
-                {
-                    return (T)MakeLazyMethod.MakeGenericMethod(requestedType.GenericTypeArguments[0])
-                        .Invoke(this, new object[0]);
-                }
-                if (requestedType.GetGenericTypeDefinition() == typeof(Func<>))
-                {
-                    return (T)MakeFuncMethod.MakeGenericMethod(requestedType.GenericTypeArguments[0])
-                        .Invoke(this, new object[0]);
-                }
+                return result;
             }
             return default(T);
+        }
+
+        public object Get(Type key)
+        {
+            if (_accessors.TryGetValue(key, out DelegateContainer container))
+            {
+                return container.Get();
+            }
+            if (key.IsConstructedGenericType)
+            {
+                if (key.GetGenericTypeDefinition() == typeof(Lazy<>))
+                {
+                    return MakeLazyMethod.MakeGenericMethod(key.GenericTypeArguments[0])
+                        .Invoke(this, new object[0]);
+                }
+                if (key.GetGenericTypeDefinition() == typeof(Func<>))
+                {
+                    return MakeFuncMethod.MakeGenericMethod(key.GenericTypeArguments[0])
+                        .Invoke(this, new object[0]);
+                }
+            }
+            return default(object);
         }
 
         private void Add<T>(Lifetime lifetimeMode, Func<T> @delegate, Type[] keys)
@@ -104,9 +113,7 @@ namespace AutoDI
         {
             foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors.OrderBy(kvp => kvp.Key.FullName))
             {
-                var delegateType = ((Delegate)kvp.Value).GetType();
-                var targetType = delegateType.IsConstructedGenericType ? delegateType.GenericTypeArguments.FirstOrDefault() : null;
-                yield return new Map(kvp.Key, targetType, kvp.Value.LifetimeMode);
+                yield return new Map(kvp.Key, kvp.Value.TargetType, kvp.Value.LifetimeMode);
             }
         }
 
@@ -133,17 +140,14 @@ namespace AutoDI
         {
             public Lifetime LifetimeMode { get; }
 
+            public abstract Type TargetType { get; }
+
             protected DelegateContainer(Lifetime lifetimeMode)
             {
                 LifetimeMode = lifetimeMode;
             }
 
-            public static explicit operator Delegate(DelegateContainer container)
-            {
-                return container.GetDelegate();
-            }
-
-            protected abstract Delegate GetDelegate();
+            public abstract object Get();
         }
 
         private class DelegateContainer<T> : DelegateContainer
@@ -155,7 +159,8 @@ namespace AutoDI
                 _func = func;
             }
 
-            protected override Delegate GetDelegate() => _func;
+            public override object Get() => _func();
+            public override Type TargetType => typeof(T);
         }
 
         public class Map
@@ -176,6 +181,5 @@ namespace AutoDI
                 return $"{SourceType.FullName} -> {TargetType.FullName} ({LifetimeMode})";
             }
         }
-
     }
 }

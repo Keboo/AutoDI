@@ -41,27 +41,15 @@ namespace AutoDI.Fody.Tests
     //<weaver: AutoDI />
     namespace DisableContainerGenerationNamespace
     {
-        using AutoDI;
-
-        public class Program
+        public partial class Program
         {
             public static void Main(string[] args)
             { }
         }
-
-        public class Sut
-        {
-            public IService Service { get; }
-
-            public Sut([Dependency] IService service = null)
-            {
-                Service = service;
-            }
-        }
-
-        public interface IService { }
-
-        public class Service : IService { }
+    
+        public partial interface IService { }
+    
+        public partial class Service : IService { }
     }
     //</assembly>
 }

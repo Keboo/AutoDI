@@ -294,7 +294,7 @@ public partial class ModuleWeaver
 
                 //Call the resolve method
                 var resolveMethod = ModuleDefinition.ImportReference(
-                    typeof(IDependencyResolver).GetMethod(nameof(IDependencyResolver.Resolve)));
+                    typeof(IDependencyResolver).GetMethods().Single(m => m.Name == nameof(IDependencyResolver.Resolve) && m.IsGenericMethod));
                 resolveMethod = new GenericInstanceMethod(resolveMethod)
                 {
                     GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
