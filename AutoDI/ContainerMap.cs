@@ -70,7 +70,9 @@ namespace AutoDI
 
         public T Get<T>()
         {
-            if (Get(typeof(T)) is T result)
+            //https://github.com/Keboo/DoubleDownWat
+            object value = Get(typeof(T));
+            if (value is T result)
             {
                 return result;
             }
@@ -81,7 +83,7 @@ namespace AutoDI
         {
             if (_accessors.TryGetValue(key, out DelegateContainer container))
             {
-                return container.Retrieve();
+                return container.Get();
             }
             if (key.IsConstructedGenericType)
             {
@@ -145,7 +147,7 @@ namespace AutoDI
                 LifetimeMode = lifetimeMode;
             }
 
-            public abstract object Retrieve();
+            public abstract object Get();
         }
 
         private class DelegateContainer<T> : DelegateContainer
@@ -157,7 +159,7 @@ namespace AutoDI
                 _func = func;
             }
 
-            public override object Retrieve() => _func();
+            public override object Get() => _func();
             public override Type TargetType => typeof(T);
         }
 
@@ -179,6 +181,5 @@ namespace AutoDI
                 return $"{SourceType.FullName} -> {TargetType.FullName} ({LifetimeMode})";
             }
         }
-
     }
 }
