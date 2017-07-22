@@ -9,6 +9,7 @@
   init:
   - ps: >-
       Set-AppveyorBuildVariable -Name "autodi_version" -Value "2.1.2"
+    
       Update-AppveyorBuild -Version "$env:autodi_version-ci$env:appveyor_build_number"
     
       Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version.$env:appveyor_build_number"
