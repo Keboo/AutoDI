@@ -1,0 +1,72 @@
+# configuration for master/CI branch
+-
+  environment:
+    autodi_version: 2.1.1
+  branches:
+    only:
+    - master
+  image: Visual Studio 2017
+  configuration: Release
+  platform: Any CPU
+  init:
+  - ps: >-
+      Update-AppveyorBuild -Version "$env:autodi_version-ci$env:appveyor_build_number"
+    
+      Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version.$env:appveyor_build_number"
+  assembly_info:
+    patch: false
+  nuget:
+    account_feed: false
+    project_feed: true
+    disable_publish_on_pr: true
+  #Temp work around for issues with nuget server.
+  #hosts:
+  #  api.nuget.org: 93.184.221.200
+  before_build:
+  - ps: nuget restore
+  build:
+    project: AutoDI.sln
+    verbosity: minimal
+  after_build:
+  - ps: >-
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
+    
+      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
+  artifacts:
+  - path: '*.nupkg'
+    name: NuGets
+
+#Configuration for releases
+-
+  environment:
+    autodi_version: 2.1.2
+  branches:
+    only:
+    - release
+  image: Visual Studio 2017
+  configuration: Release
+  platform: Any CPU
+  init:
+  - ps: >-
+      Update-AppveyorBuild -Version "$env:autodi_version"
+    
+      Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version"
+  assembly_info:
+    patch: false
+  nuget:
+    account_feed: false
+    project_feed: true
+    disable_publish_on_pr: true
+  before_build:
+  - ps: nuget restore
+  build:
+    project: AutoDI.sln
+    verbosity: minimal
+  after_build:
+  - ps: >-
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
+    
+      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
+  artifacts:
+  - path: '*.nupkg'
+    name: NuGets

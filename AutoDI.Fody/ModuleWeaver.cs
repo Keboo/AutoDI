@@ -6,33 +6,36 @@ using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
+using DependencyAttribute = AutoDI.DependencyAttribute;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
+[assembly: InternalsVisibleTo("AutoDI.Fody.Tests")]
 // ReSharper disable once CheckNamespace
-public class ModuleWeaver
+public partial class ModuleWeaver
 {
     // Will contain the full element XML from FodyWeavers.xml. OPTIONAL
     public XElement Config { get; set; }
 
     // Will log an MessageImportance.Normal message to MSBuild. OPTIONAL
-    public Action<string> LogDebug { get; set; }
+    public Action<string> LogDebug { get; set; } = s => { };
 
     // Will log an MessageImportance.High message to MSBuild. OPTIONAL
-    public Action<string> LogInfo { get; set; }
+    public Action<string> LogInfo { get; set; } = s => { };
 
     // Will log an warning message to MSBuild. OPTIONAL
-    public Action<string> LogWarning { get; set; }
+    public Action<string> LogWarning { get; set; } = s => { };
 
     // Will log an warning message to MSBuild at a specific point in the code. OPTIONAL
-    public Action<string, SequencePoint> LogWarningPoint { get; set; }
+    public Action<string, SequencePoint> LogWarningPoint { get; set; } = (s, p) => { };
 
     // Will log an error message to MSBuild. OPTIONAL
-    public Action<string> LogError { get; set; }
+    public Action<string> LogError { get; set; } = s => { };
 
     // Will log an error message to MSBuild at a specific point in the code. OPTIONAL
-    public Action<string, SequencePoint> LogErrorPoint { get; set; }
+    public Action<string, SequencePoint> LogErrorPoint { get; set; } = (s, p) => { };
 
     // An instance of Mono.Cecil.IAssemblyResolver for resolving assembly references. OPTIONAL
     public IAssemblyResolver AssemblyResolver { get; set; }
@@ -69,18 +72,39 @@ public class ModuleWeaver
 
     public string AssemblyToProcess { get; set; }
 
-    public ModuleWeaver()
-    {
-        LogWarning = s => { };
-        LogInfo = s => { };
-        LogDebug = s => { };
-    }
+    private Action<string, DebugLogLevel> InternalLogDebug { get; set; } = (s, l) => { };
 
     public void Execute()
     {
         try
         {
-            foreach (TypeDefinition type in ModuleDefinition.Types)
+            Settings settings = Settings.Parse(Config);
+            InternalLogDebug = (s, l) =>
+            {
+                if (l <= settings.DebugLogLevel)
+                {
+                    LogDebug(s);
+                }
+
+            };
+
+            ICollection<TypeDefinition> allTypes = GetAllTypes(settings);
+            if (settings.GenerateContainer)
+            {
+                Mapping mapping = GetMapping(settings, allTypes);
+
+                InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
+                TypeDefinition resolverType = CreateAutoDIContainer(mapping);
+
+                ModuleDefinition.Types.Add(resolverType);
+
+                if (settings.InjectContainer)
+                {
+                    InjectContainer(resolverType);
+                }
+            }
+
+            foreach (TypeDefinition type in allTypes)
             {
                 ProcessType(type);
             }
@@ -94,37 +118,63 @@ public class ModuleWeaver
         }
     }
 
+    private ICollection<TypeDefinition> GetAllTypes(Settings settings)
+    {
+        var allTypes = new HashSet<TypeDefinition>(TypeComparer.FullName);
+        IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) =>
+            types.Where(t => !t.IsCompilerGenerated() && !allTypes.Remove(t));
+
+        foreach (TypeDefinition type in FilterTypes(ModuleDefinition.GetAllTypes()))
+        {
+            allTypes.Add(type);
+        }
+
+        foreach (AssemblyNameReference assemblyReference in ModuleDefinition.AssemblyReferences)
+        {
+            bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
+            bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(assemblyReference.FullName));
+            if (useAutoDiAssebmlies || matchesAssembly)
+            {
+                AssemblyDefinition assembly = AssemblyResolver.Resolve(assemblyReference);
+                if (assembly == null) continue;
+
+                //Check if it references AutoDI. If it doesn't we will skip
+                if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a =>
+                        a.FullName != typeof(DependencyAttribute).Assembly.FullName))
+                {
+                    continue;
+                }
+                //Either references AutoDI, or was a config assembly match, include the types.
+                foreach (TypeDefinition type in FilterTypes(assembly.MainModule.GetAllTypes()))
+                {
+                    allTypes.Add(type);
+                }
+            }
+        }
+        return allTypes;
+    }
+
+
     private void ProcessType(TypeDefinition type)
     {
         foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
         {
             ProcessConstructor(type, ctor);
         }
-        if (type.HasNestedTypes)
-        {
-            foreach (TypeDefinition nestedType in type.NestedTypes)
-            {
-                ProcessType(nestedType);
-            }
-        }
     }
 
     private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor)
     {
-        var dependencyParameters = constructor.Parameters.Where(
+        List<ParameterDefinition> dependencyParameters = constructor.Parameters.Where(
                         p => p.CustomAttributes.Any(a => a.AttributeType.IsType<DependencyAttribute>())).ToList();
 
-        if (dependencyParameters.Any())
+        List<PropertyDefinition> dependencyProperties = type.Properties.Where(
+            p => p.CustomAttributes.Any(a => a.AttributeType.IsType<DependencyAttribute>())).ToList();
+
+        if (dependencyParameters.Any() || dependencyProperties.Any())
         {
             var resolverType = ModuleDefinition.Get<IDependencyResolver>();
             var dependencyResolverType = ModuleDefinition.ImportReference(typeof(DependencyResolver));
-            var typeReference = ModuleDefinition.Get<Type>();
-            var getTypeMethod = ModuleDefinition.ImportReference(new MethodReference(nameof(Type.GetTypeFromHandle), typeReference, typeReference)
-            {
-                Parameters = { new ParameterDefinition(ModuleDefinition.ImportReference(typeof(RuntimeTypeHandle))) }
-            });
-            var resolverRequestType = ModuleDefinition.Get<ResolverRequest>();
-            var resolverRequestCtor = ModuleDefinition.ImportReference(typeof(ResolverRequest).GetConstructor(new[] { typeof(Type), typeof(Type[]) }));
 
             var injector = new Injector(constructor);
 
@@ -132,39 +182,11 @@ public class ModuleWeaver
 
             var resolverVariable = new VariableDefinition(resolverType);
             constructor.Body.Variables.Add(resolverVariable);
-            var resolverRequestVariable = new VariableDefinition(resolverRequestType);
-            constructor.Body.Variables.Add(resolverRequestVariable);
 
-            //Create the ResolverRequest
-            //Get the calling type
-            injector.Insert(OpCodes.Ldtoken, type);
-            injector.Insert(OpCodes.Call, getTypeMethod);
-            //Create a new array to hold the dependency types
-            injector.Insert(OpCodes.Ldc_I4, dependencyParameters.Count);
-            injector.Insert(OpCodes.Newarr, typeReference);
-            for (int i = 0; i < dependencyParameters.Count; ++i)
-            {
-                //Load the dependency type into the array
-                injector.Insert(OpCodes.Dup);
-                injector.Insert(Instruction.Create(OpCodes.Ldc_I4, i));
-                TypeReference parameterType = ModuleDefinition.ImportReference(dependencyParameters[i].ParameterType);
-                injector.Insert(OpCodes.Ldtoken, parameterType);
-                injector.Insert(OpCodes.Call, getTypeMethod);
-                injector.Insert(OpCodes.Stelem_Ref);
-            }
-            //Call the ResolverRequest constructor
-            injector.Insert(OpCodes.Newobj, resolverRequestCtor);
-            //Store the resolver request in the variable
-            injector.Insert(OpCodes.Stloc, resolverRequestVariable);
-            //Load the resolver request from the variable
-            injector.Insert(OpCodes.Ldloc, resolverRequestVariable);
-
-            //Get the IDependencyResolver by calling DependencyResolver.Get(ResolverRequest)
+            //Get the IDependencyResolver by calling DependencyResolver.Get()
             injector.Insert(OpCodes.Call,
-                new MethodReference(nameof(DependencyResolver.Get), resolverType, dependencyResolverType)
-                {
-                    Parameters = { new ParameterDefinition(resolverRequestType) }
-                });
+                new MethodReference(nameof(DependencyResolver.Get), resolverType, dependencyResolverType));
+
             //Store the resolver in our local variable
             injector.Insert(OpCodes.Stloc, resolverVariable);
             //Push the resolver on top of the stack
@@ -185,10 +207,54 @@ public class ModuleWeaver
                         $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
                 }
 
-                TypeReference parameterType = ModuleDefinition.ImportReference(parameter.ParameterType);
-                var afterParam = Instruction.Create(OpCodes.Nop);
+                ResolveDependency(parameter.ParameterType, parameter,
+                    new[] { Instruction.Create(OpCodes.Ldarg, parameter) },
+                    null,
+                    Instruction.Create(OpCodes.Starg, parameter));
+            }
+
+
+            foreach (PropertyDefinition property in dependencyProperties)
+            {
+                FieldDefinition backingField = null;
+                //Store the return from the resolve method in the method parameter
+                if (property.SetMethod == null)
+                {
+                    //TODO: Constant string, compiler detail... yuck yuck and double duck
+                    backingField = property.DeclaringType.Fields.FirstOrDefault(f => f.Name == $"<{property.Name}>k__BackingField");
+                    if (backingField == null)
+                    {
+                        LogWarning(
+                            $"{property.FullName} is marked with {nameof(DependencyAttribute)} but cannot be set. Dependency properties must either be auto properties or have a setter");
+                        continue;
+                    }
+                }
+
+                //injector.Insert(OpCodes.Call, property.GetMethod);
+                ResolveDependency(property.PropertyType, property,
+                    new[]
+                    {
+                        Instruction.Create(OpCodes.Ldarg_0),
+                        Instruction.Create(OpCodes.Call, property.GetMethod),
+                    },
+                    Instruction.Create(OpCodes.Ldarg_0),
+                    property.SetMethod != null
+                        ? Instruction.Create(OpCodes.Call, property.SetMethod)
+                        : Instruction.Create(OpCodes.Stfld, backingField));
+            }
+
+
+            injector.Insert(end);
+
+
+            void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source, 
+                IEnumerable<Instruction> loadSource, 
+                Instruction resolveAssignmentTarget,
+                Instruction setResult)
+            {
                 //Push dependency parameter onto the stack
-                injector.Insert(OpCodes.Ldarg, parameter);
+                injector.Insert(loadSource);
+                var afterParam = Instruction.Create(OpCodes.Nop);
                 //Push null onto the stack
                 injector.Insert(OpCodes.Ldnull);
                 //Push 1 if the values are equal, 0 if they are not equal
@@ -196,15 +262,19 @@ public class ModuleWeaver
                 //Branch if the value is false (0), the dependency was set by the caller we wont replace it
                 injector.Insert(OpCodes.Brfalse_S, afterParam);
                 //Push the dependency resolver onto the stack
+                if (resolveAssignmentTarget != null)
+                {
+                    injector.Insert(resolveAssignmentTarget);
+                }
                 injector.Insert(OpCodes.Ldloc, resolverVariable);
 
                 //Create parameters array
-                var dependencyAttribute = parameter.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
+                var dependencyAttribute = source.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
                 var values =
                     (dependencyAttribute.ConstructorArguments?.FirstOrDefault().Value as CustomAttributeArgument[])
-                        ?.Select(x => x.Value)
-                        .OfType<CustomAttributeArgument>()
-                        .ToArray();
+                    ?.Select(x => x.Value)
+                    .OfType<CustomAttributeArgument>()
+                    .ToArray();
                 //Create array of appropriate length
                 injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
                 injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
@@ -221,23 +291,23 @@ public class ModuleWeaver
                         injector.Insert(OpCodes.Stelem_Ref);
                     }
                 }
-                
+
                 //Call the resolve method
                 var resolveMethod = ModuleDefinition.ImportReference(
-                        typeof(IDependencyResolver).GetMethod(nameof(IDependencyResolver.Resolve)));
+                    typeof(IDependencyResolver).GetMethods().Single(m => m.Name == nameof(IDependencyResolver.Resolve) && m.IsGenericMethod));
                 resolveMethod = new GenericInstanceMethod(resolveMethod)
                 {
-                    GenericArguments = { parameterType }
+                    GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
                 };
                 injector.Insert(OpCodes.Callvirt, resolveMethod);
-                //Store the return from the resolve method in the method parameter
-                injector.Insert(OpCodes.Starg, parameter);
+                //Set the return from the resolve method into the parameter
+                injector.Insert(setResult);
                 injector.Insert(afterParam);
             }
-            injector.Insert(end);
-
-            constructor.Body.OptimizeMacros();
         }
+
+        constructor.Body.OptimizeMacros();
+
     }
 
     private void InsertObjectConstant(Injector injector, object constant, TypeDefinition type)
@@ -310,7 +380,6 @@ public class ModuleWeaver
         }
         LogWarning($"Unknown constant type {constant.GetType().FullName}");
     }
-
 
     // Will be called when a request to cancel the build occurs. OPTIONAL
     public void Cancel()

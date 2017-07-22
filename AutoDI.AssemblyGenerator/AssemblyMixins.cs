@@ -48,25 +48,17 @@ namespace AutoDI.AssemblyGenerator
             if (genericType == null) throw new ArgumentNullException(nameof(genericType));
             if (target == null) throw new ArgumentNullException(nameof(target));
             if (methodName == null) throw new ArgumentNullException(nameof(methodName));
-            
 
             Type targetType = target.GetType();
 
-            MethodInfo method = targetType.GetMethod(methodName);
-            if (method == null)
-            {
-                foreach (var @interface in targetType.GetInterfaces())
-                {
-                    method = @interface.GetMethod(methodName);
-                    if (method != null) break;
-                }
-            }
+            IEnumerable<MethodInfo> methods = targetType.GetRuntimeMethods().Where(x => x.Name == methodName)
+                .Union(targetType.GetInterfaces()
+                    .SelectMany(@interface => @interface.GetRuntimeMethods().Where(x => x.Name == methodName)));
+
+            MethodInfo method = methods.FirstOrDefault(m => !m.IsStatic && m.IsGenericMethodDefinition);
             if (method == null)
                 throw new AssemblyInvocationExcetion($"Could not find method '{methodName}' on type '{targetType.FullName}'");
-
-            if (method.IsStatic)
-                throw new AssemblyInvocationExcetion($"Method '{genericType.FullName}.{methodName}' is static");
-
+            
             MethodInfo genericMethod = method.MakeGenericMethod(genericType);
 
             return genericMethod.Invoke(target, parameters);
@@ -106,7 +98,7 @@ namespace AutoDI.AssemblyGenerator
             string genericTypeName = TypeMixins.GetTypeName(typeof(T), containerType);
             Type genericType = assembly.GetType(genericTypeName);
             if (genericType == null)
-                throw new AssemblyInvocationExcetion($"Could not find generic parameter type '{genericTypeName}' in '{assembly.FullName}'");
+                throw new AssemblyInvocationExcetion($"Could not find '{genericTypeName}' in '{assembly.FullName}'");
 
             return assembly.InvokeGeneric(genericType, resolver, nameof(IDependencyResolver.Resolve), (object) new object[0]);
         }

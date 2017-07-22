@@ -3,10 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
     <ApplicationIcon>needle.ico</ApplicationIcon>
+    <Version Condition="'$(AUTODI_VERSION_FULL)' != ''">$(AUTODI_VERSION_FULL)</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FodyCecil" Version="2.1.0" />
+    <PackageReference Include="FodyCecil" Version="2.1.1" />
+    <PackageReference Include="gitlink" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>
