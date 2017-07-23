@@ -15,8 +15,8 @@
     <copyright>Copyright 2017</copyright>
     <tags>AutoDI, Fody</tags>
     <dependencies>
-      <dependency id="Fody" version="2.1.0" />
-      <dependency id="AutoDI" version ="[2.1.2,2.2.0)"/>
+      <dependency id="Fody" version="2.1.*" />
+      <dependency id="AutoDI" version ="[2.1.3,2.2.0)"/>
     </dependencies>
   </metadata>
 </package>

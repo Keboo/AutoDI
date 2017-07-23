@@ -58,11 +58,6 @@ partial class ModuleWeaver
         resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None, ModuleDefinition.Get<object[]>()));
         resolveMethod.ReturnType = ModuleDefinition.Get<object>();
         
-        TypeReference paramsAttribute = ModuleDefinition.Get<ParamArrayAttribute>();
-        MethodReference paramsArrayCtor =
-            ModuleDefinition.ImportReference(paramsAttribute.Resolve().GetConstructors().Single());
-        resolveMethod.CustomAttributes.Add(new CustomAttribute(paramsArrayCtor));
-
         var body = resolveMethod.Body.GetILProcessor();
         body.Emit(OpCodes.Ldsfld, mapField);
 
