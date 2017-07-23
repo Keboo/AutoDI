@@ -17,5 +17,10 @@ namespace StructureMap.Example
         {
             return _container.GetInstance<T>();
         }
+
+        public object Resolve(Type desiredType, params object[] parameters)
+        {
+            return _container.GetInstance(desiredType);
+        }
     }
 }

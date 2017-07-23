@@ -16,5 +16,10 @@ namespace Autofac.Example
         {
             return _container.Resolve<T>();
         }
+
+        public object Resolve(Type desiredType, params object[] parameters)
+        {
+            return _container.Resolve(desiredType);
+        }
     }
 }
