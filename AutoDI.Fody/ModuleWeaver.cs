@@ -246,6 +246,7 @@ public partial class ModuleWeaver
 
             injector.Insert(end);
 
+            constructor.Body.OptimizeMacros();
 
             void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source, 
                 IEnumerable<Instruction> loadSource, 
@@ -305,9 +306,6 @@ public partial class ModuleWeaver
                 injector.Insert(afterParam);
             }
         }
-
-        constructor.Body.OptimizeMacros();
-
     }
 
     private void InsertObjectConstant(Injector injector, object constant, TypeDefinition type)

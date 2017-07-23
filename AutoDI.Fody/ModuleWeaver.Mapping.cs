@@ -1,11 +1,9 @@
 ﻿// ReSharper disable once CheckNamespace
 
-using System.Collections.Generic;
-using System.Linq;
-using AutoDI;
 using AutoDI.Fody;
 using Mono.Cecil;
-using Mono.Cecil.Rocks;
+using System.Collections.Generic;
+using System.Linq;
 
 partial class ModuleWeaver
 {
