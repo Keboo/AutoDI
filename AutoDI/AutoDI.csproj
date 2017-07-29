@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="gitlink" Version="3.0.0-unstable0099" />
+    <PackageReference Include="gitlink" Version="3.0.0" />
   </ItemGroup>
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
