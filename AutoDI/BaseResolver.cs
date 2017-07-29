@@ -2,7 +2,7 @@
 
 namespace AutoDI
 {
-    public abstract class BaseResolver : IDependencyResolver
+    public abstract class BaseResolver : IDependencyResolver, IInitializeResolver
     {
         public virtual T Resolve<T>(params object[] parameters)
         {
@@ -14,5 +14,10 @@ namespace AutoDI
         }
 
         public abstract object Resolve(Type desiredType, params object[] parameters);
+
+        public virtual void Initialize()
+        {
+            //Base implementation does nothing
+        }
     }
 }

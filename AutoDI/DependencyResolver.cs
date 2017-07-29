@@ -6,6 +6,13 @@
 
         public static IDependencyResolver Get() => _resolver;
 
-        public static void Set(IDependencyResolver resolver) => _resolver = resolver;
+        public static void Set(IDependencyResolver resolver)
+        {
+            _resolver = resolver;
+            if (resolver is IInitializeResolver initResolver)
+            {
+                initResolver.Initialize();
+            }
+        } 
     }
 }

@@ -34,42 +34,58 @@ partial class ModuleWeaver
 
         BuildMap(mapField, staticBody, containerType, mapping);
 
-        //Pass map to setup method if one exists
-        MethodDefinition setupMethod = FindSetupMethod();
-        if (setupMethod != null)
-        {
-            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Verbose);
-            staticBody.Emit(OpCodes.Ldsfld, mapField);
-            staticBody.Emit(OpCodes.Call, setupMethod);
-            staticBody.Emit(OpCodes.Nop);
-        }
-
         staticBody.Emit(OpCodes.Ret);
 
         containerType.Methods.Add(staticConstructor);
 
         //Override BaseResolver.Resolve(Type, params object[]) method.
-        
-        //Create resolve method
-        var resolveMethod = new MethodDefinition("Resolve",
-            MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual 
-            , containerType);
-        resolveMethod.Parameters.Add(new ParameterDefinition("desiredType", ParameterAttributes.None, ModuleDefinition.Get<Type>()));
-        resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None, ModuleDefinition.Get<object[]>()));
-        resolveMethod.ReturnType = ModuleDefinition.Get<object>();
-        
-        var body = resolveMethod.Body.GetILProcessor();
-        body.Emit(OpCodes.Ldsfld, mapField);
+        {
+            //Create resolve method
+            var resolveMethod = new MethodDefinition(nameof(BaseResolver.Resolve),
+                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual
+                , ModuleDefinition.Get<object>());
+            resolveMethod.Parameters.Add(new ParameterDefinition("desiredType", ParameterAttributes.None,
+                ModuleDefinition.Get<Type>()));
+            resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None,
+                ModuleDefinition.Get<object[]>()));
 
-        MethodReference getMethod =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] { typeof(Type) }));
-        //TODO: parameters too
-        body.Emit(OpCodes.Ldarg_1);
-        body.Emit(OpCodes.Call, getMethod);
-        body.Emit(OpCodes.Ret);
+            var body = resolveMethod.Body.GetILProcessor();
+            body.Emit(OpCodes.Ldsfld, mapField);
 
-        containerType.Methods.Add(resolveMethod);
+            MethodReference getMethod =
+                ModuleDefinition.ImportReference(
+                    typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] {typeof(Type)}));
+            //TODO: parameters too
+            body.Emit(OpCodes.Ldarg_1);
+            body.Emit(OpCodes.Call, getMethod);
+            body.Emit(OpCodes.Ret);
 
+            containerType.Methods.Add(resolveMethod);
+        }
+
+        //Override BaseResolver.Initialize()
+        {
+            var initializeMethod = new MethodDefinition(nameof(BaseResolver.Initialize),
+                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
+                MethodAttributes.Virtual,
+                ModuleDefinition.ImportReference(typeof(void)));
+
+            var body = initializeMethod.Body.GetILProcessor();
+
+            //Pass map to setup method if one exists
+            MethodDefinition setupMethod = FindSetupMethod();
+            if (setupMethod != null)
+            {
+                InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Verbose);
+                body.Emit(OpCodes.Ldsfld, mapField);
+                body.Emit(OpCodes.Call, setupMethod);
+                body.Emit(OpCodes.Nop);
+            }
+
+            body.Emit(OpCodes.Ret);
+
+            containerType.Methods.Add(initializeMethod);
+        }
         return containerType;
     }
 
