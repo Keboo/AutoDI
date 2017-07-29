@@ -159,6 +159,7 @@ public partial class ModuleWeaver
     {
         foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
         {
+            InternalLogDebug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
             ProcessConstructor(type, ctor);
         }
     }

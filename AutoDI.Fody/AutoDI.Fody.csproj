@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FodyCecil" Version="2.1.1" />
+    <PackageReference Include="FodyCecil" Version="2.1.2" />
     <PackageReference Include="gitlink" Version="3.0.0-unstable0099" />
   </ItemGroup>
 
