@@ -7,12 +7,13 @@ namespace AutoDI.AssemblyGenerator
 {
     public static class AssemblyMixins
     {
-        public static object GetStaticProperty<TContainingType>(this Assembly assembly, string propertyName) where TContainingType : class
+        public static object GetStaticProperty<TContainingType>(this Assembly assembly, string propertyName, Type containerType = null) where TContainingType : class
         {
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
             if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
 
-            Type type = assembly.GetType(typeof(TContainingType).FullName);
+            string typeName = TypeMixins.GetTypeName(typeof(TContainingType), containerType);
+            Type type = assembly.GetType(typeName);
             if (type == null)
                 throw new AssemblyGetPropertyException($"Could not find '{typeof(TContainingType).FullName}' in '{assembly.FullName}'");
 

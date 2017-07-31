@@ -4,10 +4,16 @@ namespace AutoDI
 {
     public static class ContainerMapMixins
     {
+        public static void AddSingleton<T>(this ContainerMap map, T instance, Type[] keys)
+        {
+            if (map == null) throw new ArgumentNullException(nameof(map));
+            map.AddSingleton(() => instance, keys);
+        }
+
         public static void AddSingleton<TService, TImplementation>(this ContainerMap map, TImplementation instance)
         {
             if (map == null) throw new ArgumentNullException(nameof(map));
-            map.AddSingleton(instance, new[] { typeof(TService) });
+            map.AddSingleton(() => instance, new[] { typeof(TService) });
         }
 
         public static void AddSingleton<TService, TImplementation>(this ContainerMap map)
@@ -18,7 +24,7 @@ namespace AutoDI
         public static void AddSingleton<TService>(this ContainerMap map)
         {
             if (map == null) throw new ArgumentNullException(nameof(map));
-            map.AddSingleton(Activator.CreateInstance<TService>(), new[] { typeof(TService) });
+            map.AddSingleton(Activator.CreateInstance<TService>, new[] { typeof(TService) });
         }
 
         public static void AddLazySingleton<TService, TImplementation>(this ContainerMap map, Func<TImplementation> factory)

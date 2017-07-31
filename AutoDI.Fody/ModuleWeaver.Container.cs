@@ -54,7 +54,7 @@ partial class ModuleWeaver
 
             MethodReference getMethod =
                 ModuleDefinition.ImportReference(
-                    typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] {typeof(Type)}));
+                    typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] { typeof(Type) }));
             //TODO: parameters too
             body.Emit(OpCodes.Ldarg_1);
             body.Emit(OpCodes.Call, getMethod);
@@ -81,6 +81,13 @@ partial class ModuleWeaver
                 body.Emit(OpCodes.Call, setupMethod);
                 body.Emit(OpCodes.Nop);
             }
+
+            //Create singleton instances
+            var createInstancesMethod =
+                ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.CreateSingletons)));
+            body.Emit(OpCodes.Ldsfld, mapField);
+            body.Emit(OpCodes.Call, createInstancesMethod);
+            body.Emit(OpCodes.Nop);
 
             body.Emit(OpCodes.Ret);
 
@@ -144,37 +151,24 @@ partial class ModuleWeaver
                 TypeDefinition targetType = map.TargetType;
                 staticBody.Emit(OpCodes.Ldsfld, mapField);
 
-                switch (map.Lifetime)
+                var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
+                    MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
+                    MethodAttributes.Private, ModuleDefinition.ImportReference(targetType));
+                ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
+                if (!InvokeConstructor(targetType, delegateProcessor))
                 {
-                    case Lifetime.Singleton:
-                        if (!InvokeConstructor(targetType, staticBody))
-                        {
-                            staticBody.Remove(staticBody.Body.Instructions.Last());
-                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
-                            continue;
-                        }
-                        break;
-                    default:
-                        var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
-                            MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
-                            MethodAttributes.Private, ModuleDefinition.ImportReference(targetType));
-                        ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
-                        if (!InvokeConstructor(targetType, delegateProcessor))
-                        {
-                            delegateMethodCount--;
-                            staticBody.Remove(staticBody.Body.Instructions.Last());
-                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
-                            continue;
-                        }
-                        delegateProcessor.Emit(OpCodes.Ret);
-                        delegateContainer.Methods.Add(delegateMethod);
-
-                        staticBody.Emit(OpCodes.Ldnull);
-                        staticBody.Emit(OpCodes.Ldftn, delegateMethod);
-
-                        staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericType(targetType)));
-                        break;
+                    delegateMethodCount--;
+                    staticBody.Remove(staticBody.Body.Instructions.Last());
+                    InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
+                    continue;
                 }
+                delegateProcessor.Emit(OpCodes.Ret);
+                delegateContainer.Methods.Add(delegateMethod);
+
+                staticBody.Emit(OpCodes.Ldnull);
+                staticBody.Emit(OpCodes.Ldftn, delegateMethod);
+
+                staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericType(targetType)));
 
                 staticBody.Emit(OpCodes.Ldc_I4, map.Keys.Count);
                 staticBody.Emit(OpCodes.Newarr, type);

@@ -20,9 +20,10 @@ namespace AutoDI
 
         private readonly Dictionary<Type, DelegateContainer> _accessors = new Dictionary<Type, DelegateContainer>();
 
-        public void AddSingleton<T>(T instance, Type[] keys)
+        public void AddSingleton<T>(Func<T> factory, Type[] keys)
         {
-            Add(Lifetime.Singleton, () => instance, keys);
+            var lazy = new Lazy<T>(factory);
+            Add(Lifetime.Singleton, () => lazy.Value, keys);
         }
 
         public void AddLazySingleton<T>(Func<T> factory, Type[] keys)
@@ -114,6 +115,19 @@ namespace AutoDI
             foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors.OrderBy(kvp => kvp.Key.FullName))
             {
                 yield return new Map(kvp.Key, kvp.Value.TargetType, kvp.Value.LifetimeMode);
+            }
+        }
+
+        /// <summary>
+        /// This method is used by AutoDI and not expected to be invoked directly.
+        /// </summary>
+        public void CreateSingletons()
+        {
+            foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors
+                .Where(kvp => kvp.Value.LifetimeMode == Lifetime.Singleton))
+            {
+                //Forces creation of objects.
+                kvp.Value.Get();
             }
         }
 
