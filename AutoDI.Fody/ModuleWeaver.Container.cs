@@ -34,47 +34,65 @@ partial class ModuleWeaver
 
         BuildMap(mapField, staticBody, containerType, mapping);
 
-        //Pass map to setup method if one exists
-        MethodDefinition setupMethod = FindSetupMethod();
-        if (setupMethod != null)
-        {
-            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Verbose);
-            staticBody.Emit(OpCodes.Ldsfld, mapField);
-            staticBody.Emit(OpCodes.Call, setupMethod);
-            staticBody.Emit(OpCodes.Nop);
-        }
-
         staticBody.Emit(OpCodes.Ret);
 
         containerType.Methods.Add(staticConstructor);
 
         //Override BaseResolver.Resolve(Type, params object[]) method.
-        
-        //Create resolve method
-        var resolveMethod = new MethodDefinition("Resolve",
-            MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual 
-            , containerType);
-        resolveMethod.Parameters.Add(new ParameterDefinition("desiredType", ParameterAttributes.None, ModuleDefinition.Get<Type>()));
-        resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None, ModuleDefinition.Get<object[]>()));
-        resolveMethod.ReturnType = ModuleDefinition.Get<object>();
-        
-        TypeReference paramsAttribute = ModuleDefinition.Get<ParamArrayAttribute>();
-        MethodReference paramsArrayCtor =
-            ModuleDefinition.ImportReference(paramsAttribute.Resolve().GetConstructors().Single());
-        resolveMethod.CustomAttributes.Add(new CustomAttribute(paramsArrayCtor));
+        {
+            //Create resolve method
+            var resolveMethod = new MethodDefinition(nameof(BaseResolver.Resolve),
+                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual
+                , ModuleDefinition.Get<object>());
+            resolveMethod.Parameters.Add(new ParameterDefinition("desiredType", ParameterAttributes.None,
+                ModuleDefinition.Get<Type>()));
+            resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None,
+                ModuleDefinition.Get<object[]>()));
 
-        var body = resolveMethod.Body.GetILProcessor();
-        body.Emit(OpCodes.Ldsfld, mapField);
+            var body = resolveMethod.Body.GetILProcessor();
+            body.Emit(OpCodes.Ldsfld, mapField);
 
-        MethodReference getMethod =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] { typeof(Type) }));
-        //TODO: parameters too
-        body.Emit(OpCodes.Ldarg_1);
-        body.Emit(OpCodes.Call, getMethod);
-        body.Emit(OpCodes.Ret);
+            MethodReference getMethod =
+                ModuleDefinition.ImportReference(
+                    typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] { typeof(Type) }));
+            //TODO: parameters too
+            body.Emit(OpCodes.Ldarg_1);
+            body.Emit(OpCodes.Call, getMethod);
+            body.Emit(OpCodes.Ret);
 
-        containerType.Methods.Add(resolveMethod);
+            containerType.Methods.Add(resolveMethod);
+        }
 
+        //Override BaseResolver.Initialize()
+        {
+            var initializeMethod = new MethodDefinition(nameof(BaseResolver.Initialize),
+                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
+                MethodAttributes.Virtual,
+                ModuleDefinition.ImportReference(typeof(void)));
+
+            var body = initializeMethod.Body.GetILProcessor();
+
+            //Pass map to setup method if one exists
+            MethodDefinition setupMethod = FindSetupMethod();
+            if (setupMethod != null)
+            {
+                InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Verbose);
+                body.Emit(OpCodes.Ldsfld, mapField);
+                body.Emit(OpCodes.Call, setupMethod);
+                body.Emit(OpCodes.Nop);
+            }
+
+            //Create singleton instances
+            var createInstancesMethod =
+                ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.CreateSingletons)));
+            body.Emit(OpCodes.Ldsfld, mapField);
+            body.Emit(OpCodes.Call, createInstancesMethod);
+            body.Emit(OpCodes.Nop);
+
+            body.Emit(OpCodes.Ret);
+
+            containerType.Methods.Add(initializeMethod);
+        }
         return containerType;
     }
 
@@ -133,37 +151,24 @@ partial class ModuleWeaver
                 TypeDefinition targetType = map.TargetType;
                 staticBody.Emit(OpCodes.Ldsfld, mapField);
 
-                switch (map.Lifetime)
+                var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
+                    MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
+                    MethodAttributes.Private, ModuleDefinition.ImportReference(targetType));
+                ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
+                if (!InvokeConstructor(targetType, delegateProcessor))
                 {
-                    case Lifetime.Singleton:
-                        if (!InvokeConstructor(targetType, staticBody))
-                        {
-                            staticBody.Remove(staticBody.Body.Instructions.Last());
-                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
-                            continue;
-                        }
-                        break;
-                    default:
-                        var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
-                            MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
-                            MethodAttributes.Private, ModuleDefinition.ImportReference(targetType));
-                        ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
-                        if (!InvokeConstructor(targetType, delegateProcessor))
-                        {
-                            delegateMethodCount--;
-                            staticBody.Remove(staticBody.Body.Instructions.Last());
-                            InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
-                            continue;
-                        }
-                        delegateProcessor.Emit(OpCodes.Ret);
-                        delegateContainer.Methods.Add(delegateMethod);
-
-                        staticBody.Emit(OpCodes.Ldnull);
-                        staticBody.Emit(OpCodes.Ldftn, delegateMethod);
-
-                        staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericType(targetType)));
-                        break;
+                    delegateMethodCount--;
+                    staticBody.Remove(staticBody.Body.Instructions.Last());
+                    InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
+                    continue;
                 }
+                delegateProcessor.Emit(OpCodes.Ret);
+                delegateContainer.Methods.Add(delegateMethod);
+
+                staticBody.Emit(OpCodes.Ldnull);
+                staticBody.Emit(OpCodes.Ldftn, delegateMethod);
+
+                staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericType(targetType)));
 
                 staticBody.Emit(OpCodes.Ldc_I4, map.Keys.Count);
                 staticBody.Emit(OpCodes.Newarr, type);

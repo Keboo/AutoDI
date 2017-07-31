@@ -6,7 +6,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Android.OS;
-using AutoDI.Container;
+using AutoDI;
 
 namespace XamarinForms.Droid
 {

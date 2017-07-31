@@ -3,8 +3,6 @@ Have a question? [![Join the chat at https://gitter.im/AutoDIContainer/Lobby](ht
 
 [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.svg?style=flat&label=AutoDI)](https://www.nuget.org/packages/AutoDI/)
 [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.Fody.svg?style=flat&label=AutoDI.Fody)](https://www.nuget.org/packages/AutoDI.Fody/)
-[![NuGet Status](http://img.shields.io/nuget/v/AutoDI.Container.svg?style=flat&label=AutoDI.Container)](https://www.nuget.org/packages/AutoDI.Container/)
-[![NuGet Status](http://img.shields.io/nuget/v/AutoDI.Container.Fody.svg?style=flat&label=AutoDI.Container.Fody)](https://www.nuget.org/packages/AutoDI.Container.Fody/)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ybmv50xxi3lb086o?svg=true)](https://ci.appveyor.com/project/Keboo/autodi)
 

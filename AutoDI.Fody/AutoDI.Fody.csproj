@@ -3,12 +3,14 @@
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
     <ApplicationIcon>needle.ico</ApplicationIcon>
+    <DebugType>full</DebugType>
+    <DebugSymbols>True</DebugSymbols>
     <Version Condition="'$(AUTODI_VERSION_FULL)' != ''">$(AUTODI_VERSION_FULL)</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FodyCecil" Version="2.1.1" />
-    <PackageReference Include="gitlink" Version="2.4.0" />
+    <PackageReference Include="FodyCecil" Version="2.1.2" />
+    <PackageReference Include="gitlink" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,10 +19,11 @@
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
     <ItemGroup>
-      <None Include="$(TargetDir)AutoDI*.dll" />
+      <CopyItems Include="$(TargetDir)AutoDI*.dll" />
+      <CopyItems Include="$(TargetDir)AutoDI*.pdb" />
     </ItemGroup>
-    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\NuGet\$(ProjectName)" />
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)\NuGet\$(ProjectName)" />
     <!--Needed by AssemblyToProcess so Fody can find the weaver-->
-    <Copy SourceFiles="@(None)" DestinationFolder="$(SolutionDir)\packages\$(ProjectName).1.0.0" />
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)\packages\$(ProjectName).1.0.0" />
   </Target>
 </Project>

@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using AutoDI.AssemblyGenerator;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Fody.Tests
 {
@@ -11,6 +11,7 @@ namespace AutoDI.Fody.Tests
     {
         private static Assembly _publicAssembly;
         private static Assembly _internalAssembly;
+        private static Assembly _manualAssembly;
 
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
@@ -19,6 +20,7 @@ namespace AutoDI.Fody.Tests
             Dictionary<string, AssemblyInfo> result = await gen.Execute();
             _publicAssembly = result["public"].Assembly;
             _internalAssembly = result["internal"].Assembly;
+            _manualAssembly = result["manual"].Assembly;
         }
 
         [TestMethod]
@@ -28,8 +30,8 @@ namespace AutoDI.Fody.Tests
             ContainerMap GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
-                return (ContainerMap) _publicAssembly.GetType(typeof(SetupMethodPublicTests.Program).FullName)
-                    .GetProperty(nameof(SetupMethodPublicTests.Program.InitMap)).GetValue(null);
+                return (ContainerMap)_publicAssembly.GetStaticProperty<SetupMethodPublicTests.Program>(
+                    nameof(SetupMethodPublicTests.Program.InitMap));
             }
             
             Assert.IsNull(GetInitMap());
@@ -44,13 +46,32 @@ namespace AutoDI.Fody.Tests
             ContainerMap GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
-                return (ContainerMap)_internalAssembly.GetType(typeof(SetupMethodInternalTests.Program).FullName)
-                    .GetProperty(nameof(SetupMethodInternalTests.Program.InitMap)).GetValue(null);
+                return (ContainerMap)_internalAssembly.GetStaticProperty<SetupMethodInternalTests.Program>(
+                    nameof(SetupMethodInternalTests.Program.InitMap));
             }
 
             Assert.IsNull(GetInitMap());
             _internalAssembly.InvokeEntryPoint();
             Assert.IsNotNull(GetInitMap());
+        }
+
+        [TestMethod]
+        [Description("Issue 49")]
+        public void SetupMethodIsNotInvokedUntilTheContainerIsInjected()
+        {
+            ContainerMap GetInitMap()
+            {
+                // ReSharper disable once PossibleNullReferenceException
+                return (ContainerMap)_manualAssembly.GetStaticProperty<SetupMethodManualInjectionTests.TestClass>(
+                    nameof(SetupMethodManualInjectionTests.TestClass.InitMap));
+            }
+
+            Assert.IsNull(GetInitMap());
+            AutoDIContainer.Inject(_manualAssembly);
+            Assert.IsNotNull(GetInitMap());
+            Assert.IsTrue(_manualAssembly.GetStaticProperty<SetupMethodManualInjectionTests.TestClass>(
+                    nameof(SetupMethodManualInjectionTests.TestClass.Manager)).Is<SetupMethodManualInjectionTests.Manager>());
+            
         }
     }
 }
@@ -114,16 +135,44 @@ namespace SetupMethodInternalTests
             InitMap = map;
         }
     }
+}
+//</assembly>
 
-    public class Container
+//<assembly:manual />
+//<ref: AutoDI />
+//<weaver: AutoDI />
+namespace SetupMethodManualInjectionTests
+{
+    using AutoDI;
+    using System;
+
+    public class TestClass
     {
-        private static readonly ContainerMap _map;
-        static Container()
-        {
-            _map = new ContainerMap();
+        public static ContainerMap InitMap { get; set; }
+        public static Manager Manager { get; private set; }
 
-            Program.InitializeContainer(_map);
+        [SetupMethod]
+        internal static void InitializeContainer(ContainerMap map)
+        {
+            InitMap = map;
+            //This ensures the 
+            Manager = map.Get<Manager>();
         }
     }
+
+    public interface IManager { }
+
+    public class Manager : IManager
+    {
+        public IService Service { get; }
+        public Manager([Dependency] IService service = null)
+        {
+            Service = service ?? throw new ArgumentNullException(nameof(service));
+        }
+    }
+
+    public interface IService { }
+
+    public class Service : IService { }
 }
 //</assembly>

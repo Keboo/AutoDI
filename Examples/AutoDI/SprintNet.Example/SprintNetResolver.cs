@@ -17,5 +17,10 @@ namespace SprintNet.Example
         {
             return _factory.GetObject<T>();
         }
+
+        public object Resolve(Type desiredType, params object[] parameters)
+        {
+            return _factory.GetObject("", desiredType);
+        }
     }
 }

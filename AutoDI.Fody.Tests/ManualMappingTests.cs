@@ -23,8 +23,8 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    dynamic containerWeaver = args.Weaver;
-                    containerWeaver.Config = XElement.Parse($@"
+                    dynamic weaver = args.Weaver;
+                    weaver.Config = XElement.Parse($@"
     <AutoDI Behavior=""{Behaviors.None}"">
         <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from="".*"" to=""$0"" />

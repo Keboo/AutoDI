@@ -16,5 +16,10 @@ namespace Ninject.Example
         {
             return _kernel.Get<T>();
         }
+
+        public object Resolve(Type desiredType, params object[] parameters)
+        {
+            return _kernel.Get(desiredType);
+        }
     }
 }

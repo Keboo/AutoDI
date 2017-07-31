@@ -159,6 +159,7 @@ public partial class ModuleWeaver
     {
         foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
         {
+            InternalLogDebug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
             ProcessConstructor(type, ctor);
         }
     }
@@ -246,6 +247,7 @@ public partial class ModuleWeaver
 
             injector.Insert(end);
 
+            constructor.Body.OptimizeMacros();
 
             void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source, 
                 IEnumerable<Instruction> loadSource, 
@@ -305,9 +307,6 @@ public partial class ModuleWeaver
                 injector.Insert(afterParam);
             }
         }
-
-        constructor.Body.OptimizeMacros();
-
     }
 
     private void InsertObjectConstant(Injector injector, object constant, TypeDefinition type)

@@ -7,14 +7,37 @@ namespace AutoDI.AssemblyGenerator
 {
     public static class AssemblyMixins
     {
-        public static object InvokeStatic<T>(this Assembly assembly, string methodName, params object[] parameters) where T : class
+        public static object GetStaticProperty<TContainingType>(this Assembly assembly, string propertyName, Type containerType = null) where TContainingType : class
+        {
+            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+            if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
+
+            string typeName = TypeMixins.GetTypeName(typeof(TContainingType), containerType);
+            Type type = assembly.GetType(typeName);
+            if (type == null)
+                throw new AssemblyGetPropertyException($"Could not find '{typeof(TContainingType).FullName}' in '{assembly.FullName}'");
+
+            PropertyInfo property = type.GetProperty(propertyName);
+            if (property == null)
+                throw new AssemblyGetPropertyException($"Could not find property '{propertyName}' on type '{type.FullName}'");
+
+            if (property.GetMethod == null)
+                throw new AssemblyGetPropertyException($"Property '{type.FullName}.{propertyName}' does not have a getter");
+
+            if (!property.GetMethod.IsStatic)
+                throw new AssemblyGetPropertyException($"Property '{type.FullName}.{propertyName}' is not static");
+
+            return property.GetValue(null);
+        }
+
+        public static object InvokeStatic<TContainingType>(this Assembly assembly, string methodName, params object[] parameters) where TContainingType : class
         {
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
             if (methodName == null) throw new ArgumentNullException(nameof(methodName));
 
-            Type type = assembly.GetType(typeof(T).FullName);
+            Type type = assembly.GetType(typeof(TContainingType).FullName);
             if (type == null)
-                throw new AssemblyInvocationExcetion($"Could not find '{typeof(T).FullName}' in '{assembly.FullName}'");
+                throw new AssemblyInvocationExcetion($"Could not find '{typeof(TContainingType).FullName}' in '{assembly.FullName}'");
 
             MethodInfo method = type.GetMethod(methodName);
             if (method == null)
