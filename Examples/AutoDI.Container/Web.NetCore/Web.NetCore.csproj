@@ -14,8 +14,8 @@
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="1.1.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.2" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="1.1.2" />
-    <PackageReference Include="AutoDI.Fody" Version="2.1.3" />
-    <PackageReference Include="AutoDI" Version="2.1.3" />
+    <PackageReference Include="AutoDI.Fody" Version="2.1.4" />
+    <PackageReference Include="AutoDI" Version="2.1.4" />
   </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="1.0.1" />
