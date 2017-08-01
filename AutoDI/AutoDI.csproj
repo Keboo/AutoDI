@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="gitlink" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="1.1.1" />
   </ItemGroup>
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
