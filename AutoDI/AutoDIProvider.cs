@@ -1,35 +1,36 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace AutoDI
 {
-    public class AutoDIServiceProvider : IServiceProvider, ISupportRequiredService
+
+    internal class AutoDIServiceProvider : IServiceProvider, ISupportRequiredService
     {
-        public AutoDIServiceProvider(ContainerMap map)
+        private readonly ContainerMap _containerMap;
+
+        public AutoDIServiceProvider(ContainerMap containerMap)
         {
+            _containerMap = containerMap ?? throw new ArgumentNullException(nameof(containerMap));
         }
 
         public object GetService(Type serviceType)
         {
-            throw new NotImplementedException();
+            return _containerMap.Get(serviceType);
         }
 
         public object GetRequiredService(Type serviceType)
         {
-            throw new NotImplementedException();
+            object rv = _containerMap.Get(serviceType);
+            //TODO: Better checking and exception
+            if (rv == null) throw new Exception($"Required service '{serviceType?.FullName}' not found");
+            return rv;
         }
     }
 
-    public class AutoDIServiceScope : IServiceScopeFactory
-    {
-        public IServiceScope CreateScope()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class AutoDIServiceProviderFactory : IServiceProviderFactory<ContainerMap>
+    internal class AutoDIServiceProviderFactory : IServiceProviderFactory<ContainerMap>
     {
         public ContainerMap CreateBuilder(IServiceCollection services)
         {
@@ -39,24 +40,31 @@ namespace AutoDI
             {
                 if (descriptor is AutoDIServiceDescriptor autoDiDescriptor)
                 {
-                    return autoDiDescriptor.Lifetime;
+                    return autoDiDescriptor.AutoDILifetime;
                 }
-                //TODO: Translate
-                return Lifetime.Transient;
+                switch (descriptor.Lifetime)
+                {
+                    case ServiceLifetime.Singleton:
+                        return Lifetime.Singleton;
+                    case ServiceLifetime.Scoped:
+                        return Lifetime.Scoped;
+                    default:
+                        return Lifetime.Transient;
+                }
             }
 
+            //TODO: actually register the items in the container map
             foreach (ServiceDescriptor serviceDescriptor in services)
             {
                 switch (GetLifetime(serviceDescriptor))
                 {
                     case Lifetime.Singleton:
-                        map.AddSingleton();
                         break;
                     case Lifetime.LazySingleton:
-
+                        break;
+                    case Lifetime.WeakTransient:
                         break;
                     case Lifetime.Transient:
-
                         break;
                 }
             }
@@ -70,32 +78,52 @@ namespace AutoDI
         }
     }
 
-    public class AutoDIServiceScopeFactory : IServiceScopeFactory
+    internal class AutoDIServiceScopeFactory : IServiceScopeFactory
     {
+        private readonly ContainerMap _map;
+
+        public AutoDIServiceScopeFactory(ContainerMap map)
+        {
+            _map = map ?? throw new ArgumentNullException(nameof(map));
+        }
+
         public IServiceScope CreateScope()
         {
-            throw new NotImplementedException();
+            //TODO: anything needed for this? SM uses this call to created the nested container here
+            //Probably want to clone the container map here.
+            return new AutoDIServiceScope(_map);
         }
 
         private class AutoDIServiceScope : IServiceScope
         {
+            private readonly ContainerMap _map;
+
+
+            public AutoDIServiceScope(ContainerMap map)
+            {
+                _map = map;
+                //TODO: Is this correct?
+                ServiceProvider = map.Get<IServiceProvider>();
+            }
+
             public void Dispose()
             {
-                throw new NotImplementedException();
+                //TODO: Any clenaup needed?
             }
 
             public IServiceProvider ServiceProvider { get; }
         }
     }
 
-    public class AutoDIServiceCollection : List<ServiceDescriptor>, IServiceCollection
+    internal class AutoDIServiceCollection : List<ServiceDescriptor>, IServiceCollection
     {
 
     }
 
-    public class AutoDIServiceDescriptor : ServiceDescriptor
+    internal class AutoDIServiceDescriptor : ServiceDescriptor
     {
-        public Lifetime Lifetime { get; }
+        //TODO: Ctors that allow setting there.... we probably will only need the factory ctor
+        public Lifetime AutoDILifetime { get; }
 
         public AutoDIServiceDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime) : base(serviceType, implementationType, lifetime)
         {
@@ -110,36 +138,154 @@ namespace AutoDI
         }
     }
 
-    public static class AutoDI
+    public interface IApplicationBuilder
     {
-        private static AutoDIServiceProvider _serviceProvider;
+        IApplicationBuilder ConfigureServices(Action<IServiceCollection> configureServices);
 
-        public static void Init(Action<IServiceCollection> configureMethod)
+        IApplicationBuilder ConfigureContinaer<TContainerType>(Action<TContainerType> configureContianer);
+
+        IServiceProvider Build();
+    }
+
+    internal class ApplicationBuilder : IApplicationBuilder
+    {
+        private readonly List<Action<IServiceCollection>> _configureServicesDelegates = new List<Action<IServiceCollection>>();
+        //TODO: this really should be strongly typed....
+        private readonly List<Delegate> _configureContainerDelegates = new List<Delegate>();
+
+        private Type _specifiedContainerType;
+
+        public IApplicationBuilder ConfigureContinaer<TContainerType>(Action<TContainerType> configureContianer)
         {
-            var collection = new AutoDIServiceCollection();
-            configureMethod(collection);
-
-            _serviceProvider = new AutoDIServiceProvider(collection);
+            if (configureContianer == null) throw new ArgumentNullException(nameof(configureContianer));
+            if (_specifiedContainerType != null) throw new InvalidOperationException($"A container type of '{_specifiedContainerType.FullName}' was already specified");
+            _specifiedContainerType = typeof(TContainerType);
+            _configureContainerDelegates.Add(configureContianer);
+            return this;
         }
 
-        private static void Gen_Configured(AutoDIServiceCollection collection)
+        public IApplicationBuilder ConfigureServices(Action<IServiceCollection> configureServices)
         {
-            //TODO: All of the adds....
+            if (configureServices == null) throw new ArgumentNullException(nameof(configureServices));
+            _configureServicesDelegates.Add(configureServices);
+            return this;
+        }
+
+        public IServiceProvider Build()
+        {
+            IServiceCollection collection = BuildCommonServices();
+            IServiceProvider applicationProvider = BuildApplicationServiceProvider(collection);
+            IServiceProvider rootProvider = GetProvider(applicationProvider, collection);
+            return rootProvider;
+        }
+
+        private Type GetContainerType(IServiceCollection serviceCollection)
+        {
+            if (_specifiedContainerType != null)
+            {
+                return _specifiedContainerType;
+            }
+            var containerTypes = from ServiceDescriptor serviceDescriptor in serviceCollection
+                                 let typeInfo = serviceDescriptor.ServiceType.GetTypeInfo()
+                                 where typeInfo.IsGenericTypeDefinition
+                                 let genericType = typeInfo.GetGenericTypeDefinition()
+                                 where genericType == typeof(IServiceProviderFactory<>)
+                                 let containerType = serviceDescriptor.ServiceType.GenericTypeArguments[0]
+                                 orderby containerType == typeof(ContainerMap) ? 1 : 0
+                                 select containerType;
+            return containerTypes.FirstOrDefault();
+        }
+
+        private IServiceProvider GetProvider(IServiceProvider applicationProvider,
+            IServiceCollection serviceCollection)
+        {
+            return (IServiceProvider)GetType().GetTypeInfo().DeclaredMethods
+                .Single(m => m.IsGenericMethodDefinition && m.Name == nameof(GetProvider))
+                .MakeGenericMethod(GetContainerType(serviceCollection))
+                .Invoke(this, new object[] { applicationProvider, serviceCollection });
+        }
+
+        private IServiceProvider GetProvider<TContainerType>(IServiceProvider applicationProvider, IServiceCollection serviceCollection)
+        {
+            IServiceProviderFactory<TContainerType> providerFactory = applicationProvider.GetService<IServiceProviderFactory<TContainerType>>();
+            TContainerType container = providerFactory.CreateBuilder(serviceCollection);
+
+            foreach (Action<TContainerType> configureMethods in _configureContainerDelegates.OfType<Action<TContainerType>>())
+            {
+                configureMethods(container);
+            }
+
+            return providerFactory.CreateServiceProvider(container);
+        }
+
+        private IServiceCollection BuildCommonServices()
+        {
+            var collection = new AutoDIServiceCollection();
+            AutoDIStuff(collection);
+
+            foreach (var @delegate in _configureServicesDelegates)
+            {
+                @delegate(collection);
+            }
+
+            return collection;
+        }
+
+        private static IServiceProvider BuildApplicationServiceProvider(IServiceCollection collection)
+        {
+            var factory = new AutoDIServiceProviderFactory();
+            return factory.CreateServiceProvider(factory.CreateBuilder(collection));
+        }
+
+        private static void AutoDIStuff(AutoDIServiceCollection collection)
+        {
+            collection.AddSingleton<IServiceProviderFactory<ContainerMap>>(sp => new AutoDIServiceProviderFactory());
+            //TODO: how to register the container map?
+            collection.AddSingleton<IServiceScopeFactory>(sp => new AutoDIServiceScopeFactory(sp.GetService<ContainerMap>()));
+            collection.AddScoped<IServiceProvider>(sp => new AutoDIServiceProvider(sp.GetService<ContainerMap>()));
         }
     }
 
-    public class P
+    //This class will be generated
+    internal static class AutoDI_Gen
+    {
+        //This is the default resolver that will be used when nothing else specified
+        private static IServiceProvider _globalServiceProvider;
+
+        public static void Init(Action<IApplicationBuilder> configure)
+        {
+            IApplicationBuilder builder = new ApplicationBuilder();
+            builder.ConfigureServices(Gen_Configured);
+            configure?.Invoke(builder);
+
+            _globalServiceProvider = builder.Build();
+        }
+
+        private static void Gen_Configured(IServiceCollection collection)
+        {
+            //AuotDI generates all of the registrations here
+        }
+    }
+
+    public class ExampleProgram
     {
         public static void Main()
         {
+            //This line gets injected
+            AutoDI_Gen.Init(ConfigureApplication);
 
-
-
+            //The rest of your code here
         }
 
-        public static void Configure(IServiceCollection serviceCollection)
+        //Optional, you write this method
+        [SetupMethod]
+        public static void ConfigureApplication(IApplicationBuilder applicationBuilder)
         {
+            applicationBuilder.ConfigureServices(services => { });
+            applicationBuilder.ConfigureContinaer<ContainerMap>(map =>
+            {
 
+            });
         }
     }
 }
