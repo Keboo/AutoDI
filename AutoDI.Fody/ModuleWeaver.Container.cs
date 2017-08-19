@@ -26,7 +26,7 @@ partial class ModuleWeaver
         ILProcessor staticBody = staticConstructor.Body.GetILProcessor();
 
         //Declare and initialize dictionary map
-        FieldDefinition mapField = CreateStaticReadonlyField<ContainerMap>("_items", false);
+        FieldDefinition mapField = ModuleDefinition.CreateStaticReadonlyField<ContainerMap>("_items", false);
         containerType.Fields.Add(mapField);
         MethodReference mapConstructor = ModuleDefinition.ImportReference(typeof(ContainerMap).GetConstructor(new Type[0]));
         staticBody.Emit(OpCodes.Newobj, mapConstructor);
@@ -127,7 +127,7 @@ partial class ModuleWeaver
         TypeReference funcType = ModuleDefinition.ImportReference(typeof(Func<>));
         //NB: This null fall back is due to an issue with Mono.Cecil 0.10.0
         //From GitHub issues it looks like it make be resolved in some of the beta builds, however this would require modifying Fody.
-        //For now we will just manually resolve this way. Since we know Func<>> lives in the core library.
+        //For now we will just manually resolve this way. Since we know Func<> lives in the core library.
         TypeDefinition funcDefinition = funcType.Resolve() ?? ModuleDefinition.AssemblyResolver
                                             .Resolve((AssemblyNameReference)ModuleDefinition.TypeSystem.CoreLibrary)
                                             .MainModule.GetType(typeof(Func<>).FullName);
@@ -168,7 +168,7 @@ partial class ModuleWeaver
                 staticBody.Emit(OpCodes.Ldnull);
                 staticBody.Emit(OpCodes.Ldftn, delegateMethod);
 
-                staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericType(targetType)));
+                staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericTypeConstructor(targetType)));
 
                 staticBody.Emit(OpCodes.Ldc_I4, map.Keys.Count);
                 staticBody.Emit(OpCodes.Newarr, type);
@@ -226,17 +226,5 @@ partial class ModuleWeaver
                                   md.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>()) &&
                                   md.Parameters.Count == 1 &&
                                   md.Parameters[0].ParameterType.IsType<ContainerMap>());
-    }
-
-    private FieldDefinition CreateStaticReadonlyField<T>(string name, bool @public)
-    {
-        return CreateStaticReadonlyField(name, @public, ModuleDefinition.Get<T>());
-    }
-
-    private static FieldDefinition CreateStaticReadonlyField(string name, bool @public, TypeReference type)
-    {
-        return new FieldDefinition(name,
-            (@public ? FieldAttributes.Public : FieldAttributes.Private) | FieldAttributes.Static |
-            FieldAttributes.InitOnly, type);
     }
 }

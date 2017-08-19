@@ -5,11 +5,14 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
 using DependencyAttribute = AutoDI.DependencyAttribute;
+using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 [assembly: InternalsVisibleTo("AutoDI.Fody.Tests")]
@@ -78,6 +81,8 @@ public partial class ModuleWeaver
     {
         try
         {
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
+
             Settings settings = Settings.Parse(Config);
             InternalLogDebug = (s, l) =>
             {
@@ -94,9 +99,11 @@ public partial class ModuleWeaver
                 Mapping mapping = GetMapping(settings, allTypes);
 
                 InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
-                TypeDefinition resolverType = CreateAutoDIContainer(mapping);
 
+                TypeDefinition resolverType = CreateAutoDIContainer(mapping);
                 ModuleDefinition.Types.Add(resolverType);
+                
+                ModuleDefinition.Types.Add(GenerateContainer(mapping));
 
                 if (settings.InjectContainer)
                 {
@@ -115,6 +122,28 @@ public partial class ModuleWeaver
             for (Exception e = ex; e != null; e = e.InnerException)
                 sb.AppendLine(e.ToString());
             LogError(sb.ToString());
+        }
+        finally
+        {
+            AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomainOnAssemblyResolve;
+        }
+    }
+
+    private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
+    {
+        var assemblyName = new AssemblyName(args.Name);
+        var assembly = AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
+        if (assembly == null)
+        {
+            LogWarning($"Failed to resolve assembly '{assemblyName.FullName}'");
+            return null;
+        }
+        InternalLogDebug($"Resolved assembly '{assembly.FullName}'", DebugLogLevel.Verbose);
+        using (var memoryStream = new MemoryStream())
+        {
+            assembly.Write(memoryStream);
+            memoryStream.Position = 0;
+            return Assembly.Load(memoryStream.ToArray());
         }
     }
 
@@ -136,7 +165,11 @@ public partial class ModuleWeaver
             if (useAutoDiAssebmlies || matchesAssembly)
             {
                 AssemblyDefinition assembly = AssemblyResolver.Resolve(assemblyReference);
-                if (assembly == null) continue;
+                if (assembly == null)
+                {
+                    InternalLogDebug($"Failed to resolve assembly reference '{assemblyReference.FullName}'", DebugLogLevel.Verbose);
+                    continue;
+                };
 
                 //Check if it references AutoDI. If it doesn't we will skip
                 if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a =>
