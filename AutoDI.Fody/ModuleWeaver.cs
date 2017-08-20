@@ -94,8 +94,10 @@ public partial class ModuleWeaver
             };
 
             ICollection<TypeDefinition> allTypes = GetAllTypes(settings);
+            
             if (settings.GenerateContainer)
             {
+
                 Mapping mapping = GetMapping(settings, allTypes);
 
                 InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
@@ -103,18 +105,20 @@ public partial class ModuleWeaver
                 TypeDefinition resolverType = CreateAutoDIContainer(mapping);
                 ModuleDefinition.Types.Add(resolverType);
                 
-                ModuleDefinition.Types.Add(GenerateContainer(mapping));
+                ModuleDefinition.Types.Add(GenerateContainer(mapping, out MethodDefinition getGlobalServiceProvider));
 
                 if (settings.InjectContainer)
                 {
                     InjectContainer(resolverType);
                 }
+
+                foreach (TypeDefinition type in allTypes)
+                {
+                    ProcessType(type, getGlobalServiceProvider);
+                }
             }
 
-            foreach (TypeDefinition type in allTypes)
-            {
-                ProcessType(type);
-            }
+
         }
         catch (Exception ex)
         {
@@ -188,16 +192,16 @@ public partial class ModuleWeaver
     }
 
 
-    private void ProcessType(TypeDefinition type)
+    private void ProcessType(TypeDefinition type, MethodDefinition getGlobalServiceProvider)
     {
         foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
         {
             InternalLogDebug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
-            ProcessConstructor(type, ctor);
+            ProcessConstructor(type, ctor, getGlobalServiceProvider);
         }
     }
 
-    private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor)
+    private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor, MethodDefinition getGlobalServiceProvider)
     {
         List<ParameterDefinition> dependencyParameters = constructor.Parameters.Where(
                         p => p.CustomAttributes.Any(a => a.AttributeType.IsType<DependencyAttribute>())).ToList();
@@ -207,24 +211,20 @@ public partial class ModuleWeaver
 
         if (dependencyParameters.Any() || dependencyProperties.Any())
         {
-            var resolverType = ModuleDefinition.Get<IDependencyResolver>();
-            var dependencyResolverType = ModuleDefinition.ImportReference(typeof(DependencyResolver));
-
             var injector = new Injector(constructor);
 
             var end = Instruction.Create(OpCodes.Nop);
 
-            var resolverVariable = new VariableDefinition(resolverType);
-            constructor.Body.Variables.Add(resolverVariable);
+            var serviceProviderVariable = new VariableDefinition(ModuleDefinition.Get<IServiceProvider>());
+            constructor.Body.Variables.Add(serviceProviderVariable);
 
-            //Get the IDependencyResolver by calling DependencyResolver.Get()
-            injector.Insert(OpCodes.Call,
-                new MethodReference(nameof(DependencyResolver.Get), resolverType, dependencyResolverType));
+            //Get the global IServiceProvider => AutoDI.<AutoDI>.Global
+            injector.Insert(OpCodes.Call, getGlobalServiceProvider);
 
             //Store the resolver in our local variable
-            injector.Insert(OpCodes.Stloc, resolverVariable);
+            injector.Insert(OpCodes.Stloc, serviceProviderVariable);
             //Push the resolver on top of the stack
-            injector.Insert(OpCodes.Ldloc, resolverVariable);
+            injector.Insert(OpCodes.Ldloc, serviceProviderVariable);
             //Branch to the end if the resolver is null
             injector.Insert(OpCodes.Brfalse, end);
 
@@ -301,7 +301,7 @@ public partial class ModuleWeaver
                 {
                     injector.Insert(resolveAssignmentTarget);
                 }
-                injector.Insert(OpCodes.Ldloc, resolverVariable);
+                injector.Insert(OpCodes.Ldloc, serviceProviderVariable);
 
                 //Create parameters array
                 var dependencyAttribute = source.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
@@ -327,14 +327,22 @@ public partial class ModuleWeaver
                     }
                 }
 
+                //TODO: the base method can be extracted into a static
+                var getServiceMethod = ModuleDefinition.ImportReference(
+                    (from method in typeof(ServiceProviderMixins).GetMethods()
+                        where method.Name == nameof(ServiceProviderMixins.GetService) &&
+                              method.IsGenericMethodDefinition
+                        let parameters = method.GetParameters()
+                        where parameters.Length == 2 && parameters[0].ParameterType == typeof(IServiceProvider) &&
+                              parameters[1].ParameterType == typeof(object[])
+                        select method).Single());
+                
                 //Call the resolve method
-                var resolveMethod = ModuleDefinition.ImportReference(
-                    typeof(IDependencyResolver).GetMethods().Single(m => m.Name == nameof(IDependencyResolver.Resolve) && m.IsGenericMethod));
-                resolveMethod = new GenericInstanceMethod(resolveMethod)
+                getServiceMethod = new GenericInstanceMethod(getServiceMethod)
                 {
                     GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
                 };
-                injector.Insert(OpCodes.Callvirt, resolveMethod);
+                injector.Insert(OpCodes.Call, getServiceMethod);
                 //Set the return from the resolve method into the parameter
                 injector.Insert(setResult);
                 injector.Insert(afterParam);

@@ -1,6 +1,5 @@
 ﻿using AssemblyToProcess;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Moq.AutoMock;
 using System;
 
@@ -15,8 +14,8 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var sut = mocker.CreateInstance<ClassWithDependencies>();
 
-            Assert.AreEqual( mocker.Get<IService>(), sut.Service );
-            Assert.AreEqual( mocker.Get<IService2>(), sut.Service2 );
+            Assert.AreEqual(mocker.Get<IService>(), sut.Service);
+            Assert.AreEqual(mocker.Get<IService2>(), sut.Service2);
         }
 
         [TestMethod]
@@ -25,39 +24,42 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service1 = mocker.Get<IService>();
             var service2 = mocker.Get<IService2>();
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup( x => x.Resolve<IService>( It.IsAny<object[]>() ) ).Returns( service1 ).Verifiable();
-            dr.Setup( x => x.Resolve<IService2>( It.IsAny<object[]>() ) ).Returns( service2 ).Verifiable();
+            var serviceProvider = mocker.GetMock<IServiceProvider>();
+            serviceProvider.Setup(x => x.GetService(typeof(IService))).Returns(service1).Verifiable();
+            serviceProvider.Setup(x => x.GetService(typeof(IService2))).Returns(service2).Verifiable();
 
             try
             {
-                DependencyResolver.Set( dr.Object );
+                DI.Init(typeof(IService).Assembly, builder =>
+                {
+                    builder.WithProvider(serviceProvider.Object);
+                });
 
                 var sut = new ClassWithDependencies();
-                Assert.AreEqual( service1, sut.Service );
-                Assert.AreEqual( service2, sut.Service2 );
-                dr.Verify();
+                Assert.AreEqual(service1, sut.Service);
+                Assert.AreEqual(service2, sut.Service2);
+                serviceProvider.Verify();
             }
             finally
             {
-                DependencyResolver.Set( (IDependencyResolver)null );
+                DI.Dispose();
             }
         }
 
-        [TestMethod, ExpectedException( typeof( ArgumentNullException ) )]
+        [TestMethod, ExpectedException(typeof(ArgumentNullException))]
         public void WhenFirstServiceIsNotSpecifiedItThrows()
         {
             var mocker = new AutoMocker();
 
-            new ClassWithDependencies( null, mocker.Get<IService2>() );
+            new ClassWithDependencies(null, mocker.Get<IService2>());
         }
 
-        [TestMethod, ExpectedException( typeof( ArgumentNullException ) )]
+        [TestMethod, ExpectedException(typeof(ArgumentNullException))]
         public void WhenSecondServiceIsNotSpecifiedItThrows()
         {
             var mocker = new AutoMocker();
 
-            new ClassWithDependencies( mocker.Get<IService>(), null );
+            new ClassWithDependencies(mocker.Get<IService>(), null);
         }
     }
 }

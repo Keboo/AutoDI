@@ -12,9 +12,10 @@ using Mono.Cecil.Rocks;
 partial class ModuleWeaver
 {
     //TODO: Better name
-    private TypeDefinition GenerateContainer(Mapping mapping)
+    //TODO: out parameter... yuck
+    private TypeDefinition GenerateContainer(Mapping mapping, out MethodDefinition getGlobalServiceProvider)
     {
-        var containerType = new TypeDefinition("AutoDI", "<AutoDI>",
+        var containerType = new TypeDefinition(DI.Namespace, DI.TypeName,
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
             | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit)
         {
@@ -27,6 +28,7 @@ partial class ModuleWeaver
 
         PropertyDefinition property = GenerateGlobalServiceProviderProperty(globalServiceProvider);
         containerType.Properties.Add(property);
+        getGlobalServiceProvider = property.GetMethod;
         containerType.Methods.Add(property.GetMethod);
 
         MethodDefinition configureMethod = GenerateConfigureMethod(mapping, containerType);
@@ -34,6 +36,9 @@ partial class ModuleWeaver
 
         MethodDefinition initMethod = GenerateInitMethod(configureMethod, globalServiceProvider);
         containerType.Methods.Add(initMethod);
+
+        MethodDefinition disposeMethod = GenerateDisposeMethod(globalServiceProvider);
+        containerType.Methods.Add(disposeMethod);
 
         return containerType;
     }
@@ -43,7 +48,7 @@ partial class ModuleWeaver
         var property = new PropertyDefinition("Global", PropertyAttributes.None,
             ModuleDefinition.Get<IServiceProvider>());
 
-        var getMethod = new MethodDefinition("get_Global",
+        var getMethod = new MethodDefinition($"get_{property.Name}",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static |
             MethodAttributes.SpecialName, ModuleDefinition.Get<IServiceProvider>());
         property.GetMethod = getMethod;
@@ -167,7 +172,7 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateInitMethod(MethodDefinition configureMethod, FieldDefinition globalServiceProvider)
     {
-        var initMethod = new MethodDefinition("Init",
+        var initMethod = new MethodDefinition(nameof(DI.Init),
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
         var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, ModuleDefinition.Get<Action<IApplicationBuilder>>());
@@ -201,6 +206,29 @@ partial class ModuleWeaver
 
         initProcessor.Emit(OpCodes.Ret);
 
+        return initMethod;
+    }
+
+    private MethodDefinition GenerateDisposeMethod(FieldDefinition globalServiceProvider)
+    {
+        var initMethod = new MethodDefinition(nameof(DI.Dispose),
+            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
+            ModuleDefinition.ImportReference(typeof(void)));
+
+        ILProcessor processor = initMethod.Body.GetILProcessor();
+        Instruction loadNull = Instruction.Create(OpCodes.Ldnull);
+
+        processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
+        processor.Emit(OpCodes.Isinst, ModuleDefinition.Get<IDisposable>());
+        processor.Emit(OpCodes.Dup);
+        processor.Emit(OpCodes.Brfalse_S, loadNull);
+        processor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IDisposable>(nameof(IDisposable.Dispose)));
+
+
+        processor.Append(loadNull);
+        processor.Emit(OpCodes.Stsfld, globalServiceProvider);
+
+        processor.Emit(OpCodes.Ret);
         return initMethod;
     }
 }

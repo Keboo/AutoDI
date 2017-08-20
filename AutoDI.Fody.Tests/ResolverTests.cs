@@ -1,6 +1,6 @@
 ﻿using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using AutoDI.Fody.Tests.ResolveTestsNamespace;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -12,8 +12,6 @@ namespace AutoDI.Fody.Tests
     {
         private static Assembly _testAssembly;
 
-        private static IDependencyResolver _resolver;
-
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
         {
@@ -21,17 +19,20 @@ namespace AutoDI.Fody.Tests
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
-            Type resolverType = _testAssembly.GetType("AutoDI.AutoDIContainer");
-            Assert.IsNotNull(resolverType, "Could not find generated AudoDI resolver");
-            _resolver = Activator.CreateInstance(resolverType) as IDependencyResolver;
-            Assert.IsNotNull(_resolver, "Failed to create resolver");
+            DI.Init(_testAssembly);
+        }
+
+        [ClassCleanup]
+        public static void Cleanup()
+        {
+            DI.Dispose();
         }
 
         private object Resolve<T>()
         {
             string genericTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
             Type resolveType = _testAssembly.GetType(genericTypeName);
-            return _testAssembly.InvokeGeneric(resolveType, _resolver, nameof(_resolver.Resolve), (object) new object[0]);
+            return DI.Global.GetService(resolveType);
         }
 
         [TestMethod]

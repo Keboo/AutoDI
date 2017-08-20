@@ -1,4 +1,5 @@
 ﻿using AutoDI.AssemblyGenerator;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -20,19 +21,19 @@ namespace AutoDI.Fody.Tests
         }
 
         [TestMethod]
-        //[Description("Issue 26")]
+        [Description("Issue 26")]
         public void CanResolveServiceWithNonGenericMethod()
         {
             _testAssembly.InvokeEntryPoint();
-            DependencyResolver.Get().Resolve(typeof(IService)).Is<Service>();
+            DI.Global.GetService(typeof(IService)).Is<Service>();
         }
 
         [TestMethod]
-        //[Description("Issue 26")]
+        [Description("Issue 26")]
         public void CanResolveServiceWithGenericMethod()
         {
             _testAssembly.InvokeEntryPoint();
-            DependencyResolver.Get().Resolve<IService>().Is<Service>();
+            DI.Global.GetService<IService>().Is<Service>();
         }
     }
 

@@ -12,15 +12,15 @@ partial class ModuleWeaver
     {
         if (ModuleDefinition.EntryPoint != null)
         {
-            ILProcessor entryMethodProcessor = ModuleDefinition.EntryPoint.Body.GetILProcessor();
-            var create = Instruction.Create(OpCodes.Newobj,
-                resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
-            var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(
-                nameof(DependencyResolver.Set),
-                new[] { typeof(IDependencyResolver) }));
-            var set = Instruction.Create(OpCodes.Call, setMethod);
-            entryMethodProcessor.InsertBefore(ModuleDefinition.EntryPoint.Body.Instructions.First(), set);
-            entryMethodProcessor.InsertBefore(set, create);
+            //ILProcessor entryMethodProcessor = ModuleDefinition.EntryPoint.Body.GetILProcessor();
+            //var create = Instruction.Create(OpCodes.Newobj,
+            //    resolverType.Methods.Single(m => m.IsConstructor && !m.IsStatic));
+            //var setMethod = ModuleDefinition.ImportReference(typeof(DependencyResolver).GetMethod(
+            //    nameof(DependencyResolver.Set),
+            //    new[] { typeof(IDependencyResolver) }));
+            //var set = Instruction.Create(OpCodes.Call, setMethod);
+            //entryMethodProcessor.InsertBefore(ModuleDefinition.EntryPoint.Body.Instructions.First(), set);
+            //entryMethodProcessor.InsertBefore(set, create);
         }
         else
         {

@@ -7,7 +7,6 @@ namespace AutoDI
         public static T GetService<T>(this IServiceProvider provider, object[] autoDiParameters)
         {
             return (T)provider.GetService(typeof(T), autoDiParameters);
-            
         }
 
         public static object GetService(this IServiceProvider provider, Type serviceType, object[] autoDiParameters)

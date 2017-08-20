@@ -6,11 +6,12 @@ namespace AutoDI
 {
     public static class AutoDIContainer
     {
+        [Obsolete("Use DI.Init")]
         public static void Inject(Assembly containerAssembly = null)
         {
-            Type containerType = GetContainerType(containerAssembly);
-            IDependencyResolver resolver = (IDependencyResolver) Activator.CreateInstance(containerType);
-            DependencyResolver.Set(resolver);
+            //Type containerType = GetContainerType(containerAssembly);
+            //IDependencyResolver resolver = (IDependencyResolver) Activator.CreateInstance(containerType);
+            //DependencyResolver.Set(resolver);
         }
 
         public static ContainerMap GetMap(Assembly containerAssembly = null)

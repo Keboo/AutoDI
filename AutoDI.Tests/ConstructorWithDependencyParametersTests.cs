@@ -1,4 +1,5 @@
-﻿using AssemblyToProcess;
+﻿using System;
+using AssemblyToProcess;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.AutoMock;
@@ -8,18 +9,21 @@ namespace AutoDI.Tests
     [TestClass]
     public class ConstructorWithDependencyParametersTests
     {
+        //TODO: These tests could bennifit from scopes
+
         [TestMethod]
         public void DependencyWithIntParameter()
         {
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals(42)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals(42)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithIntParam();
 
@@ -28,7 +32,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -38,12 +42,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals("Test String")))).Returns(service).Verifiable();
-
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals("Test String")))).Returns(service).Verifiable();
+            
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithStringParam();
 
@@ -52,7 +57,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -62,12 +67,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0] == null))).Returns(service).Verifiable();
-
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0] == null))).Returns(service).Verifiable();
+            
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithNullParam();
 
@@ -76,7 +82,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -86,12 +92,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals(long.MaxValue)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals(long.MaxValue)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithLongParam();
 
@@ -100,7 +107,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -110,12 +117,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals(double.NaN)))).Returns(service).Verifiable();
-
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals(double.NaN)))).Returns(service).Verifiable();
+            
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithDoubleParam();
 
@@ -124,7 +132,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -134,12 +142,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals(float.MinValue)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals(float.MinValue)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithFloatParam();
 
@@ -148,7 +157,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -158,12 +167,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals(short.MinValue)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals(short.MinValue)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithShortParam();
 
@@ -172,7 +182,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -182,12 +192,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals(byte.MaxValue)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals(byte.MaxValue)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithByteParam();
 
@@ -196,7 +207,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -206,12 +217,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals((uint)int.MaxValue + 1)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals((uint)int.MaxValue + 1)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithUnsignedIntParam();
 
@@ -220,7 +232,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -230,12 +242,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals((ulong)long.MaxValue + 1)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals((ulong)long.MaxValue + 1)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithUnsignedLongParam();
 
@@ -244,7 +257,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -254,12 +267,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals((ushort)short.MaxValue + 1)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals((ushort)short.MaxValue + 1)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithUnsignedShortParam();
 
@@ -268,7 +282,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -278,12 +292,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals(EnumParam.BeAwesome)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals(EnumParam.BeAwesome)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithEnumParam();
 
@@ -292,7 +307,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -302,12 +317,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 1 && p[0].Equals(sbyte.MinValue)))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 1 && p[0].Equals(sbyte.MinValue)))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithSignedByteParam();
 
@@ -316,7 +332,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 
@@ -327,12 +343,13 @@ namespace AutoDI.Tests
             var mocker = new AutoMocker();
             var service = mocker.Get<IService>();
 
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.Is<object[]>(p => p.Length == 2 && p[0].Equals(4) && p[1].Equals("Test")))).Returns(service).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.Is<object[]>(p => p.Length == 2 && p[0].Equals(4) && p[1].Equals("Test")))).Returns(service).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWithTwoDependencyParams();
 
@@ -341,7 +358,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DependencyResolver.Set(null);
+                DI.Dispose();
             }
         }
 

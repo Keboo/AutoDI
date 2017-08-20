@@ -1,4 +1,5 @@
-﻿using AssemblyToProcess;
+﻿using System;
+using AssemblyToProcess;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Moq.AutoMock;
@@ -13,20 +14,21 @@ namespace AutoDI.Tests
         {
             var mocker = new AutoMocker();
             var service1 = mocker.Get<IService>();
-            var dr = mocker.GetMock<IDependencyResolver>();
-            dr.Setup(x => x.Resolve<IService>(It.IsAny<object[]>())).Returns(service1).Verifiable();
+            var provider = mocker.GetMock<IServiceProvider>();
+            var autoDIProvider = provider.As<IAutoDISerivceProvider>();
+            autoDIProvider.Setup(x => x.GetService(typeof(IService), It.IsAny<object[]>())).Returns(service1).Verifiable();
 
             try
             {
-                DependencyResolver.Set(dr.Object);
+                DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
                 var sut = new ClassWtihNestedType.NestedType();
                 Assert.AreEqual(service1, sut.Service);
-                dr.Verify();
+                mocker.VerifyAll();
             }
             finally
             {
-                DependencyResolver.Set((IDependencyResolver)null);
+                DI.Dispose();
             }
         }
     }

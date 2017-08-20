@@ -1,6 +1,5 @@
-using System;
-using AutoDI;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace AutoDI
 {
@@ -11,7 +10,7 @@ namespace AutoDI
         {
             foreach (Type serviceType in serviceTypes)
             {
-                serviceCollection.Add(new AutoDIServiceDescriptor(serviceType, sp => factory(sp), lifetime.FromAutoDI()));
+                serviceCollection.Add(new AutoDIServiceDescriptor(serviceType, sp => factory(sp), lifetime));
             }
         }
 

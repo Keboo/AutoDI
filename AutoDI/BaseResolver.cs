@@ -2,7 +2,7 @@
 
 namespace AutoDI
 {
-    public abstract class BaseResolver : IDependencyResolver, IInitializeResolver
+    public abstract class BaseResolver : IAutoDISerivceProvider, IInitializeResolver
     {
         public virtual T Resolve<T>(params object[] parameters)
         {
@@ -18,6 +18,11 @@ namespace AutoDI
         public virtual void Initialize()
         {
             //Base implementation does nothing
+        }
+
+        public object GetService(Type serviceType, object[] parameters)
+        {
+            throw new NotImplementedException();
         }
     }
 }
