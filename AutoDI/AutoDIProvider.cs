@@ -105,24 +105,6 @@ namespace AutoDI
         }
     }
 
-    internal class AutoDIServiceDescriptor : ServiceDescriptor
-    {
-        //TODO: Ctors that allow setting there.... we probably will only need the factory ctor
-        public Lifetime AutoDILifetime { get; }
-
-        public AutoDIServiceDescriptor(Type serviceType, Type implementationType, ServiceLifetime lifetime) : base(serviceType, implementationType, lifetime)
-        {
-        }
-
-        public AutoDIServiceDescriptor(Type serviceType, object instance) : base(serviceType, instance)
-        {
-        }
-
-        public AutoDIServiceDescriptor(Type serviceType, Func<IServiceProvider, object> factory, ServiceLifetime lifetime) : base(serviceType, factory, lifetime)
-        {
-        }
-    }
-
     //This class will be generated
     internal static class AutoDI_Gen
     {
@@ -155,7 +137,10 @@ namespace AutoDI
             //AuotDI generates all of the registrations here
             collection.AddSingleton<IServiceExample, ServiceExample>();
             collection.AddAutoDIService<ServiceExample>(sp => new ServiceExample(), new[] {typeof(IServiceExample)}, Lifetime.LazySingleton);
-            collection.AddAutoDIService<ExampleManager>(sp => new ExampleManager(sp.GetService<IServiceExample>(), sp.GetService<IServiceExample>()), new[] {typeof(IServiceExample)}, Lifetime.LazySingleton);
+            collection.AddAutoDIService<ExampleManager>(
+                sp => new ExampleManager(sp.GetService<IServiceExample>(), sp.GetService<IServiceExample>()), 
+                new[] {typeof(IServiceExample), typeof(IServiceProvider)}, 
+                Lifetime.LazySingleton);
             
         }
     }

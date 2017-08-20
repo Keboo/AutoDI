@@ -80,13 +80,6 @@ partial class ModuleWeaver
 
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
 
-
-        if (funcCtor == null)
-        {
-            LogError($"Failed to find {typeof(Func<>).FullName} constructor");
-            return null;
-        }
-
         int factoryIndex = 0;
         foreach (TypeMap map in mapping)
         {
@@ -103,9 +96,10 @@ partial class ModuleWeaver
                 containerType.Methods.Add(factoryMethod);
                 factoryIndex++;
 
+                processor.Emit(OpCodes.Ldarg_0); //collection parameter
+
                 processor.Emit(OpCodes.Ldnull);
                 processor.Emit(OpCodes.Ldftn, factoryMethod);
-
                 processor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericTypeConstructor(ModuleDefinition.Get<IServiceProvider>(), map.TargetType)));
 
                 processor.Emit(OpCodes.Ldc_I4, map.Keys.Count);
@@ -128,15 +122,6 @@ partial class ModuleWeaver
                 var genericAddMethod = new GenericInstanceMethod(addAuotDIServiceMethod);
                 genericAddMethod.GenericArguments.Add(map.TargetType);
                 processor.Emit(OpCodes.Call, genericAddMethod);
-                //processor.Emit(OpCodes.Ldarg_0); //collection
-
-
-
-                //processor.Emit(OpCodes.Ldsfld, null);
-                //processor.Emit(OpCodes.Dup);
-                //processor.Emit(OpCodes.Dup);
-
-
             }
             catch (Exception e)
             {
