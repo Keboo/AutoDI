@@ -46,11 +46,11 @@ namespace AutoDI
             }
             var containerTypes = from ServiceDescriptor serviceDescriptor in serviceCollection
                 let typeInfo = serviceDescriptor.ServiceType.GetTypeInfo()
-                where typeInfo.IsGenericTypeDefinition
+                where typeInfo.IsGenericType
                 let genericType = typeInfo.GetGenericTypeDefinition()
                 where genericType == typeof(IServiceProviderFactory<>)
                 let containerType = serviceDescriptor.ServiceType.GenericTypeArguments[0]
-                orderby containerType == typeof(ContainerMap) ? 1 : 0
+                orderby containerType == typeof(ContainerMap_old) ? 1 : 0
                 select containerType;
             return containerTypes.FirstOrDefault();
         }
@@ -58,18 +58,25 @@ namespace AutoDI
         private IServiceProvider GetProvider(IServiceProvider applicationProvider,
             IServiceCollection serviceCollection)
         {
-            return (IServiceProvider)IntrospectionExtensions.GetTypeInfo(GetType()).DeclaredMethods
+            //TODO: Better exception type
+            Type containerType = GetContainerType(serviceCollection) ??
+                                 throw new Exception($"Could not determine container type. Is there an {typeof(IServiceProviderFactory<>).FullName} registered?");
+            return (IServiceProvider)GetType().GetTypeInfo().DeclaredMethods
                 .Single(m => m.IsGenericMethodDefinition && m.Name == nameof(GetProvider))
-                .MakeGenericMethod(GetContainerType(serviceCollection))
+                .MakeGenericMethod(containerType)
                 .Invoke(this, new object[] { applicationProvider, serviceCollection });
         }
 
         private IServiceProvider GetProvider<TContainerType>(IServiceProvider applicationProvider, IServiceCollection serviceCollection)
         {
-            IServiceProviderFactory<TContainerType> providerFactory = applicationProvider.GetService<IServiceProviderFactory<TContainerType>>();
+            //TODO: Better exception type.
+            IServiceProviderFactory<TContainerType> providerFactory =
+                applicationProvider.GetService<IServiceProviderFactory<TContainerType>>()
+                ?? throw new Exception($"Failed to resolve service provider factory");
+            
             TContainerType container = providerFactory.CreateBuilder(serviceCollection);
 
-            foreach (Action<TContainerType> configureMethods in Enumerable.OfType<Action<TContainerType>>(_configureContainerDelegates))
+            foreach (Action<TContainerType> configureMethods in _configureContainerDelegates.OfType<Action<TContainerType>>())
             {
                 configureMethods(container);
             }

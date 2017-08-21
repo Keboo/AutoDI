@@ -3,49 +3,6 @@ using System;
 
 namespace AutoDI
 {
-    internal class AutoDIServiceProviderFactory : IServiceProviderFactory<ContainerMap>
-    {
-        public ContainerMap CreateBuilder(IServiceCollection services)
-        {
-            var map = new ContainerMap();
-
-            Lifetime GetLifetime(ServiceDescriptor descriptor)
-            {
-                if (descriptor is AutoDIServiceDescriptor autoDiDescriptor)
-                {
-                    return autoDiDescriptor.AutoDILifetime;
-                }
-                return descriptor.Lifetime.ToAutoDI();
-            }
-
-            //TODO: actually register the items in the container map
-            foreach (ServiceDescriptor serviceDescriptor in services)
-            {
-                switch (GetLifetime(serviceDescriptor))
-                {
-                    //TODO....
-                    case Lifetime.Singleton:
-                        break;
-                    case Lifetime.LazySingleton:
-                        break;
-                    case Lifetime.Scoped:
-                        break;
-                    case Lifetime.WeakTransient:
-                        break;
-                    case Lifetime.Transient:
-                        break;
-                }
-            }
-
-            return map;
-        }
-
-        public IServiceProvider CreateServiceProvider(ContainerMap containerBuilder)
-        {
-            return new AutoDIServiceProvider(containerBuilder);
-        }
-    }
-
     internal class AutoDIServiceScopeFactory : IServiceScopeFactory
     {
         private readonly ContainerMap _map;
@@ -152,7 +109,7 @@ namespace AutoDI
         public static void ConfigureApplication(IApplicationBuilder applicationBuilder)
         {
             applicationBuilder.ConfigureServices(services => { });
-            applicationBuilder.ConfigureContinaer<ContainerMap>(map =>
+            applicationBuilder.ConfigureContinaer<ContainerMap_old>(map =>
             {
 
             });

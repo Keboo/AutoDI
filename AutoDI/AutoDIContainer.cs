@@ -14,12 +14,12 @@ namespace AutoDI
             //DependencyResolver.Set(resolver);
         }
 
-        public static ContainerMap GetMap(Assembly containerAssembly = null)
+        public static ContainerMap_old GetMap(Assembly containerAssembly = null)
         {
             Type containerType = GetContainerType(containerAssembly);
             FieldInfo field = containerType.GetRuntimeFields().SingleOrDefault(f => f.Name == "_items");
             if (field == null) throw new InvalidOperationException("Could not find mapping field in container");
-            return (ContainerMap) field.GetValue(null);
+            return (ContainerMap_old) field.GetValue(null);
         }
 
         private static Type GetContainerType(Assembly containerAssembly)

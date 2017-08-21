@@ -211,17 +211,22 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateDisposeMethod(FieldDefinition globalServiceProvider)
     {
-        var initMethod = new MethodDefinition(nameof(DI.Dispose),
+        var disposeMethod = new MethodDefinition(nameof(DI.Dispose),
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 
-        ILProcessor processor = initMethod.Body.GetILProcessor();
+        VariableDefinition disposable = new VariableDefinition(ModuleDefinition.Get<IDisposable>());
+        disposeMethod.Body.Variables.Add(disposable);
+
+        ILProcessor processor = disposeMethod.Body.GetILProcessor();
         Instruction loadNull = Instruction.Create(OpCodes.Ldnull);
 
         processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         processor.Emit(OpCodes.Isinst, ModuleDefinition.Get<IDisposable>());
         processor.Emit(OpCodes.Dup);
+        processor.Emit(OpCodes.Stloc_0); //disposable
         processor.Emit(OpCodes.Brfalse_S, loadNull);
+        processor.Emit(OpCodes.Ldloc_0); //disposable
         processor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IDisposable>(nameof(IDisposable.Dispose)));
 
 
@@ -229,6 +234,6 @@ partial class ModuleWeaver
         processor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
         processor.Emit(OpCodes.Ret);
-        return initMethod;
+        return disposeMethod;
     }
 }

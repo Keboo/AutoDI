@@ -27,7 +27,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanLoadTypesFromDependentAssemblies()
         {
-            ContainerMap map = AutoDIContainer.GetMap(_mainAssembly);
+            ContainerMap_old map = AutoDIContainer.GetMap(_mainAssembly);
             Assert.IsNotNull(map);
             Assert.IsTrue(map.IsMapped<IService, Service>(typeof(DependentAssemblyTests)));
             Assert.IsTrue(map.IsMapped<Service, Service>(typeof(DependentAssemblyTests)));

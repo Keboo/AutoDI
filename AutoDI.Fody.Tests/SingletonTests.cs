@@ -82,7 +82,7 @@ namespace AutoDI.Fody.Tests
         public static class Foo
         {
             [SetupMethod]
-            public static void Setup(ContainerMap map)
+            public static void Setup(ContainerMap_old map)
             {
                 if (Service.IsCreated) throw new Exception();
             }
@@ -113,7 +113,7 @@ namespace AutoDI.Fody.Tests
         public static class Foo
         {
             [SetupMethod]
-            public static void Setup(ContainerMap map)
+            public static void Setup(ContainerMap_old map)
             {
                 if (Service.IsCreated) throw new Exception();
                 var service = map.Get<IService>();

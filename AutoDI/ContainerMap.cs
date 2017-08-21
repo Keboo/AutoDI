@@ -1,8 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace AutoDI
 {
@@ -11,63 +11,21 @@ namespace AutoDI
         private static readonly MethodInfo MakeLazyMethod;
         private static readonly MethodInfo MakeFuncMethod;
 
+        private readonly Dictionary<Type, DelegateContainer> _accessors = new Dictionary<Type, DelegateContainer>();
+
         static ContainerMap()
         {
-            var methods = typeof(ContainerMap).GetRuntimeMethods().ToList();
+            var methods = typeof(ContainerMap_old).GetRuntimeMethods().ToList();
             MakeLazyMethod = methods.Single(m => m.Name == nameof(MakeLazy));
             MakeFuncMethod = methods.Single(m => m.Name == nameof(MakeFunc));
         }
 
-        private readonly Dictionary<Type, DelegateContainer> _accessors = new Dictionary<Type, DelegateContainer>();
-
-        public void AddSingleton<T>(Func<T> factory, Type[] keys)
+        public void Add(ServiceDescriptor descriptor)
         {
-            var lazy = new Lazy<T>(factory);
-            Add(Lifetime.Singleton, () => lazy.Value, keys);
-        }
+            if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
 
-        public void AddLazySingleton<T>(Func<T> factory, Type[] keys)
-        {
-            var lazy = new Lazy<T>(factory);
-            Add(Lifetime.LazySingleton, () => lazy.Value, keys);
+            _accessors[descriptor.ServiceType] = new DelegateContainer(descriptor);
         }
-
-        public void AddWeakTransient<T>(Func<T> factory, Type[] keys) where T : class
-        {
-            var weakRef = new WeakReference<T>(default(T));
-            Add(Lifetime.WeakTransient, () =>
-            {
-                lock (weakRef)
-                {
-                    if (!weakRef.TryGetTarget(out T value))
-                    {
-                        value = factory();
-                        weakRef.SetTarget(value);
-                    }
-                    return value;
-                }
-            }, keys);
-        }
-
-        public void AddTransient<T>(Func<T> factory, Type[] keys)
-        {
-            Add(Lifetime.Transient, factory, keys);
-        }
-
-        public bool Remove<T>()
-        {
-            bool rv = false; 
-            foreach (Type key in _accessors.Keys.ToList())
-            {
-                if (_accessors[key] is DelegateContainer<T>)
-                {
-                    rv |= _accessors.Remove(key);
-                }
-            }
-            return rv;
-        }
-        
-        public bool RemoveKey(Type key) => _accessors.Remove(key);
 
         public T Get<T>()
         {
@@ -84,7 +42,7 @@ namespace AutoDI
         {
             if (_accessors.TryGetValue(key, out DelegateContainer container))
             {
-                return container.Get();
+                return container.Get(null);
             }
             if (key.IsConstructedGenericType)
             {
@@ -102,79 +60,38 @@ namespace AutoDI
             return default(object);
         }
 
-        private void Add<T>(Lifetime lifetimeMode, Func<T> @delegate, Type[] keys)
-        {
-            foreach (Type key in keys)
-            {
-                _accessors[key] = new DelegateContainer<T>(@delegate, lifetimeMode);
-            }
-        }
-
-        public IEnumerable<Map> GetMappings()
-        {
-            foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors.OrderBy(kvp => kvp.Key.FullName))
-            {
-                yield return new Map(kvp.Key, kvp.Value.TargetType, kvp.Value.LifetimeMode);
-            }
-        }
-
-        /// <summary>
-        /// This method is used by AutoDI and not expected to be invoked directly.
-        /// </summary>
-        public void CreateSingletons()
-        {
-            foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors
-                .Where(kvp => kvp.Value.LifetimeMode == Lifetime.Singleton))
-            {
-                //Forces creation of objects.
-                kvp.Value.Get();
-            }
-        }
-
-        public override string ToString()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine($"{nameof(ContainerMap)} contents:");
-
-            var maps = GetMappings().ToArray();
-            int padSize = maps.Select(m => m.SourceType.FullName.Length).Max();
-
-            foreach (Map map in maps)
-            {
-                sb.AppendLine($"  {map.SourceType.FullName.PadRight(padSize)} -> {map.TargetType?.FullName ?? "<unknown>"} as {map.LifetimeMode}");
-            }
-            return sb.ToString();
-        }
-
         private Lazy<T> MakeLazy<T>() => new Lazy<T>(Get<T>);
 
         private Func<T> MakeFunc<T>() => () => Get<T>();
 
-        private abstract class DelegateContainer
+        private class DelegateContainer
         {
-            public Lifetime LifetimeMode { get; }
+            private readonly Func<IServiceProvider, object> _get;
+            public Type TargetType { get; }
+            public Lifetime Lifetime { get; }
 
-            public abstract Type TargetType { get; }
-
-            protected DelegateContainer(Lifetime lifetimeMode)
+            public DelegateContainer(ServiceDescriptor descriptor)
             {
-                LifetimeMode = lifetimeMode;
+                AutoDIServiceDescriptor autoDIDescriptor = descriptor as AutoDIServiceDescriptor;
+                Lifetime = autoDIDescriptor?.AutoDILifetime ?? descriptor.Lifetime.ToAutoDI();
+
+                if (descriptor.ImplementationType != null)
+                {
+                    //TODO
+                }
+                else if (descriptor.ImplementationFactory != null)
+                {
+                    var factory = descriptor.ImplementationFactory;
+                    _get = provider => factory(provider); //TODO
+                }
+                else
+                {
+                    object instance = descriptor.ImplementationInstance;
+                    _get = _ => instance;
+                }
             }
 
-            public abstract object Get();
-        }
-
-        private class DelegateContainer<T> : DelegateContainer
-        {
-            private readonly Func<T> _func;
-
-            public DelegateContainer(Func<T> func, Lifetime lifetimeMode) : base(lifetimeMode)
-            {
-                _func = func;
-            }
-
-            public override object Get() => _func();
-            public override Type TargetType => typeof(T);
+            public object Get(IServiceProvider provider) => _get(provider);
         }
 
         public class Map

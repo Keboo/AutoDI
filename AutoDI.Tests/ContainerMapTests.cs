@@ -9,7 +9,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void TestGetSingleton()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             map.AddSingleton<IInterface, Class>();
 
             IInterface c = map.Get<IInterface>();
@@ -19,7 +19,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void TestGetLazySingleton()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             map.AddLazySingleton<IInterface, Class>();
 
             IInterface c = map.Get<IInterface>();
@@ -29,7 +29,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void TestGetWeakTransient()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             map.AddWeakTransient<IInterface, Class>();
 
             IInterface c = map.Get<IInterface>();
@@ -39,7 +39,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void TestGetTransient()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             map.AddTransient<IInterface, Class>();
 
             IInterface c = map.Get<IInterface>();
@@ -49,7 +49,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void GetSingletonAlwaysReturnsTheSameInstance()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             var instance = new Class();
             map.AddSingleton<IInterface, Class>(instance);
 
@@ -63,7 +63,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void GetLazySingletonDoesNotCreateObjectUntilRequested()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             map.AddLazySingleton<IInterface, Class>(() => throw new Exception());
 
             try
@@ -80,7 +80,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void GetLazySingletonReturnsTheSameInstance()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             map.AddLazySingleton(() => new Class(), new[] { typeof(IInterface), typeof(IInterface2) });
 
             var instance1 = map.Get<IInterface>();
@@ -93,7 +93,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void GetSingleOnlyCreatesOneInstanceAtATime()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             int instanceCount = 0;
             map.AddWeakTransient<IInterface, Class>(() =>
             {
@@ -120,7 +120,7 @@ namespace AutoDI.Tests
         [TestMethod]
         public void GetAlwaysCreatesNewInstances()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             int instanceCount = 0;
             map.AddTransient<IInterface, Class>(() =>
             {
@@ -141,7 +141,7 @@ namespace AutoDI.Tests
         [Description("Issue 22")]
         public void ContainerMapCanGenerateLazyInstances()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             var @class = new Class();
             map.AddSingleton<IInterface, Class>(@class);
 
@@ -154,7 +154,7 @@ namespace AutoDI.Tests
         [Description("Issue 22")]
         public void ContainerMapCanGenerateFuncInstances()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             var @class = new Class();
             map.AddSingleton<IInterface, Class>(@class);
 
@@ -167,7 +167,7 @@ namespace AutoDI.Tests
         [Description("Issue 22")]
         public void CanRemoveMappedType()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
             map.AddSingleton<IInterface, Class>();
             map.AddSingleton<IInterface2, Derived>();
 
@@ -181,7 +181,7 @@ namespace AutoDI.Tests
         [Description("Issue 22")]
         public void CanRemoveMappedTypeKeys()
         {
-            var map = new ContainerMap();
+            var map = new ContainerMap_old();
 
             map.AddSingleton(new Class(), new[] {typeof(IInterface), typeof(IInterface2)});
 

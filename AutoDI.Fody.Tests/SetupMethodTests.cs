@@ -27,10 +27,10 @@ namespace AutoDI.Fody.Tests
         [Description("Issue 23")]
         public void PublicSetupMethodIsInvoked()
         {
-            ContainerMap GetInitMap()
+            ContainerMap_old GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
-                return (ContainerMap)_publicAssembly.GetStaticProperty<SetupMethodPublicTests.Program>(
+                return (ContainerMap_old)_publicAssembly.GetStaticProperty<SetupMethodPublicTests.Program>(
                     nameof(SetupMethodPublicTests.Program.InitMap));
             }
             
@@ -43,10 +43,10 @@ namespace AutoDI.Fody.Tests
         [Description("Issue 38")]
         public void InternalSetupMethodIsInvoked()
         {
-            ContainerMap GetInitMap()
+            ContainerMap_old GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
-                return (ContainerMap)_internalAssembly.GetStaticProperty<SetupMethodInternalTests.Program>(
+                return (ContainerMap_old)_internalAssembly.GetStaticProperty<SetupMethodInternalTests.Program>(
                     nameof(SetupMethodInternalTests.Program.InitMap));
             }
 
@@ -59,10 +59,10 @@ namespace AutoDI.Fody.Tests
         [Description("Issue 49")]
         public void SetupMethodIsNotInvokedUntilTheContainerIsInjected()
         {
-            ContainerMap GetInitMap()
+            ContainerMap_old GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
-                return (ContainerMap)_manualAssembly.GetStaticProperty<SetupMethodManualInjectionTests.TestClass>(
+                return (ContainerMap_old)_manualAssembly.GetStaticProperty<SetupMethodManualInjectionTests.TestClass>(
                     nameof(SetupMethodManualInjectionTests.TestClass.InitMap));
             }
 
@@ -85,7 +85,7 @@ namespace SetupMethodPublicTests
 
     public class Program
     {
-        public static ContainerMap InitMap { get; set; }
+        public static ContainerMap_old InitMap { get; set; }
 
         public static void Main(string[] args)
         {
@@ -93,7 +93,7 @@ namespace SetupMethodPublicTests
         }
 
         [SetupMethod]
-        public static void InitializeContainer(ContainerMap map)
+        public static void InitializeContainer(ContainerMap_old map)
         {
             InitMap = map;
         }
@@ -101,10 +101,10 @@ namespace SetupMethodPublicTests
 
     public class Container
     {
-        private static readonly ContainerMap _map;
+        private static readonly ContainerMap_old _map;
         static Container()
         {
-            _map = new ContainerMap();
+            _map = new ContainerMap_old();
 
             Program.InitializeContainer(_map);
         }
@@ -122,7 +122,7 @@ namespace SetupMethodInternalTests
 
     public class Program
     {
-        public static ContainerMap InitMap { get; set; }
+        public static ContainerMap_old InitMap { get; set; }
 
         public static void Main(string[] args)
         {
@@ -130,7 +130,7 @@ namespace SetupMethodInternalTests
         }
 
         [SetupMethod]
-        internal static void InitializeContainer(ContainerMap map)
+        internal static void InitializeContainer(ContainerMap_old map)
         {
             InitMap = map;
         }
@@ -148,11 +148,11 @@ namespace SetupMethodManualInjectionTests
 
     public class TestClass
     {
-        public static ContainerMap InitMap { get; set; }
+        public static ContainerMap_old InitMap { get; set; }
         public static Manager Manager { get; private set; }
 
         [SetupMethod]
-        internal static void InitializeContainer(ContainerMap map)
+        internal static void InitializeContainer(ContainerMap_old map)
         {
             InitMap = map;
             //This ensures the 

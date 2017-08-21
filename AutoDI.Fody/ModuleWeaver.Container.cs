@@ -26,9 +26,9 @@ partial class ModuleWeaver
         ILProcessor staticBody = staticConstructor.Body.GetILProcessor();
 
         //Declare and initialize dictionary map
-        FieldDefinition mapField = ModuleDefinition.CreateStaticReadonlyField<ContainerMap>("_items", false);
+        FieldDefinition mapField = ModuleDefinition.CreateStaticReadonlyField<ContainerMap_old>("_items", false);
         containerType.Fields.Add(mapField);
-        MethodReference mapConstructor = ModuleDefinition.ImportReference(typeof(ContainerMap).GetConstructor(new Type[0]));
+        MethodReference mapConstructor = ModuleDefinition.ImportReference(typeof(ContainerMap_old).GetConstructor(new Type[0]));
         staticBody.Emit(OpCodes.Newobj, mapConstructor);
         staticBody.Emit(OpCodes.Stsfld, mapField);
 
@@ -54,7 +54,7 @@ partial class ModuleWeaver
 
             MethodReference getMethod =
                 ModuleDefinition.ImportReference(
-                    typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] { typeof(Type) }));
+                    typeof(ContainerMap_old).GetMethod(nameof(ContainerMap_old.Get), new[] { typeof(Type) }));
             //TODO: parameters too
             body.Emit(OpCodes.Ldarg_1);
             body.Emit(OpCodes.Call, getMethod);
@@ -84,7 +84,7 @@ partial class ModuleWeaver
 
             //Create singleton instances
             var createInstancesMethod =
-                ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.CreateSingletons)));
+                ModuleDefinition.ImportReference(typeof(ContainerMap_old).GetMethod(nameof(ContainerMap_old.CreateSingletons)));
             body.Emit(OpCodes.Ldsfld, mapField);
             body.Emit(OpCodes.Call, createInstancesMethod);
             body.Emit(OpCodes.Nop);
@@ -116,13 +116,13 @@ partial class ModuleWeaver
         }
 
         MethodReference addSingleton =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddSingleton)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap_old).GetMethod(nameof(ContainerMap_old.AddSingleton)));
         MethodReference addLazySingleton =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddLazySingleton)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap_old).GetMethod(nameof(ContainerMap_old.AddLazySingleton)));
         MethodReference addWeakTransient =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddWeakTransient)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap_old).GetMethod(nameof(ContainerMap_old.AddWeakTransient)));
         MethodReference addTransient =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddTransient)));
+            ModuleDefinition.ImportReference(typeof(ContainerMap_old).GetMethod(nameof(ContainerMap_old.AddTransient)));
 
         TypeReference funcType = ModuleDefinition.ImportReference(typeof(Func<>));
         //NB: This null fall back is due to an issue with Mono.Cecil 0.10.0
@@ -225,6 +225,6 @@ partial class ModuleWeaver
                                   (md.IsPublic || md.IsAssembly) &&
                                   md.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>()) &&
                                   md.Parameters.Count == 1 &&
-                                  md.Parameters[0].ParameterType.IsType<ContainerMap>());
+                                  md.Parameters[0].ParameterType.IsType<ContainerMap_old>());
     }
 }
