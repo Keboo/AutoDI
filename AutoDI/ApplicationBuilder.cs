@@ -50,9 +50,9 @@ namespace AutoDI
                 let genericType = typeInfo.GetGenericTypeDefinition()
                 where genericType == typeof(IServiceProviderFactory<>)
                 let containerType = serviceDescriptor.ServiceType.GenericTypeArguments[0]
-                orderby containerType == typeof(ContainerMap_old) ? 1 : 0
+                orderby containerType == typeof(ContainerMap) ? 1 : 0 descending
                 select containerType;
-            return containerTypes.FirstOrDefault();
+            return containerTypes.LastOrDefault();
         }
 
         private IServiceProvider GetProvider(IServiceProvider applicationProvider,
