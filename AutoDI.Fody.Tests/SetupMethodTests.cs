@@ -69,8 +69,6 @@ namespace AutoDI.Fody.Tests
             Assert.IsNull(GetInitMap());
             DI.Init(_manualAssembly);
             Assert.IsNotNull(GetInitMap());
-            Assert.IsTrue(_manualAssembly.GetStaticProperty<SetupMethodManualInjectionTests.TestClass>(
-                    nameof(SetupMethodManualInjectionTests.TestClass.Manager)).Is<SetupMethodManualInjectionTests.Manager>());
             
         }
     }
@@ -144,7 +142,6 @@ namespace SetupMethodManualInjectionTests
     public class TestClass
     {
         public static ContainerMap InitMap { get; set; }
-        public static Manager Manager { get; private set; }
 
         [SetupMethod]
         internal static void InitializeContainer(IApplicationBuilder builder)
@@ -152,7 +149,6 @@ namespace SetupMethodManualInjectionTests
             builder.ConfigureContinaer<ContainerMap>(map =>
             {
                 InitMap = map;
-                Manager = map.Get<Manager>(null);
             });
         }
     }

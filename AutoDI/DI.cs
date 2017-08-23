@@ -36,17 +36,6 @@ namespace AutoDI
             method.Invoke(null, new object[] { configureMethod });
         }
 
-        public static ContainerMap GetMap(Assembly containerAssembly = null)
-        {
-            IServiceProvider serviceProvider = GetServiceProvider(containerAssembly ?? ContainerAssembly);
-            if (serviceProvider is AutoDIServiceProvider autoDIProvider)
-            {
-                return autoDIProvider.ContainerMap;
-            }
-            //TODO: Better exception
-            throw new InvalidOperationException($"Could not find {nameof(AutoDIServiceProvider)}");
-        }
-
         public static void Dispose()
         {
             Type autoDI = GetAutoDIType(ContainerAssembly);

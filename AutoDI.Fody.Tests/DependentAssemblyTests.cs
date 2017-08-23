@@ -11,8 +11,9 @@ namespace AutoDI.Fody.Tests
     [TestClass]
     public class DependentAssemblyTests
     {
-        private static Assembly _sharedAssembly;
+        //private static Assembly _sharedAssembly;
         private static Assembly _mainAssembly;
+        private static ContainerMap _map;
 
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
@@ -20,19 +21,32 @@ namespace AutoDI.Fody.Tests
             var gen = new Generator();
 
             var testAssemblies = await gen.Execute();
-            _sharedAssembly = testAssemblies["shared"].Assembly;
+            //_sharedAssembly = testAssemblies["shared"].Assembly;
             _mainAssembly = testAssemblies["main"].Assembly;
+
+            DI.Init(_mainAssembly, builder =>
+            {
+                builder.ConfigureContinaer<ContainerMap>(map =>
+                {
+                    _map = map;
+                });
+            });
+        }
+
+        [ClassCleanup]
+        public static void Cleanup()
+        {
+            DI.Dispose();
         }
 
         [TestMethod]
         public void CanLoadTypesFromDependentAssemblies()
         {
-            ContainerMap map = DI.GetMap(_mainAssembly);
-            Assert.IsNotNull(map);
-            Assert.IsTrue(map.IsMapped<IService, Service>(typeof(DependentAssemblyTests)));
-            Assert.IsTrue(map.IsMapped<Service, Service>(typeof(DependentAssemblyTests)));
-            Assert.IsTrue(map.IsMapped<Manager, Manager>(typeof(DependentAssemblyTests)));
-            Assert.IsTrue(map.IsMapped<Program, Program>(typeof(DependentAssemblyTests)));
+            Assert.IsNotNull(_map);
+            Assert.IsTrue(_map.IsMapped<IService, Service>(typeof(DependentAssemblyTests)));
+            Assert.IsTrue(_map.IsMapped<Service, Service>(typeof(DependentAssemblyTests)));
+            Assert.IsTrue(_map.IsMapped<Manager, Manager>(typeof(DependentAssemblyTests)));
+            Assert.IsTrue(_map.IsMapped<Program, Program>(typeof(DependentAssemblyTests)));
         }
     }
 

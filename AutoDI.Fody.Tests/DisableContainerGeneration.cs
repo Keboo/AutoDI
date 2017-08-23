@@ -32,7 +32,7 @@ namespace AutoDI.Fody.Tests
         public void WhenGenerateContainerIsFalseTheContainerIsNotGenerated()
         {
             Assert.Fail("Does this make sense?");
-            DI.GetMap(_testAssembly);
+            //DI.GetMap(_testAssembly);
         }
     }
 

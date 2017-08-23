@@ -102,8 +102,8 @@ public partial class ModuleWeaver
 
                 InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
 
-                TypeDefinition resolverType = CreateAutoDIContainer(mapping);
-                ModuleDefinition.Types.Add(resolverType);
+                //TypeDefinition resolverType = CreateAutoDIContainer(mapping);
+                //ModuleDefinition.Types.Add(resolverType);
                 
                 ModuleDefinition.Types.Add(GenerateContainer(mapping, out MethodDefinition getGlobalServiceProvider, out MethodDefinition initMethod));
 
@@ -164,6 +164,10 @@ public partial class ModuleWeaver
 
         foreach (AssemblyNameReference assemblyReference in ModuleDefinition.AssemblyReferences)
         {
+            if (assemblyReference.Name == "AutoDI")
+            {
+                continue;
+            }
             bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
             bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(assemblyReference.FullName));
             if (useAutoDiAssebmlies || matchesAssembly)

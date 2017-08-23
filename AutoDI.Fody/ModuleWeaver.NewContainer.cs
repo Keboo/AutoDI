@@ -73,7 +73,7 @@ partial class ModuleWeaver
         var method = new MethodDefinition("Gen_Configured",
             MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
-
+        
         var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, ModuleDefinition.Get<IServiceCollection>());
         method.Parameters.Add(serviceCollection);
 
@@ -162,7 +162,7 @@ partial class ModuleWeaver
         {
             factoryProcessor.Emit(OpCodes.Ldarg_0);
             var genericGetService = new GenericInstanceMethod(getServiceMethod);
-            genericGetService.GenericArguments.Add(parameter.ParameterType);
+            genericGetService.GenericArguments.Add(ModuleDefinition.ImportReference(parameter.ParameterType));
             factoryProcessor.Emit(OpCodes.Call, genericGetService);
         }
 

@@ -30,8 +30,8 @@ namespace AutoDI.Fody.Tests
 
         private object Resolve<T>()
         {
-            string genericTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
-            Type resolveType = _testAssembly.GetType(genericTypeName);
+            string assemblyTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
+            Type resolveType = _testAssembly.GetType(assemblyTypeName);
             return DI.Global.GetService(resolveType, new object[0]);
         }
 
