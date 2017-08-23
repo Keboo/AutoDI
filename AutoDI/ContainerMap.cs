@@ -15,7 +15,7 @@ namespace AutoDI
 
         static ContainerMap()
         {
-            var methods = typeof(ContainerMap_old).GetRuntimeMethods().ToList();
+            var methods = typeof(ContainerMap).GetRuntimeMethods().ToList();
             MakeLazyMethod = methods.Single(m => m.Name == nameof(MakeLazy));
             MakeFuncMethod = methods.Single(m => m.Name == nameof(MakeFunc));
         }
@@ -27,10 +27,10 @@ namespace AutoDI
             _accessors[descriptor.ServiceType] = new DelegateContainer(descriptor);
         }
 
-        public T Get<T>()
+        public T Get<T>(IServiceProvider provider)
         {
             //https://github.com/Keboo/DoubleDownWat
-            object value = Get(typeof(T));
+            object value = Get(typeof(T), provider);
             if (value is T result)
             {
                 return result;
@@ -38,31 +38,52 @@ namespace AutoDI
             return default(T);
         }
 
-        public object Get(Type key)
+        public object Get(Type key, IServiceProvider provider)
         {
             if (_accessors.TryGetValue(key, out DelegateContainer container))
             {
-                return container.Get(null);
+                return container.Get(provider);
             }
             if (key.IsConstructedGenericType)
             {
                 if (key.GetGenericTypeDefinition() == typeof(Lazy<>))
                 {
                     return MakeLazyMethod.MakeGenericMethod(key.GenericTypeArguments[0])
-                        .Invoke(this, new object[0]);
+                        .Invoke(this, new object[] { provider });
                 }
                 if (key.GetGenericTypeDefinition() == typeof(Func<>))
                 {
                     return MakeFuncMethod.MakeGenericMethod(key.GenericTypeArguments[0])
-                        .Invoke(this, new object[0]);
+                        .Invoke(this, new object[] { provider });
                 }
             }
             return default(object);
         }
 
-        private Lazy<T> MakeLazy<T>() => new Lazy<T>(Get<T>);
+        public IEnumerable<Map> GetMappings()
+        {
+            foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors.OrderBy(kvp => kvp.Key.FullName))
+            {
+                yield return new Map(kvp.Key, kvp.Value.TargetType, kvp.Value.Lifetime);
+            }
+        }
 
-        private Func<T> MakeFunc<T>() => () => Get<T>();
+        /// <summary>
+        /// This method is used by AutoDI and not expected to be invoked directly.
+        /// </summary>
+        internal void CreateSingletons(IServiceProvider provider)
+        {
+            foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors
+                .Where(kvp => kvp.Value.Lifetime == Lifetime.Singleton))
+            {
+                //Forces creation of objects.
+                kvp.Value.Get(provider);
+            }
+        }
+
+        private Lazy<T> MakeLazy<T>(IServiceProvider provider) => new Lazy<T>(() => Get<T>(provider));
+
+        private Func<T> MakeFunc<T>(IServiceProvider provider) => () => Get<T>(provider);
 
         private class DelegateContainer
         {
@@ -74,6 +95,7 @@ namespace AutoDI
             {
                 AutoDIServiceDescriptor autoDIDescriptor = descriptor as AutoDIServiceDescriptor;
                 Lifetime = autoDIDescriptor?.AutoDILifetime ?? descriptor.Lifetime.ToAutoDI();
+                TargetType = autoDIDescriptor?.TargetType;
 
                 if (descriptor.ImplementationType != null)
                 {
@@ -81,11 +103,12 @@ namespace AutoDI
                 }
                 else if (descriptor.ImplementationFactory != null)
                 {
-                    var factory = descriptor.ImplementationFactory;
-                    _get = provider => factory(provider); //TODO
+                    Func<IServiceProvider, object> factory = descriptor.ImplementationFactory;
+                    _get = factory;
                 }
                 else
                 {
+                    //TODO implicit singleton?
                     object instance = descriptor.ImplementationInstance;
                     _get = _ => instance;
                 }

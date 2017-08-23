@@ -25,12 +25,11 @@ namespace AutoDI
             switch (lifetime)
             {
                 case Lifetime.Singleton:
-                case Lifetime.WeakTransient:
-                    throw new InvalidOperationException($"{nameof(Lifetime)}.{lifetime} cannot be converted to {typeof(ServiceLifetime).FullName}");
                 case Lifetime.LazySingleton:
                     return ServiceLifetime.Singleton;
                 case Lifetime.Scoped:
                     return ServiceLifetime.Scoped;
+                case Lifetime.WeakTransient:
                 case Lifetime.Transient:
                     return ServiceLifetime.Transient;
                 default:

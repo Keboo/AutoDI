@@ -8,6 +8,18 @@ namespace AutoDI.Tests
     [TestClass]
     public class ConstructorInjectionTests
     {
+        [TestInitialize]
+        public void TestSetup()
+        {
+            DI.Init(typeof(ClassWithDependencies).Assembly);
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            DI.Dispose();
+        }
+
         [TestMethod]
         public void ConstructorParametersCanBeMocked()
         {

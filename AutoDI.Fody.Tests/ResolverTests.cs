@@ -32,7 +32,7 @@ namespace AutoDI.Fody.Tests
         {
             string genericTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
             Type resolveType = _testAssembly.GetType(genericTypeName);
-            return DI.Global.GetService(resolveType);
+            return DI.Global.GetService(resolveType, new object[0]);
         }
 
         [TestMethod]

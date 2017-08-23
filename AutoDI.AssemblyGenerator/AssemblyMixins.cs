@@ -100,31 +100,31 @@ namespace AutoDI.AssemblyGenerator
             {
                 var parameters = ctor.GetParameters();
                 if (parameters.All(pi => pi.HasDefaultValue))
+                {
                     return ctor.Invoke(parameters.Select(x => x.DefaultValue).ToArray());
+                }
             }
             throw new AssemblyCreateInstanceException($"Could not find valid constructor for '{typeof(T).FullName}'");
         }
 
         public static object Resolve<T>(this Assembly assembly, Type containerType = null)
         {
-            throw new NotImplementedException();
-            //if (assembly == null) throw new ArgumentNullException(nameof(assembly));
-            //
-            //Type resolverType = assembly.GetType("AutoDI.AutoDIContainer");
-            //if (resolverType == null)
-            //    throw new InvalidOperationException("Could not find AutoDIContainer");
-            //
-            //var resolver = Activator.CreateInstance(resolverType) as IDependencyResolver;
-            //
-            //if (resolver == null)
-            //    throw new InvalidOperationException($"Failed to create resolver '{resolverType.FullName}'");
-            //
-            //string genericTypeName = TypeMixins.GetTypeName(typeof(T), containerType);
-            //Type genericType = assembly.GetType(genericTypeName);
-            //if (genericType == null)
-            //    throw new AssemblyInvocationExcetion($"Could not find '{genericTypeName}' in '{assembly.FullName}'");
-            //
-            //return assembly.InvokeGeneric(genericType, resolver, nameof(IDependencyResolver.Resolve), (object) new object[0]);
+            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+
+            string typeName = TypeMixins.GetTypeName(typeof(T), containerType);
+            Type type = assembly.GetType(typeName);
+            if (type == null)
+                throw new AssemblyCreateInstanceException($"Could not find '{typeName}' in '{assembly.FullName}'");
+
+            var provider = DI.GetServiceProvider(assembly);
+
+            if (provider == null)
+            {
+                //TODO: Better exception
+                throw new AssemblyInvocationExcetion($"Could not find service provider for '{assembly.FullName}'");
+            }
+
+            return provider.GetService(type);
         }
 
         public static Assembly SingleAssembly(this IDictionary<string, AssemblyInfo> assemblies)

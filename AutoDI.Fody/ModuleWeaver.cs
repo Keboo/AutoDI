@@ -105,11 +105,11 @@ public partial class ModuleWeaver
                 TypeDefinition resolverType = CreateAutoDIContainer(mapping);
                 ModuleDefinition.Types.Add(resolverType);
                 
-                ModuleDefinition.Types.Add(GenerateContainer(mapping, out MethodDefinition getGlobalServiceProvider));
+                ModuleDefinition.Types.Add(GenerateContainer(mapping, out MethodDefinition getGlobalServiceProvider, out MethodDefinition initMethod));
 
                 if (settings.InjectContainer)
                 {
-                    InjectContainer(resolverType);
+                    InjectContainer(initMethod);
                 }
 
                 foreach (TypeDefinition type in allTypes)

@@ -1,6 +1,6 @@
 ﻿namespace AutoDI
 {
-    public interface IInitializeResolver
+    public interface IInitializeServiceProvider
     {
         void Initialize();
     }

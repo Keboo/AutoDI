@@ -43,6 +43,7 @@
     <Compile Include="ClassWithInitData.cs" />
     <Compile Include="ClassWithSingleDependency.cs" />
     <Compile Include="ClassWtihNestedType.cs" />
+    <Compile Include="DISetup.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="IService2.cs" />
     <Compile Include="Manager.cs" />

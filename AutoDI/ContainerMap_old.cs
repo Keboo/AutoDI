@@ -7,7 +7,7 @@ using System.Text;
 namespace AutoDI
 {
     //TODO: Better name
-
+    [Obsolete]
     public sealed class ContainerMap_old
     {
         private static readonly MethodInfo MakeLazyMethod;

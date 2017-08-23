@@ -2,7 +2,7 @@
 
 namespace AutoDI
 {
-    public abstract class BaseResolver : IAutoDISerivceProvider, IInitializeResolver
+    public abstract class BaseResolver : IAutoDISerivceProvider, IInitializeServiceProvider
     {
         public virtual T Resolve<T>(params object[] parameters)
         {

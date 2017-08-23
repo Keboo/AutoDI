@@ -28,7 +28,7 @@ namespace AutoDI
             {
                 _map = map;
                 //TODO: Is this correct?
-                ServiceProvider = map.Get<IServiceProvider>();
+                //ServiceProvider = map.Get<IServiceProvider>();
             }
 
             public void Dispose()
@@ -109,7 +109,7 @@ namespace AutoDI
         public static void ConfigureApplication(IApplicationBuilder applicationBuilder)
         {
             applicationBuilder.ConfigureServices(services => { });
-            applicationBuilder.ConfigureContinaer<ContainerMap_old>(map =>
+            applicationBuilder.ConfigureContinaer<ContainerMap>(map =>
             {
 
             });

@@ -216,7 +216,7 @@ partial class ModuleWeaver
         }
     }
 
-    private MethodDefinition FindSetupMethod()
+    private MethodDefinition FindSetupMethod_old()
     {
         return ModuleDefinition
             .GetAllTypes()

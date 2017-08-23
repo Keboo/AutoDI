@@ -13,7 +13,9 @@ partial class ModuleWeaver
 {
     //TODO: Better name
     //TODO: out parameter... yuck
-    private TypeDefinition GenerateContainer(Mapping mapping, out MethodDefinition getGlobalServiceProvider)
+    private TypeDefinition GenerateContainer(Mapping mapping, 
+        out MethodDefinition getGlobalServiceProvider, 
+        out MethodDefinition initMethod)
     {
         var containerType = new TypeDefinition(DI.Namespace, DI.TypeName,
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
@@ -34,7 +36,7 @@ partial class ModuleWeaver
         MethodDefinition configureMethod = GenerateConfigureMethod(mapping, containerType);
         containerType.Methods.Add(configureMethod);
 
-        MethodDefinition initMethod = GenerateInitMethod(configureMethod, globalServiceProvider);
+        initMethod = GenerateInitMethod(configureMethod, globalServiceProvider);
         containerType.Methods.Add(initMethod);
 
         MethodDefinition disposeMethod = GenerateDisposeMethod(globalServiceProvider);
@@ -45,7 +47,7 @@ partial class ModuleWeaver
 
     private PropertyDefinition GenerateGlobalServiceProviderProperty(FieldDefinition backingField)
     {
-        var property = new PropertyDefinition("Global", PropertyAttributes.None,
+        var property = new PropertyDefinition(nameof(DI.Global), PropertyAttributes.None,
             ModuleDefinition.Get<IServiceProvider>());
 
         var getMethod = new MethodDefinition($"get_{property.Name}",
@@ -57,9 +59,8 @@ partial class ModuleWeaver
         Instruction loadField = Instruction.Create(OpCodes.Ldsfld, backingField);
         processor.Emit(OpCodes.Ldsfld, backingField);
         processor.Emit(OpCodes.Brtrue_S, loadField);
-
-        processor.Emit(OpCodes.Ldstr, "AutoDI has not been initialized");
-        processor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<InvalidOperationException>(typeof(string)));
+        
+        processor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AutoDIInitializationException>());
         processor.Emit(OpCodes.Throw);
 
         processor.Append(loadField);
@@ -125,7 +126,7 @@ partial class ModuleWeaver
                 processor.Emit(OpCodes.Ldc_I4, (int)map.Lifetime);
 
                 var genericAddMethod = new GenericInstanceMethod(addAuotDIServiceMethod);
-                genericAddMethod.GenericArguments.Add(map.TargetType);
+                genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
                 processor.Emit(OpCodes.Call, genericAddMethod);
             }
             catch (Exception e)
@@ -149,8 +150,8 @@ partial class ModuleWeaver
 
         var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
             MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
-            targetType);
-        factory.Parameters.Add(new ParameterDefinition("servicePProvider", ParameterAttributes.None, ModuleDefinition.Get<IServiceProvider>()));
+            ModuleDefinition.ImportReference(targetType));
+        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, ModuleDefinition.Get<IServiceProvider>()));
 
         ILProcessor factoryProcessor = factory.Body.GetILProcessor();
 
@@ -165,7 +166,7 @@ partial class ModuleWeaver
             factoryProcessor.Emit(OpCodes.Call, genericGetService);
         }
 
-        factoryProcessor.Emit(OpCodes.Newobj, targetTypeCtor);
+        factoryProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
         factoryProcessor.Emit(OpCodes.Ret);
         return factory;
     }
@@ -184,12 +185,25 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetDefaultConstructor<ApplicationBuilder>());
         initProcessor.Emit(OpCodes.Stloc_0);
 
-        initProcessor.Emit(OpCodes.Ldloc_0);
+        initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
         initProcessor.Emit(OpCodes.Ldnull);
         initProcessor.Emit(OpCodes.Ldftn, configureMethod);
         initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<Action<IServiceCollection>>());
         initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.ConfigureServices)));
         initProcessor.Emit(OpCodes.Pop);
+
+        MethodDefinition setupMethod = FindSetupMethod();
+        if (setupMethod != null)
+        {
+            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
+            initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
+            initProcessor.Emit(OpCodes.Call, setupMethod);
+            initProcessor.Emit(OpCodes.Nop);
+        }
+        else
+        {
+            InternalLogDebug("No setup method found", DebugLogLevel.Default);
+        }
 
         Instruction loadForBuild = Instruction.Create(OpCodes.Ldloc_0);
 
@@ -235,5 +249,30 @@ partial class ModuleWeaver
 
         processor.Emit(OpCodes.Ret);
         return disposeMethod;
+    }
+
+    private MethodDefinition FindSetupMethod()
+    {
+        foreach (var method in ModuleDefinition.GetAllTypes().SelectMany(t => t.GetMethods())
+            .Where(m => m.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>())))
+        {
+            if (!method.IsStatic)
+            {
+                LogWarning($"Setup method '{method.FullName}' must be static");
+                return null;
+            }
+            if (!method.IsPublic && !method.IsAssembly)
+            {
+                LogWarning($"Setup method '{method.FullName}' must be public or internal");
+                return null;
+            }
+            if (method.Parameters.Count != 1 || !method.Parameters[0].ParameterType.IsType<IApplicationBuilder>())
+            {
+                LogWarning($"Setup method '{method.FullName}' must take a single parameter of type '{typeof(IApplicationBuilder).FullName}'");
+                return null;
+            }
+            return method;
+        }
+        return null;
     }
 }

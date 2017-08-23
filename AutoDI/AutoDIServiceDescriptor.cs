@@ -7,10 +7,13 @@ namespace AutoDI
     {
         public Lifetime AutoDILifetime { get; }
 
-        public AutoDIServiceDescriptor(Type serviceType, Func<IServiceProvider, object> factory, Lifetime lifetime)
+        public Type TargetType { get; }
+
+        public AutoDIServiceDescriptor(Type serviceType, Type targetType, Func<IServiceProvider, object> factory, Lifetime lifetime)
             : base(serviceType, factory, lifetime.FromAutoDI())
         {
             AutoDILifetime = lifetime;
+            TargetType = targetType;
         }
     }
 }

@@ -31,7 +31,8 @@ namespace AutoDI.Fody.Tests
         [TestMethod, ExpectedException(typeof(InvalidOperationException))]
         public void WhenGenerateContainerIsFalseTheContainerIsNotGenerated()
         {
-            AutoDIContainer.GetMap(_testAssembly);
+            Assert.Fail("Does this make sense?");
+            DI.GetMap(_testAssembly);
         }
     }
 
@@ -41,15 +42,15 @@ namespace AutoDI.Fody.Tests
     //<weaver: AutoDI />
     namespace DisableContainerGenerationNamespace
     {
-        public partial class Program
+        public class Program
         {
             public static void Main(string[] args)
             { }
         }
     
-        public partial interface IService { }
+        public interface IService { }
     
-        public partial class Service : IService { }
+        public class Service : IService { }
     }
     //</assembly>
 }

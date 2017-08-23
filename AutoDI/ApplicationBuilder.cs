@@ -35,6 +35,10 @@ namespace AutoDI
             IServiceCollection collection = BuildCommonServices();
             IServiceProvider applicationProvider = BuildApplicationServiceProvider(collection);
             IServiceProvider rootProvider = GetProvider(applicationProvider, collection);
+            if (rootProvider is IInitializeServiceProvider initResolver)
+            {
+                initResolver.Initialize();
+            }
             return rootProvider;
         }
 

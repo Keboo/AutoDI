@@ -7,8 +7,6 @@ using System.Xml.Linq;
 
 namespace AutoDI.Fody.Tests
 {
-
-
     [TestClass]
     public class ManualInjectionOfContainer
     {
@@ -36,12 +34,19 @@ namespace AutoDI.Fody.Tests
             //Invoke the entry point, since this is where the automatic injdection would occur
             _testAssembly.InvokeEntryPoint();
 
+            try
+            {
+                _testAssembly.CreateInstance<Sut>();
+                Assert.Fail("Excepted an exception");
+            }
+            catch (TargetInvocationException e) 
+                when (e.InnerException is AutoDIInitializationException)
+            {
+            }
+
+            DI.Init(_testAssembly);
+
             dynamic sut = _testAssembly.CreateInstance<Sut>();
-            Assert.IsFalse(((object)sut.Service).Is<Service>());
-
-            AutoDIContainer.Inject(_testAssembly);
-
-            sut = _testAssembly.CreateInstance<Sut>();
             Assert.IsTrue(((object)sut.Service).Is<Service>());
         }
     }

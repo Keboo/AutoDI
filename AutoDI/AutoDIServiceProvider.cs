@@ -2,24 +2,29 @@ using System;
 
 namespace AutoDI
 {
-    internal class AutoDIServiceProvider : IServiceProvider, IAutoDISerivceProvider
+    internal class AutoDIServiceProvider : IServiceProvider, IAutoDISerivceProvider, IInitializeServiceProvider
     {
-        private readonly ContainerMap _containerMap;
+        internal ContainerMap ContainerMap { get; }
 
         public AutoDIServiceProvider(ContainerMap containerMap)
         {
-            _containerMap = containerMap ?? throw new ArgumentNullException(nameof(containerMap));
+            ContainerMap = containerMap ?? throw new ArgumentNullException(nameof(containerMap));
         }
 
-        public object GetService(Type serviceType)
+        object IServiceProvider.GetService(Type serviceType)
         {
-            return _containerMap.Get(serviceType);
+            return ContainerMap.Get(serviceType, this);
         }
 
-        public object GetService(Type serviceType, object[] parameters)
+        object IAutoDISerivceProvider.GetService(Type serviceType, object[] parameters)
         {
             //TODO: use parameters
-            return _containerMap.Get(serviceType);
+            return ContainerMap.Get(serviceType, this);
+        }
+
+        void IInitializeServiceProvider.Initialize()
+        {
+            ContainerMap.CreateSingletons(this);
         }
     }
 }
