@@ -4,9 +4,9 @@ namespace AutoDI
 {
     internal class AutoDIServiceProvider : IServiceProvider, IAutoDISerivceProvider, IInitializeServiceProvider
     {
-        internal ContainerMap ContainerMap { get; }
+        internal IContainer ContainerMap { get; }
 
-        public AutoDIServiceProvider(ContainerMap containerMap)
+        public AutoDIServiceProvider(IContainer containerMap)
         {
             ContainerMap = containerMap ?? throw new ArgumentNullException(nameof(containerMap));
         }
@@ -24,7 +24,7 @@ namespace AutoDI
 
         void IInitializeServiceProvider.Initialize()
         {
-            ContainerMap.CreateSingletons(this);
+            (ContainerMap as ContainerMap)?.CreateSingletons(this);
         }
     }
 }

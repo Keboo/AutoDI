@@ -13,7 +13,7 @@ namespace AutoDI.Fody.Tests
     {
         //private static Assembly _sharedAssembly;
         private static Assembly _mainAssembly;
-        private static ContainerMap _map;
+        private static IContainer _map;
 
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
@@ -26,7 +26,7 @@ namespace AutoDI.Fody.Tests
 
             DI.Init(_mainAssembly, builder =>
             {
-                builder.ConfigureContinaer<ContainerMap>(map =>
+                builder.ConfigureContinaer<IContainer>(map =>
                 {
                     _map = map;
                 });

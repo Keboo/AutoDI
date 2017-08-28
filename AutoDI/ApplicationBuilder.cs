@@ -54,7 +54,7 @@ namespace AutoDI
                 let genericType = typeInfo.GetGenericTypeDefinition()
                 where genericType == typeof(IServiceProviderFactory<>)
                 let containerType = serviceDescriptor.ServiceType.GenericTypeArguments[0]
-                orderby containerType == typeof(ContainerMap) ? 1 : 0 descending
+                orderby containerType == typeof(IContainer) ? 1 : 0 descending
                 select containerType;
             return containerTypes.LastOrDefault();
         }
@@ -76,7 +76,7 @@ namespace AutoDI
             //TODO: Better exception type.
             IServiceProviderFactory<TContainerType> providerFactory =
                 applicationProvider.GetService<IServiceProviderFactory<TContainerType>>()
-                ?? throw new Exception($"Failed to resolve service provider factory");
+                ?? throw new Exception("Failed to resolve service provider factory");
             
             TContainerType container = providerFactory.CreateBuilder(serviceCollection);
 
@@ -92,10 +92,13 @@ namespace AutoDI
         {
             var collection = new AutoDIServiceCollection();
 
-            collection.AddSingleton<IServiceProviderFactory<ContainerMap>>(sp => new AutoDIServiceProviderFactory());
-            //TODO: how to register the container map?
-            collection.AddSingleton<IServiceScopeFactory>(sp => new AutoDIServiceScopeFactory(sp.GetService<ContainerMap>()));
-            collection.AddScoped<IServiceProvider>(sp => new AutoDIServiceProvider(sp.GetService<ContainerMap>()));
+            collection.AddSingleton<IServiceProviderFactory<IContainer>>(sp => new AutoDIServiceProviderFactory());
+            collection.AddScoped<IServiceScopeFactory>(sp =>
+            {
+                return new AutoDIServiceScopeFactory(sp.GetService<IContainer>());
+            });
+            collection.AddScoped<IContainer>(sp => sp.GetService<IServiceProviderFactory<IContainer>>().CreateBuilder(collection));
+            collection.AddScoped<IServiceProvider>(sp => new AutoDIServiceProvider(sp.GetService<IContainer>()));
 
             foreach (var @delegate in _configureServicesDelegates)
             {

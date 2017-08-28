@@ -116,7 +116,7 @@ namespace AutoDI.Fody.Tests
             public static void Setup(IApplicationBuilder builder)
             {
                 if (Service.IsCreated) throw new Exception();
-                builder.ConfigureContinaer<ContainerMap>(map =>
+                builder.ConfigureContinaer<IContainer>(map =>
                 {
                     var service = map.Get<IService>(null);
                     if (!(service is Service)) throw new Exception();

@@ -3,43 +3,6 @@ using System;
 
 namespace AutoDI
 {
-    internal class AutoDIServiceScopeFactory : IServiceScopeFactory
-    {
-        private readonly ContainerMap _map;
-
-        public AutoDIServiceScopeFactory(ContainerMap map)
-        {
-            _map = map ?? throw new ArgumentNullException(nameof(map));
-        }
-
-        public IServiceScope CreateScope()
-        {
-            //TODO: anything needed for this? SM uses this call to created the nested container here
-            //Probably want to clone the container map here.
-            return new AutoDIServiceScope(_map);
-        }
-
-        private class AutoDIServiceScope : IServiceScope
-        {
-            private readonly ContainerMap _map;
-
-
-            public AutoDIServiceScope(ContainerMap map)
-            {
-                _map = map;
-                //TODO: Is this correct?
-                //ServiceProvider = map.Get<IServiceProvider>();
-            }
-
-            public void Dispose()
-            {
-                //TODO: Any clenaup needed?
-            }
-
-            public IServiceProvider ServiceProvider { get; }
-        }
-    }
-
     //This class will be generated
     internal static class AutoDI_Gen
     {
@@ -109,7 +72,7 @@ namespace AutoDI
         public static void ConfigureApplication(IApplicationBuilder applicationBuilder)
         {
             applicationBuilder.ConfigureServices(services => { });
-            applicationBuilder.ConfigureContinaer<ContainerMap>(map =>
+            applicationBuilder.ConfigureContinaer<IContainer>(map =>
             {
 
             });
