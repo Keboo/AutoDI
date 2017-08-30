@@ -56,18 +56,18 @@ namespace AutoDI.Fody.Tests
             using (IServiceScope scope1 = scopeFactory.CreateScope())
             using (IServiceScope scope2 = scopeFactory.CreateScope())
             {
-                var service1a = Resolve<IService>(scope1);
-                var service1b = Resolve<IService>(scope1);
-                var service2a = Resolve<IService>(scope2);
-                var service2b = Resolve<IService>(scope2);
+                var service1A = Resolve<IService>(scope1);
+                var service1B = Resolve<IService>(scope1);
+                var service2A = Resolve<IService>(scope2);
+                var service2B = Resolve<IService>(scope2);
 
-                Assert.IsNotNull(service1a);
-                Assert.IsNotNull(service1b);
-                Assert.IsNotNull(service2a);
-                Assert.IsNotNull(service2b);
-                Assert.IsTrue(ReferenceEquals(service1a, service1b));
-                Assert.IsTrue(ReferenceEquals(service2a, service2b));
-                Assert.IsFalse(ReferenceEquals(service1a, service2a));
+                Assert.IsNotNull(service1A);
+                Assert.IsNotNull(service1B);
+                Assert.IsNotNull(service2A);
+                Assert.IsNotNull(service2B);
+                Assert.IsTrue(ReferenceEquals(service1A, service1B));
+                Assert.IsTrue(ReferenceEquals(service2A, service2B));
+                Assert.IsFalse(ReferenceEquals(service1A, service2A));
             }
 
             Assert.IsTrue(Resolve<IService>().Is<Service>(GetType()));

@@ -40,22 +40,16 @@ namespace AutoDI.Tests
             serviceProvider.Setup(x => x.GetService(typeof(IService))).Returns(service1).Verifiable();
             serviceProvider.Setup(x => x.GetService(typeof(IService2))).Returns(service2).Verifiable();
 
-            try
+            DI.Dispose();
+            DI.Init(typeof(IService).Assembly, builder =>
             {
-                DI.Init(typeof(IService).Assembly, builder =>
-                {
-                    builder.WithProvider(serviceProvider.Object);
-                });
+                builder.WithProvider(serviceProvider.Object);
+            });
 
-                var sut = new ClassWithDependencies();
-                Assert.AreEqual(service1, sut.Service);
-                Assert.AreEqual(service2, sut.Service2);
-                serviceProvider.Verify();
-            }
-            finally
-            {
-                DI.Dispose();
-            }
+            var sut = new ClassWithDependencies();
+            Assert.AreEqual(service1, sut.Service);
+            Assert.AreEqual(service2, sut.Service2);
+            serviceProvider.Verify();
         }
 
         [TestMethod, ExpectedException(typeof(ArgumentNullException))]

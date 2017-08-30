@@ -18,7 +18,6 @@ namespace AutoDI.Fody.Tests
         {
             var gen = new Generator();
             _testAssembly = (await gen.Execute()).SingleAssembly();
-            DI.Init(_testAssembly);
         }
 
         [ClassCleanup]
@@ -32,6 +31,7 @@ namespace AutoDI.Fody.Tests
         public void CanResolveServiceWithNonGenericMethod()
         {
             _testAssembly.InvokeEntryPoint();
+
             DI.Global.GetService(typeof(IService)).Is<Service>();
         }
 
@@ -39,7 +39,6 @@ namespace AutoDI.Fody.Tests
         [Description("Issue 26")]
         public void CanResolveServiceWithGenericMethod()
         {
-            _testAssembly.InvokeEntryPoint();
             DI.Global.GetService<IService>().Is<Service>();
         }
     }

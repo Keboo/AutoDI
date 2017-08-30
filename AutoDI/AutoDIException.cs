@@ -14,10 +14,17 @@ namespace AutoDI
         { }
     }
 
-    public class AutoDIInitializationException : AutoDIException
+    public class AutoDINotInitializedException : AutoDIException
     {
-        public AutoDIInitializationException()
+        public AutoDINotInitializedException()
             : base("AutoDI has not been initialized")
+        { }
+    }
+
+    public class AutoDIAlreadyInitializedException : AutoDIException
+    {
+        public AutoDIAlreadyInitializedException()
+            : base("AutoDI has already been initialized. Call Dispose before trying to initialize a second time.")
         { }
     }
 }

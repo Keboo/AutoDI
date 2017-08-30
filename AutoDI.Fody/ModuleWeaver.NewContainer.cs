@@ -60,7 +60,7 @@ partial class ModuleWeaver
         processor.Emit(OpCodes.Ldsfld, backingField);
         processor.Emit(OpCodes.Brtrue_S, loadField);
         
-        processor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AutoDIInitializationException>());
+        processor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AutoDINotInitializedException>());
         processor.Emit(OpCodes.Throw);
 
         processor.Append(loadField);
@@ -182,7 +182,16 @@ partial class ModuleWeaver
         var applicationBuilder = new VariableDefinition(ModuleDefinition.Get<IApplicationBuilder>());
         initMethod.Body.Variables.Add(applicationBuilder);
         ILProcessor initProcessor = initMethod.Body.GetILProcessor();
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetDefaultConstructor<ApplicationBuilder>());
+
+        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, ModuleDefinition.GetDefaultConstructor<ApplicationBuilder>());
+
+        initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
+        initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
+        //Compare
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AutoDIAlreadyInitializedException>());
+        initProcessor.Emit(OpCodes.Throw);
+
+        initProcessor.Append(createApplicationbuilder);
         initProcessor.Emit(OpCodes.Stloc_0);
 
         initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder

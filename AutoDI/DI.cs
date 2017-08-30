@@ -18,8 +18,10 @@ namespace AutoDI
         {
             get
             {
+                //TODO: This is ignoring the case where the Init method is called by the EntryPoint :/
                 if (_containerAssembly == null)
                 {
+                    //TODO: AutoDI exception
                     throw new InvalidOperationException("AutoDI has not been initialized");
                 }
                 return _containerAssembly;

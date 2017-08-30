@@ -23,6 +23,9 @@ namespace AutoDI
 
         public static void Init(Action<IApplicationBuilder> configure)
         {
+            if (_globalServiceProvider != null)
+                throw new InvalidOperationException(
+                    "AutoDI has already been initialized. Call Dispose before trying to initialize a second time.");
             IApplicationBuilder builder = new ApplicationBuilder();
             builder.ConfigureServices(Gen_Configured);
             configure?.Invoke(builder);
