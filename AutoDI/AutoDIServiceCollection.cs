@@ -1,9 +1,9 @@
-using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 
 namespace AutoDI
 {
-    internal class AutoDIServiceCollection : List<ServiceDescriptor>, IServiceCollection
+    public class AutoDIServiceCollection : List<ServiceDescriptor>, IServiceCollection
     {
 
     }

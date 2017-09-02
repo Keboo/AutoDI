@@ -136,6 +136,7 @@ partial class ModuleWeaver
                     var genericAddMethod = new GenericInstanceMethod(addAuotDIServiceMethod);
                     genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
                     processor.Emit(OpCodes.Call, genericAddMethod);
+                    processor.Emit(OpCodes.Pop);
                 }
                 catch (Exception e)
                 {

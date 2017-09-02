@@ -15,5 +15,12 @@ namespace AutoDI
             AutoDILifetime = lifetime;
             TargetType = targetType;
         }
+
+        public AutoDIServiceDescriptor(Type serviceType, Type targetType, Lifetime lifetime)
+            : base(serviceType, targetType, lifetime.FromAutoDI())
+        {
+            AutoDILifetime = lifetime;
+            TargetType = targetType;
+        }
     }
 }

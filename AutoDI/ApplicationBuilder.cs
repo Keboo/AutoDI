@@ -92,13 +92,10 @@ namespace AutoDI
         {
             var collection = new AutoDIServiceCollection();
 
-            collection.AddSingleton<IServiceProviderFactory<IContainer>>(sp => new AutoDIServiceProviderFactory());
-            collection.AddScoped<IServiceScopeFactory>(sp =>
-            {
-                return new AutoDIServiceScopeFactory(sp.GetService<IContainer>());
-            });
-            collection.AddScoped<IContainer>(sp => sp.GetService<IServiceProviderFactory<IContainer>>().CreateBuilder(collection));
-            collection.AddScoped<IServiceProvider>(sp => new AutoDIServiceProvider(sp.GetService<IContainer>()));
+            collection.AddAutoDISingleton<IServiceProviderFactory<IContainer>>(sp => new AutoDIServiceProviderFactory());
+            collection.AddAutoDIScoped<IServiceScopeFactory>(sp => new AutoDIServiceScopeFactory(sp.GetService<IContainer>()));
+            collection.AddAutoDIScoped<IContainer>(sp => sp.GetService<IServiceProviderFactory<IContainer>>().CreateBuilder(collection));
+            collection.AddAutoDIScoped<IServiceProvider>(sp => new AutoDIServiceProvider(sp.GetService<IContainer>()));
 
             foreach (var @delegate in _configureServicesDelegates)
             {

@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AutoDI.Tests
 {
@@ -9,52 +10,62 @@ namespace AutoDI.Tests
         [TestMethod]
         public void TestGetSingleton()
         {
-            var map = new ContainerMap_old();
-            map.AddSingleton<IInterface, Class>();
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface, Class>();
+            map.Add(services);
 
-            IInterface c = map.Get<IInterface>();
+            IInterface c = map.Get<IInterface>(null);
             Assert.IsTrue(c is Class);
         }
 
         [TestMethod]
         public void TestGetLazySingleton()
         {
-            var map = new ContainerMap_old();
-            map.AddLazySingleton<IInterface, Class>();
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDILazySingleton<IInterface, Class>();
+            map.Add(services);
 
-            IInterface c = map.Get<IInterface>();
+            IInterface c = map.Get<IInterface>(null);
             Assert.IsTrue(c is Class);
         }
 
         [TestMethod]
         public void TestGetWeakTransient()
         {
-            var map = new ContainerMap_old();
-            map.AddWeakTransient<IInterface, Class>();
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDIWeakTransient<IInterface, Class>();
+            map.Add(services);
 
-            IInterface c = map.Get<IInterface>();
+            IInterface c = map.Get<IInterface>(null);
             Assert.IsTrue(c is Class);
         }
 
         [TestMethod]
         public void TestGetTransient()
         {
-            var map = new ContainerMap_old();
-            map.AddTransient<IInterface, Class>();
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDITransient<IInterface, Class>();
+            map.Add(services);
 
-            IInterface c = map.Get<IInterface>();
+            IInterface c = map.Get<IInterface>(null);
             Assert.IsTrue(c is Class);
         }
 
         [TestMethod]
         public void GetSingletonAlwaysReturnsTheSameInstance()
         {
-            var map = new ContainerMap_old();
+            var map = new ContainerMap();
             var instance = new Class();
-            map.AddSingleton<IInterface, Class>(instance);
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface>(instance);
+            map.Add(services);
 
-            IInterface c1 = map.Get<IInterface>();
-            IInterface c2 = map.Get<IInterface>();
+            IInterface c1 = map.Get<IInterface>(null);
+            IInterface c2 = map.Get<IInterface>(null);
             Assert.IsTrue(ReferenceEquals(c1, c2));
             Assert.IsTrue(ReferenceEquals(c1, instance));
             Assert.IsTrue(ReferenceEquals(c2, instance));
@@ -63,12 +74,14 @@ namespace AutoDI.Tests
         [TestMethod]
         public void GetLazySingletonDoesNotCreateObjectUntilRequested()
         {
-            var map = new ContainerMap_old();
-            map.AddLazySingleton<IInterface, Class>(() => throw new Exception());
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDILazySingleton<IInterface, Class>(provider => throw new Exception());
+            map.Add(services);
 
             try
             {
-                map.Get<IInterface>();
+                map.Get<IInterface>(null);
             }
             catch (Exception)
             {
@@ -80,31 +93,35 @@ namespace AutoDI.Tests
         [TestMethod]
         public void GetLazySingletonReturnsTheSameInstance()
         {
-            var map = new ContainerMap_old();
-            map.AddLazySingleton(() => new Class(), new[] { typeof(IInterface), typeof(IInterface2) });
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDIService<Class>(provider => new Class(), new[] {typeof(IInterface), typeof(IInterface2)}, Lifetime.LazySingleton);
+            map.Add(services);
 
-            var instance1 = map.Get<IInterface>();
-            var instance2 = map.Get<IInterface2>();
+            var instance1 = map.Get<IInterface>(null);
+            var instance2 = map.Get<IInterface2>(null);
             Assert.IsNotNull(instance1);
             Assert.IsNotNull(instance2);
             Assert.IsTrue(ReferenceEquals(instance1, instance2));
         }
 
         [TestMethod]
-        public void GetSingleOnlyCreatesOneInstanceAtATime()
+        public void GetWeakTransientOnlyCreatesOneInstanceAtATime()
         {
-            var map = new ContainerMap_old();
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
             int instanceCount = 0;
-            map.AddWeakTransient<IInterface, Class>(() =>
+            services.AddAutoDIService<Class>(provider =>
             {
                 instanceCount++;
                 return new Class();
-            });
+            }, new[] {typeof(IInterface)}, Lifetime.WeakTransient);
+            map.Add(services);
 
-            var instance = map.Get<IInterface>();
+            var instance = map.Get<IInterface>(null);
 
-            Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>()));
-            Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>()));
+            Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>(null)));
+            Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>(null)));
 
             Assert.AreEqual(1, instanceCount);
 
@@ -113,24 +130,26 @@ namespace AutoDI.Tests
 
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
 
-            Assert.IsNotNull(map.Get<IInterface>());
+            Assert.IsNotNull(map.Get<IInterface>(null));
             Assert.AreEqual(2, instanceCount);
         }
 
         [TestMethod]
-        public void GetAlwaysCreatesNewInstances()
+        public void GetTransientAlwaysCreatesNewInstances()
         {
-            var map = new ContainerMap_old();
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
             int instanceCount = 0;
-            map.AddTransient<IInterface, Class>(() =>
+            services.AddAutoDIService<Class>(provider =>
             {
                 instanceCount++;
                 return new Class();
-            });
+            }, new[] { typeof(IInterface) }, Lifetime.Transient);
+            map.Add(services);
 
-            var a = map.Get<IInterface>();
-            var b = map.Get<IInterface>();
-            var c = map.Get<IInterface>();
+            var a = map.Get<IInterface>(null);
+            var b = map.Get<IInterface>(null);
+            var c = map.Get<IInterface>(null);
             Assert.IsFalse(ReferenceEquals(a, b));
             Assert.IsFalse(ReferenceEquals(b, c));
             Assert.IsFalse(ReferenceEquals(a, c));
@@ -141,11 +160,13 @@ namespace AutoDI.Tests
         [Description("Issue 22")]
         public void ContainerMapCanGenerateLazyInstances()
         {
-            var map = new ContainerMap_old();
+            var map = new ContainerMap();
             var @class = new Class();
-            map.AddSingleton<IInterface, Class>(@class);
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface>(@class);
+            map.Add(services);
 
-            Lazy<IInterface> lazy = map.Get<Lazy<IInterface>>();
+            Lazy<IInterface> lazy = map.Get<Lazy<IInterface>>(null);
             Assert.IsNotNull(lazy);
             Assert.IsTrue(ReferenceEquals(@class, lazy.Value));
         }
@@ -154,41 +175,15 @@ namespace AutoDI.Tests
         [Description("Issue 22")]
         public void ContainerMapCanGenerateFuncInstances()
         {
-            var map = new ContainerMap_old();
+            var map = new ContainerMap();
             var @class = new Class();
-            map.AddSingleton<IInterface, Class>(@class);
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface>(@class);
+            map.Add(services);
 
-            Func<IInterface> func = map.Get<Func<IInterface>>();
+            Func<IInterface> func = map.Get<Func<IInterface>>(null);
             Assert.IsNotNull(func);
             Assert.IsTrue(ReferenceEquals(@class, func()));
-        }
-
-        [TestMethod]
-        [Description("Issue 22")]
-        public void CanRemoveMappedType()
-        {
-            var map = new ContainerMap_old();
-            map.AddSingleton<IInterface, Class>();
-            map.AddSingleton<IInterface2, Derived>();
-
-            Assert.IsTrue(map.Remove<Class>());
-
-            Assert.IsNull(map.Get<IInterface>());
-            Assert.IsTrue(map.Get<IInterface2>() is Derived);
-        }
-
-        [TestMethod]
-        [Description("Issue 22")]
-        public void CanRemoveMappedTypeKeys()
-        {
-            var map = new ContainerMap_old();
-
-            map.AddSingleton(new Class(), new[] {typeof(IInterface), typeof(IInterface2)});
-
-            Assert.IsTrue(map.RemoveKey(typeof(IInterface)));
-
-            Assert.IsNull(map.Get<IInterface>());
-            Assert.IsTrue(map.Get<IInterface2>() is Class);
         }
 
         private interface IInterface { }
