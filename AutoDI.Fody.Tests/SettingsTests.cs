@@ -1,5 +1,4 @@
-﻿using AutoDI.Fody;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Xml.Linq;
 
 namespace AutoDI.Fody.Tests
@@ -101,11 +100,11 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanSkipContainerGeneration()
         {
-            var xml = XElement.Parse(@"<AutoDI GenerateContainer=""False"" />");
+            var xml = XElement.Parse(@"<AutoDI GenerateRegistrations=""False"" />");
 
             var settings = Settings.Parse(xml);
 
-            Assert.IsFalse(settings.GenerateContainer);
+            Assert.IsFalse(settings.GenerateRegistrations);
         }
     }
 }

@@ -26,8 +26,8 @@ namespace AutoDI.Fody.Tests
                     dynamic weaver = args.Weaver;
                     weaver.Config = XElement.Parse($@"
     <AutoDI Behavior=""{Behaviors.None}"">
-        <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from="".*"" to=""$0"" />
+        <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from=""IService4"" to=""Service4"" force=""true"" />
         <map from=""Service5"" to=""Service5Extended"" />
 
@@ -55,7 +55,7 @@ namespace AutoDI.Fody.Tests
         [TestCleanup]
         public void TestCleanup()
         {
-            DI.Dispose();
+            DI.Dispose(_testAssembly);
         }
 
         [TestMethod]

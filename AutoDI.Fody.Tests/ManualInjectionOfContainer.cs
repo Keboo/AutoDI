@@ -21,7 +21,7 @@ namespace AutoDI.Fody.Tests
                 if (args.Weaver.Name == "AutoDI")
                 {
                     dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse(@"<AutoDI InjectContainer=""False"" />");
+                    weaver.Config = XElement.Parse(@"<AutoDI AutoInit=""False"" />");
                 }
             };
             

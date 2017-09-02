@@ -38,20 +38,20 @@ namespace AutoDI.Fody.Tests
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose();
+            DI.Dispose(_testAssembly);
         }
 
         private object Resolve<T>(IServiceScope scope = null)
         {
             string assemblyTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
             Type resolveType = _testAssembly.GetType(assemblyTypeName);
-            return (scope?.ServiceProvider ?? DI.Global).GetService(resolveType, new object[0]);
+            return (scope?.ServiceProvider ?? DI.GetGlobalServiceProvider(_testAssembly)).GetService(resolveType, new object[0]);
         }
 
         [TestMethod]
         public void CanResolveScopedSingletonsByInterface()
         {
-            var scopeFactory = DI.Global.GetService<IServiceScopeFactory>();
+            var scopeFactory = DI.GetGlobalServiceProvider(_testAssembly).GetService<IServiceScopeFactory>();
 
             using (IServiceScope scope1 = scopeFactory.CreateScope())
             using (IServiceScope scope2 = scopeFactory.CreateScope())

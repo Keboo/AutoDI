@@ -94,30 +94,31 @@ public partial class ModuleWeaver
             };
 
             ICollection<TypeDefinition> allTypes = GetAllTypes(settings);
-            
-            if (settings.GenerateContainer)
-            {
 
-                Mapping mapping = GetMapping(settings, allTypes);
+            Mapping mapping;
+            if (settings.GenerateRegistrations)
+            {
+                mapping = GetMapping(settings, allTypes);
 
                 InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
-
-                //TypeDefinition resolverType = CreateAutoDIContainer(mapping);
-                //ModuleDefinition.Types.Add(resolverType);
-                
-                ModuleDefinition.Types.Add(GenerateContainer(mapping, out MethodDefinition getGlobalServiceProvider, out MethodDefinition initMethod));
-
-                if (settings.InjectContainer)
-                {
-                    InjectContainer(initMethod);
-                }
-
-                foreach (TypeDefinition type in allTypes)
-                {
-                    ProcessType(type, getGlobalServiceProvider);
-                }
+            }
+            else
+            {
+                InternalLogDebug("Skipping registration", DebugLogLevel.Verbose);
+                mapping = null;
             }
 
+            ModuleDefinition.Types.Add(GenerateContainer(mapping, out MethodDefinition getGlobalServiceProvider, out MethodDefinition initMethod));
+
+            if (settings.AutoInit)
+            {
+                InjectInitCall(initMethod);
+            }
+
+            foreach (TypeDefinition type in allTypes)
+            {
+                ProcessType(type, getGlobalServiceProvider);
+            }
 
         }
         catch (Exception ex)

@@ -47,7 +47,7 @@ partial class ModuleWeaver
 
     private PropertyDefinition GenerateGlobalServiceProviderProperty(FieldDefinition backingField)
     {
-        var property = new PropertyDefinition(nameof(DI.Global), PropertyAttributes.None,
+        var property = new PropertyDefinition(DI.GlobalPropertyName, PropertyAttributes.None,
             ModuleDefinition.Get<IServiceProvider>());
 
         var getMethod = new MethodDefinition($"get_{property.Name}",
@@ -86,52 +86,61 @@ partial class ModuleWeaver
 
         MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
 
-        int factoryIndex = 0;
-        foreach (TypeMap map in mapping)
+        if (mapping != null)
         {
-            try
+            int factoryIndex = 0;
+            foreach (TypeMap map in mapping)
             {
-                InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
-
-                MethodDefinition factoryMethod = GenerateFactoryMethod(map.TargetType, factoryIndex);
-                if (factoryMethod == null)
+                try
                 {
-                    InternalLogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map", DebugLogLevel.Verbose);
-                    continue;
+                    InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
+
+                    MethodDefinition factoryMethod = GenerateFactoryMethod(map.TargetType, factoryIndex);
+                    if (factoryMethod == null)
+                    {
+                        InternalLogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
+                            DebugLogLevel.Verbose);
+                        continue;
+                    }
+                    containerType.Methods.Add(factoryMethod);
+                    factoryIndex++;
+
+                    processor.Emit(OpCodes.Ldarg_0); //collection parameter
+
+                    processor.Emit(OpCodes.Ldnull);
+                    processor.Emit(OpCodes.Ldftn, factoryMethod);
+                    processor.Emit(OpCodes.Newobj,
+                        ModuleDefinition.ImportReference(
+                            funcCtor.MakeGenericTypeConstructor(ModuleDefinition.Get<IServiceProvider>(),
+                                map.TargetType)));
+
+                    processor.Emit(OpCodes.Ldc_I4, map.Keys.Count);
+                    processor.Emit(OpCodes.Newarr, ModuleDefinition.Get<Type>());
+
+                    int arrayIndex = 0;
+                    foreach (TypeDefinition key in map.Keys)
+                    {
+                        TypeReference importedKey = ModuleDefinition.ImportReference(key);
+                        InternalLogDebug(
+                            $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({map.Lifetime})",
+                            DebugLogLevel.Default);
+                        processor.Emit(OpCodes.Dup);
+                        processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
+                        processor.Emit(OpCodes.Ldtoken, importedKey);
+                        processor.Emit(OpCodes.Call, getTypeMethod);
+                        processor.Emit(OpCodes.Stelem_Ref);
+                    }
+
+                    processor.Emit(OpCodes.Ldc_I4, (int) map.Lifetime);
+
+                    var genericAddMethod = new GenericInstanceMethod(addAuotDIServiceMethod);
+                    genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
+                    processor.Emit(OpCodes.Call, genericAddMethod);
                 }
-                containerType.Methods.Add(factoryMethod);
-                factoryIndex++;
-
-                processor.Emit(OpCodes.Ldarg_0); //collection parameter
-
-                processor.Emit(OpCodes.Ldnull);
-                processor.Emit(OpCodes.Ldftn, factoryMethod);
-                processor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericTypeConstructor(ModuleDefinition.Get<IServiceProvider>(), map.TargetType)));
-
-                processor.Emit(OpCodes.Ldc_I4, map.Keys.Count);
-                processor.Emit(OpCodes.Newarr, ModuleDefinition.Get<Type>());
-
-                int arrayIndex = 0;
-                foreach (TypeDefinition key in map.Keys)
+                catch (Exception e)
                 {
-                    TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                    InternalLogDebug($"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({map.Lifetime})", DebugLogLevel.Default);
-                    processor.Emit(OpCodes.Dup);
-                    processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
-                    processor.Emit(OpCodes.Ldtoken, importedKey);
-                    processor.Emit(OpCodes.Call, getTypeMethod);
-                    processor.Emit(OpCodes.Stelem_Ref);
+                    LogWarning($"Failed to create map for {map}\r\n{e}");
                 }
-
-                processor.Emit(OpCodes.Ldc_I4, (int)map.Lifetime);
-
-                var genericAddMethod = new GenericInstanceMethod(addAuotDIServiceMethod);
-                genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
-                processor.Emit(OpCodes.Call, genericAddMethod);
-            }
-            catch (Exception e)
-            {
-                LogWarning($"Failed to create map for {map}\r\n{e}");
             }
         }
 

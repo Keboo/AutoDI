@@ -36,7 +36,7 @@ namespace AutoDI.Fody.Tests
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose();
+            DI.Dispose(_mainAssembly);
         }
 
         [TestMethod]

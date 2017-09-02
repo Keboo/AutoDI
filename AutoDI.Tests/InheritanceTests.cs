@@ -28,7 +28,7 @@ namespace AutoDI.Tests
             }
             finally
             {
-                DI.Dispose();
+                DI.Dispose(typeof(IService).Assembly);
             }
         }
     }

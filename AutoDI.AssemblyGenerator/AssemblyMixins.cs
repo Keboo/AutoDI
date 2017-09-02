@@ -116,7 +116,7 @@ namespace AutoDI.AssemblyGenerator
             if (type == null)
                 throw new AssemblyCreateInstanceException($"Could not find '{typeName}' in '{assembly.FullName}'");
 
-            var provider = DI.GetServiceProvider(assembly);
+            var provider = DI.GetGlobalServiceProvider(assembly);
 
             if (provider == null)
             {

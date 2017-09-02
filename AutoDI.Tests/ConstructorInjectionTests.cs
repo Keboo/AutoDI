@@ -17,7 +17,7 @@ namespace AutoDI.Tests
         [TestCleanup]
         public void TestCleanup()
         {
-            DI.Dispose();
+            DI.Dispose(typeof(ClassWithDependencies).Assembly);
         }
 
         [TestMethod]
@@ -40,7 +40,7 @@ namespace AutoDI.Tests
             serviceProvider.Setup(x => x.GetService(typeof(IService))).Returns(service1).Verifiable();
             serviceProvider.Setup(x => x.GetService(typeof(IService2))).Returns(service2).Verifiable();
 
-            DI.Dispose();
+            DI.Dispose(typeof(ClassWithDependencies).Assembly);
             DI.Init(typeof(IService).Assembly, builder =>
             {
                 builder.WithProvider(serviceProvider.Object);

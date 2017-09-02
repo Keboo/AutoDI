@@ -7,53 +7,34 @@ namespace AutoDI
     {
         public const string Namespace = "AutoDI";
         public const string TypeName = "<AutoDI>";
-
-        //TODO: Cache type not assembly
-        private static Assembly _containerAssembly;
-        private static IServiceProvider _global;
-
-        public static IServiceProvider Global => _global ?? (_global = GetServiceProvider(ContainerAssembly));
-
-        private static Assembly ContainerAssembly
-        {
-            get
-            {
-                //TODO: This is ignoring the case where the Init method is called by the EntryPoint :/
-                if (_containerAssembly == null)
-                {
-                    //TODO: AutoDI exception
-                    throw new InvalidOperationException("AutoDI has not been initialized");
-                }
-                return _containerAssembly;
-            }
-        }
+        public const string GlobalPropertyName = "Global";
 
         public static void Init(Assembly containerAssembly = null, Action<IApplicationBuilder> configureMethod = null)
         {
             Type autoDI = GetAutoDIType(containerAssembly);
-            _containerAssembly = autoDI.GetTypeInfo().Assembly;
 
             var method = autoDI.GetRuntimeMethod(nameof(Init), new[] { typeof(Action<IApplicationBuilder>) });
             if (method == null) throw new InvalidOperationException($"Could not find {nameof(Init)} method on {autoDI.FullName}");
             method.Invoke(null, new object[] { configureMethod });
         }
 
-        public static void Dispose()
+        //TODO: make nullable
+        public static void Dispose(Assembly containerAssembly)
         {
-            Type autoDI = GetAutoDIType(ContainerAssembly);
+            Type autoDI = GetAutoDIType(containerAssembly);
 
             var method = autoDI.GetRuntimeMethod(nameof(Dispose), new Type[0]);
             if (method == null) throw new InvalidOperationException($"Could not find {nameof(Dispose)} method on {autoDI.FullName}");
             method.Invoke(null, new object[0]);
         }
 
-        public static IServiceProvider GetServiceProvider(Assembly assembly)
+        public static IServiceProvider GetGlobalServiceProvider(Assembly assembly)
         {
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
 
             Type autoDI = GetAutoDIType(assembly);
-            PropertyInfo property = autoDI.GetRuntimeProperty(nameof(Global)) ??
-                                    throw new InvalidOperationException($"Could not find {nameof(Global)} property");
+            PropertyInfo property = autoDI.GetRuntimeProperty(GlobalPropertyName) ??
+                                    throw new InvalidOperationException($"Could not find {GlobalPropertyName} property");
             return (IServiceProvider)property.GetValue(null);
         }
 

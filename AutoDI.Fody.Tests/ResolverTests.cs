@@ -25,14 +25,16 @@ namespace AutoDI.Fody.Tests
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose();
+            DI.Dispose(_testAssembly);
         }
 
         private object Resolve<T>()
         {
             string assemblyTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
             Type resolveType = _testAssembly.GetType(assemblyTypeName);
-            return DI.Global.GetService(resolveType, new object[0]);
+
+            IServiceProvider provider = DI.GetGlobalServiceProvider(_testAssembly);
+            return provider.GetService(resolveType, new object[0]);
         }
 
         [TestMethod]

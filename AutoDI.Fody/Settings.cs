@@ -9,9 +9,15 @@ namespace AutoDI.Fody
     {
         public Behaviors Behavior { get; set; } = Behaviors.Default;
 
-        public bool InjectContainer { get; set; } = true;
+        /// <summary>
+        /// Automatically initialize AutoDI in assembly entry point (if avialible)
+        /// </summary>
+        public bool AutoInit { get; set; } = true;
 
-        public bool GenerateContainer { get; set; } = true;
+        /// <summary>
+        /// Generate registration calls to the container.
+        /// </summary>
+        public bool GenerateRegistrations { get; set; } = true;
 
         public DebugLogLevel DebugLogLevel { get; set; } = DebugLogLevel.Default;
 
@@ -38,16 +44,16 @@ namespace AutoDI.Fody
                 rv.Behavior = behavior;
             }
 
-            if (bool.TryParse(rootElement.GetAttributeValue(nameof(InjectContainer)) ?? bool.TrueString,
-                out bool injectContainer))
+            if (bool.TryParse(rootElement.GetAttributeValue(nameof(AutoInit)) ?? bool.TrueString,
+                out bool autoInit))
             {
-                rv.InjectContainer = injectContainer;
+                rv.AutoInit = autoInit;
             }
 
-            if (bool.TryParse(rootElement.GetAttributeValue(nameof(GenerateContainer)) ?? bool.TrueString,
-                out bool generateContainer))
+            if (bool.TryParse(rootElement.GetAttributeValue(nameof(GenerateRegistrations)) ?? bool.TrueString,
+                out bool generateRegistrations))
             {
-                rv.GenerateContainer = generateContainer;
+                rv.GenerateRegistrations = generateRegistrations;
             }
 
             if (Enum.TryParse(rootElement.GetAttributeValue(nameof(DebugLogLevel)) ?? nameof(DebugLogLevel.Default),
