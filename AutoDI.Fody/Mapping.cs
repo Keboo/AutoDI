@@ -12,7 +12,7 @@ namespace AutoDI.Fody
 
         public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior)
         {
-            //TODO Better filtering
+            //TODO Better filtering, mostly just to remove <Module>
             if (targetType.FullName.Contains('<') || targetType.FullName.Contains('>')) return;
 
 

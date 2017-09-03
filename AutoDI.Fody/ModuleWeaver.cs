@@ -1,5 +1,4 @@
-﻿using AutoDI;
-using AutoDI.Fody;
+﻿using AutoDI.Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -83,6 +82,8 @@ public partial class ModuleWeaver
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
 
+            LoadMethods();
+
             Settings settings = Settings.Parse(Config);
             InternalLogDebug = (s, l) =>
             {
@@ -108,7 +109,7 @@ public partial class ModuleWeaver
                 mapping = null;
             }
 
-            ModuleDefinition.Types.Add(GenerateContainer(mapping, out MethodDefinition getGlobalServiceProvider, out MethodDefinition initMethod));
+            ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, out MethodDefinition getGlobalServiceProvider, out MethodDefinition initMethod));
 
             if (settings.AutoInit)
             {
@@ -196,7 +197,6 @@ public partial class ModuleWeaver
         return allTypes;
     }
 
-
     private void ProcessType(TypeDefinition type, MethodDefinition getGlobalServiceProvider)
     {
         foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
@@ -259,7 +259,7 @@ public partial class ModuleWeaver
                 //Store the return from the resolve method in the method parameter
                 if (property.SetMethod == null)
                 {
-                    //TODO: Constant string, compiler detail... yuck yuck and double duck
+                    //NB: Constant string, compiler detail... yuck yuck and double duck
                     backingField = property.DeclaringType.Fields.FirstOrDefault(f => f.Name == $"<{property.Name}>k__BackingField");
                     if (backingField == null)
                     {
@@ -281,7 +281,6 @@ public partial class ModuleWeaver
                         ? Instruction.Create(OpCodes.Call, property.SetMethod)
                         : Instruction.Create(OpCodes.Stfld, backingField));
             }
-
 
             injector.Insert(end);
 
@@ -331,19 +330,9 @@ public partial class ModuleWeaver
                         injector.Insert(OpCodes.Stelem_Ref);
                     }
                 }
-
-                //TODO: the base method can be extracted into a static
-                var getServiceMethod = ModuleDefinition.ImportReference(
-                    (from method in typeof(ServiceProviderMixins).GetMethods()
-                        where method.Name == nameof(ServiceProviderMixins.GetService) &&
-                              method.IsGenericMethodDefinition
-                        let parameters = method.GetParameters()
-                        where parameters.Length == 2 && parameters[0].ParameterType == typeof(IServiceProvider) &&
-                              parameters[1].ParameterType == typeof(object[])
-                        select method).Single());
                 
                 //Call the resolve method
-                getServiceMethod = new GenericInstanceMethod(getServiceMethod)
+                var getServiceMethod = new GenericInstanceMethod(Methods.ServiceProviderMixins_GetService)
                 {
                     GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
                 };

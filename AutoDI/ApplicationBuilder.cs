@@ -9,7 +9,6 @@ namespace AutoDI
     public class ApplicationBuilder : IApplicationBuilder
     {
         private readonly List<Action<IServiceCollection>> _configureServicesDelegates = new List<Action<IServiceCollection>>();
-        //TODO: this really should be strongly typed....
         private readonly List<Delegate> _configureContainerDelegates = new List<Delegate>();
 
         private Type _specifiedContainerType;
@@ -62,9 +61,8 @@ namespace AutoDI
         private IServiceProvider GetProvider(IServiceProvider applicationProvider,
             IServiceCollection serviceCollection)
         {
-            //TODO: Better exception type
             Type containerType = GetContainerType(serviceCollection) ??
-                                 throw new Exception($"Could not determine container type. Is there an {typeof(IServiceProviderFactory<>).FullName} registered?");
+                                 throw new NoRegisteredContainerException($"Could not determine container type. Is there an {typeof(IServiceProviderFactory<>).FullName} registered?");
             return (IServiceProvider)GetType().GetTypeInfo().DeclaredMethods
                 .Single(m => m.IsGenericMethodDefinition && m.Name == nameof(GetProvider))
                 .MakeGenericMethod(containerType)
@@ -73,10 +71,9 @@ namespace AutoDI
 
         private IServiceProvider GetProvider<TContainerType>(IServiceProvider applicationProvider, IServiceCollection serviceCollection)
         {
-            //TODO: Better exception type.
             IServiceProviderFactory<TContainerType> providerFactory =
                 applicationProvider.GetService<IServiceProviderFactory<TContainerType>>()
-                ?? throw new Exception("Failed to resolve service provider factory");
+                ?? throw new NoServiceProviderFactoryException("Failed to resolve service provider factory");
             
             TContainerType container = providerFactory.CreateBuilder(serviceCollection);
 

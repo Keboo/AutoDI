@@ -18,8 +18,7 @@ namespace AutoDI
             method.Invoke(null, new object[] { configureMethod });
         }
 
-        //TODO: make nullable
-        public static void Dispose(Assembly containerAssembly)
+        public static void Dispose(Assembly containerAssembly = null)
         {
             Type autoDI = GetAutoDIType(containerAssembly);
 

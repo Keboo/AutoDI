@@ -11,9 +11,8 @@ using Mono.Cecil.Rocks;
 // ReSharper disable once CheckNamespace
 partial class ModuleWeaver
 {
-    //TODO: Better name
-    //TODO: out parameter... yuck
-    private TypeDefinition GenerateContainer(Mapping mapping, 
+    //TODO: out parameters... yuck
+    private TypeDefinition GenerateAutoDIClass(Mapping mapping, 
         out MethodDefinition getGlobalServiceProvider, 
         out MethodDefinition initMethod)
     {
@@ -60,7 +59,7 @@ partial class ModuleWeaver
         processor.Emit(OpCodes.Ldsfld, backingField);
         processor.Emit(OpCodes.Brtrue_S, loadField);
         
-        processor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AutoDINotInitializedException>());
+        processor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<NotInitializedException>());
         processor.Emit(OpCodes.Throw);
 
         processor.Append(loadField);
@@ -198,7 +197,7 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
         //Compare
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AutoDIAlreadyInitializedException>());
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AlreadyInitializedException>());
         initProcessor.Emit(OpCodes.Throw);
 
         initProcessor.Append(createApplicationbuilder);

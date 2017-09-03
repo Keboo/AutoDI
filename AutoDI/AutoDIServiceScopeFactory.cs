@@ -14,9 +14,6 @@ namespace AutoDI
 
         public IServiceScope CreateScope()
         {
-            //TODO: anything needed for this? SM uses this call to created the nested container here
-            //Probably want to clone the container map here.
-
             IContainer nested = _map.CreatedNestedContainer();
             return new AutoDIServiceScope(nested);
         }
@@ -31,7 +28,7 @@ namespace AutoDI
 
             public void Dispose()
             {
-                //TODO: Any clenaup needed?
+                (ServiceProvider as IDisposable)?.Dispose();
             }
 
             public IServiceProvider ServiceProvider { get; }

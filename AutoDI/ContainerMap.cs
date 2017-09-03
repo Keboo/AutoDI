@@ -63,7 +63,6 @@ namespace AutoDI
                 {
                     return descriptor.ImplementationFactory;
                 }
-                //TODO implicit singleton?
                 //NB: separate the instance from the ServiceDescriptor to avoid capturing both
                 object instance = descriptor.ImplementationInstance;
                 return _ => instance;

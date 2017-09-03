@@ -9,8 +9,6 @@ namespace AutoDI.Tests
     [TestClass]
     public class ConstructorWithDependencyParametersTests
     {
-        //TODO: These tests could bennifit from scopes
-
         [TestMethod]
         public void DependencyWithIntParameter()
         {

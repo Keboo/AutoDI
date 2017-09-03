@@ -40,7 +40,7 @@ namespace AutoDI.Fody.Tests
                 Assert.Fail("Excepted an exception");
             }
             catch (TargetInvocationException e) 
-                when (e.InnerException is AutoDINotInitializedException)
+                when (e.InnerException is NotInitializedException)
             {
             }
 
