@@ -16,7 +16,8 @@
     <tags>AutoDI, Fody</tags>
     <dependencies>
       <dependency id="Fody" version="2.1.*" />
-      <dependency id="AutoDI" version ="[2.1.4,2.2.0)"/>
+      <dependency id="AutoDI" version ="[3.0.0,3.1.0)"/>
+      <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="[1.1.1,2.0.0)" />
     </dependencies>
   </metadata>
 </package>

@@ -1,6 +1,7 @@
 ﻿using System;
 using AutoDI;
 using AutoDI.Container.Examples;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Console.NetCore
 {
@@ -11,6 +12,33 @@ namespace Console.NetCore
             var quoteBoard = new QuoteBoard();
             quoteBoard.ShowQuotes();
             System.Console.ReadLine();
+        }
+
+        private static IServiceProvider _globalServiceProvider;
+
+        public static void Init(Action<IApplicationBuilder> configure)
+        {
+            if (_globalServiceProvider != null)
+                throw new AlreadyInitializedException();
+            IApplicationBuilder applicationBuilder = new ApplicationBuilder();
+            applicationBuilder.ConfigureServices(Gen_Configured);
+            if (configure != null)
+                configure(applicationBuilder);
+            _globalServiceProvider = applicationBuilder.Build();
+        }
+
+        private static PrincessBrideQuoteService PrincessBrideQuoteService_generated_0(IServiceProvider serviceProvider)
+        {
+            return new PrincessBrideQuoteService();
+        }
+
+        private static void Gen_Configured(IServiceCollection collection)
+        {
+            collection.AddAutoDIService<PrincessBrideQuoteService>(PrincessBrideQuoteService_generated_0, new[]
+            {
+                typeof (IQuoteService),
+                typeof (PrincessBrideQuoteService)
+            }, Lifetime.LazySingleton);
         }
     }
 

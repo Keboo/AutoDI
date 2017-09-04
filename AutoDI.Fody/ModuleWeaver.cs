@@ -82,8 +82,6 @@ public partial class ModuleWeaver
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
 
-            LoadMethods();
-
             Settings settings = Settings.Parse(Config);
             InternalLogDebug = (s, l) =>
             {
@@ -94,7 +92,25 @@ public partial class ModuleWeaver
 
             };
 
-            ICollection<TypeDefinition> allTypes = GetAllTypes(settings);
+            AssemblyDefinition autoDIAssembly;
+            ICollection<TypeDefinition> allTypes = GetAllTypes(settings, out autoDIAssembly);
+
+            if (autoDIAssembly == null)
+            {
+                var assemblyName = typeof(DependencyAttribute).Assembly.GetName();
+                autoDIAssembly = AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
+                if (autoDIAssembly == null)
+                {
+                    LogError("Could not find AutoDI assembly");
+                    return;
+                }
+                else
+                {
+                    LogWarning($"Failed to find AutoDI assembly. Manually injecting '{autoDIAssembly.MainModule.FileName}'");
+                }
+            }
+
+            LoadRequiredData(autoDIAssembly);
 
             Mapping mapping;
             if (settings.GenerateRegistrations)
@@ -153,8 +169,9 @@ public partial class ModuleWeaver
         }
     }
 
-    private ICollection<TypeDefinition> GetAllTypes(Settings settings)
+    private ICollection<TypeDefinition> GetAllTypes(Settings settings, out AssemblyDefinition autoDIAssembly)
     {
+        autoDIAssembly = null;
         var allTypes = new HashSet<TypeDefinition>(TypeComparer.FullName);
         IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) =>
             types.Where(t => !t.IsCompilerGenerated() && !allTypes.Remove(t));
@@ -164,10 +181,12 @@ public partial class ModuleWeaver
             allTypes.Add(type);
         }
 
+        string autoDIFullName = typeof(DependencyAttribute).Assembly.FullName;
         foreach (AssemblyNameReference assemblyReference in ModuleDefinition.AssemblyReferences)
         {
-            if (assemblyReference.Name == "AutoDI")
+            if (assemblyReference.FullName == autoDIFullName)
             {
+                autoDIAssembly = AssemblyResolver.Resolve(assemblyReference);
                 continue;
             }
             bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
@@ -183,7 +202,7 @@ public partial class ModuleWeaver
 
                 //Check if it references AutoDI. If it doesn't we will skip
                 if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a =>
-                        a.FullName != typeof(DependencyAttribute).Assembly.FullName))
+                        a.FullName != autoDIFullName))
                 {
                     continue;
                 }
@@ -220,7 +239,7 @@ public partial class ModuleWeaver
 
             var end = Instruction.Create(OpCodes.Nop);
 
-            var serviceProviderVariable = new VariableDefinition(ModuleDefinition.Get<IServiceProvider>());
+            var serviceProviderVariable = new VariableDefinition(Import.IServiceProvider);
             constructor.Body.Variables.Add(serviceProviderVariable);
 
             //Get the global IServiceProvider => AutoDI.<AutoDI>.Global
@@ -286,8 +305,8 @@ public partial class ModuleWeaver
 
             constructor.Body.OptimizeMacros();
 
-            void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source, 
-                IEnumerable<Instruction> loadSource, 
+            void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source,
+                IEnumerable<Instruction> loadSource,
                 Instruction resolveAssignmentTarget,
                 Instruction setResult)
             {
@@ -330,9 +349,9 @@ public partial class ModuleWeaver
                         injector.Insert(OpCodes.Stelem_Ref);
                     }
                 }
-                
+
                 //Call the resolve method
-                var getServiceMethod = new GenericInstanceMethod(Methods.ServiceProviderMixins_GetService)
+                var getServiceMethod = new GenericInstanceMethod(Import.ServiceProviderMixins_GetService)
                 {
                     GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
                 };

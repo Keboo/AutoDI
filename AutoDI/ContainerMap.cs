@@ -20,11 +20,6 @@ namespace AutoDI
             MakeFuncMethod = methods.Single(m => m.Name == nameof(MakeFunc));
         }
 
-        public ContainerMap()
-        {
-            //TODO: This seems to be created more than expected
-        }
-
         public void Add(IServiceCollection services)
         {
             //TODO: This re-grouping seems off somewhere...

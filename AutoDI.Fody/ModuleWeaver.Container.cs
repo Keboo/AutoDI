@@ -22,9 +22,9 @@ partial class ModuleWeaver
         {
             BaseType = ModuleDefinition.Get<object>()
         };
-
-        FieldDefinition globalServiceProvider =
-            ModuleDefinition.CreateStaticReadonlyField<IServiceProvider>("_globalServiceProvider", false);
+        
+        FieldDefinition globalServiceProvider = 
+            ModuleDefinition.CreateStaticReadonlyField("_globalServiceProvider", false, Import.IServiceProvider);
         containerType.Fields.Add(globalServiceProvider);
 
         PropertyDefinition property = GenerateGlobalServiceProviderProperty(globalServiceProvider);
@@ -47,11 +47,11 @@ partial class ModuleWeaver
     private PropertyDefinition GenerateGlobalServiceProviderProperty(FieldDefinition backingField)
     {
         var property = new PropertyDefinition(DI.GlobalPropertyName, PropertyAttributes.None,
-            ModuleDefinition.Get<IServiceProvider>());
+            Import.IServiceProvider);
 
         var getMethod = new MethodDefinition($"get_{property.Name}",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static |
-            MethodAttributes.SpecialName, ModuleDefinition.Get<IServiceProvider>());
+            MethodAttributes.SpecialName, Import.IServiceProvider);
         property.GetMethod = getMethod;
 
         ILProcessor processor = getMethod.Body.GetILProcessor();
@@ -78,12 +78,7 @@ partial class ModuleWeaver
 
         ILProcessor processor = method.Body.GetILProcessor();
 
-        MethodReference addAuotDIServiceMethod = ModuleDefinition.GetMethod(typeof(ServiceCollectionMixins),
-            nameof(ServiceCollectionMixins.AddAutoDIService));
-
         MethodDefinition funcCtor = ModuleDefinition.ResolveCoreConstructor(typeof(Func<,>));
-
-        MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
 
         if (mapping != null)
         {
@@ -110,11 +105,11 @@ partial class ModuleWeaver
                     processor.Emit(OpCodes.Ldftn, factoryMethod);
                     processor.Emit(OpCodes.Newobj,
                         ModuleDefinition.ImportReference(
-                            funcCtor.MakeGenericTypeConstructor(ModuleDefinition.Get<IServiceProvider>(),
+                            funcCtor.MakeGenericTypeConstructor(Import.IServiceProvider,
                                 map.TargetType)));
 
                     processor.Emit(OpCodes.Ldc_I4, map.Keys.Count);
-                    processor.Emit(OpCodes.Newarr, ModuleDefinition.Get<Type>());
+                    processor.Emit(OpCodes.Newarr, Import.System_Type);
 
                     int arrayIndex = 0;
                     foreach (TypeDefinition key in map.Keys)
@@ -126,13 +121,13 @@ partial class ModuleWeaver
                         processor.Emit(OpCodes.Dup);
                         processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
                         processor.Emit(OpCodes.Ldtoken, importedKey);
-                        processor.Emit(OpCodes.Call, getTypeMethod);
+                        processor.Emit(OpCodes.Call, Import.Type_GetTypeFromHandle);
                         processor.Emit(OpCodes.Stelem_Ref);
                     }
 
                     processor.Emit(OpCodes.Ldc_I4, (int) map.Lifetime);
 
-                    var genericAddMethod = new GenericInstanceMethod(addAuotDIServiceMethod);
+                    var genericAddMethod = new GenericInstanceMethod(Import.ServiceCollectionMixins_AddAutoDIService);
                     genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
                     processor.Emit(OpCodes.Call, genericAddMethod);
                     processor.Emit(OpCodes.Pop);
@@ -160,7 +155,7 @@ partial class ModuleWeaver
         var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
             MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(targetType));
-        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, ModuleDefinition.Get<IServiceProvider>()));
+        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.IServiceProvider));
 
         ILProcessor factoryProcessor = factory.Body.GetILProcessor();
 
@@ -233,7 +228,9 @@ partial class ModuleWeaver
 
 
         initProcessor.Append(loadForBuild);
-        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.Build)));
+        var buildMethod = ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.Build));
+        buildMethod.ReturnType = Import.IServiceProvider; //Must update the return type to handle .net core apps
+        initProcessor.Emit(OpCodes.Callvirt, buildMethod);
         initProcessor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
         initProcessor.Emit(OpCodes.Ret);

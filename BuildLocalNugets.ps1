@@ -3,6 +3,7 @@
 Param([Parameter(Mandatory=$true)][string]$Version,
 [Parameter()][System.IO.DirectoryInfo]$TargetDir)
 
+msbuild "AutoDI.sln" /p:AUTODI_VERSION_FULL=$Version /p:Configuration=Release
 
 if (!(Test-Path "nuget.exe")) {
     Invoke-WebRequest -Uri https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile "nuget.exe"

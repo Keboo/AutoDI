@@ -9,10 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="ModuleWeaver.ImportMethods.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="FodyCecil" Version="2.1.2" />
     <PackageReference Include="gitlink" Version="3.0.0" />
   </ItemGroup>

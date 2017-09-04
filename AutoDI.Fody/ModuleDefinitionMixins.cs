@@ -147,14 +147,18 @@ namespace AutoDI.Fody
 
         public static MethodDefinition ResolveCoreConstructor(this ModuleDefinition moduleDefinition, Type targetType)
         {
-            TypeReference funcType = moduleDefinition.ImportReference(targetType);
+            return ResolveCoreType(moduleDefinition, targetType)?.GetConstructors().Single();
+        }
+
+        public static TypeDefinition ResolveCoreType(this ModuleDefinition moduleDefinition, Type targetType)
+        {
+            TypeReference coreType = moduleDefinition.ImportReference(targetType);
             //NB: This null fall back is due to an issue with Mono.Cecil 0.10.0
             //From GitHub issues it looks like it make be resolved in some of the beta builds, however this would require modifying Fody.
-            //For now we will just manually resolve this way. Since we know Func<> lives in the core library.
-            TypeDefinition funcDefinition = funcType.Resolve() ?? moduleDefinition.AssemblyResolver
-                                                .Resolve((AssemblyNameReference)moduleDefinition.TypeSystem.CoreLibrary)
-                                                .MainModule.GetType(targetType.FullName);
-            return funcDefinition?.GetConstructors().Single();
+            //For now we will just manually resolve this way and assume the type lives in the core library.
+            return coreType.Resolve() ?? moduleDefinition.AssemblyResolver
+                       .Resolve((AssemblyNameReference) moduleDefinition.TypeSystem.CoreLibrary)
+                       .MainModule.GetType(targetType.FullName);
         }
     }
 }
