@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.3</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoDI" Version="3.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StructureMap.Microsoft.DependencyInjection\src\StructureMap.Microsoft.DependencyInjection\StructureMap.Microsoft.DependencyInjection.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoDI.Fody" Version="3.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ExampleClasses\ExampleClasses.csproj" />
+    <ProjectReference Include="..\StructureMap.AutoDI\StructureMap.AutoDI.csproj" />
+  </ItemGroup>
+
+</Project>

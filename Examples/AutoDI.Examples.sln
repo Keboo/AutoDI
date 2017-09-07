@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.15
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AutoDI", "AutoDI", "{93505DD5-95F9-44D3-B001-FAB9836FA3B6}"
 EndProject
@@ -37,7 +37,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamarinForms.UWP", "AutoDI.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamarinForms.iOS", "AutoDI.Container\XamarinForms\XamarinForms.iOS\XamarinForms.iOS.csproj", "{21B59EDF-B01F-4654-9584-B5A411808EA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console.NetCore", "AutoDI.Container\Console.NetCore\Console.NetCore.csproj", "{69153F74-7EF0-4226-A9C1-2250B3BFBAA4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Console.NetCore", "AutoDI.Container\Console.NetCore\Console.NetCore.csproj", "{69153F74-7EF0-4226-A9C1-2250B3BFBAA4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -739,5 +739,8 @@ Global
 		{47AA669C-619F-4CBA-A875-4172C6A91072} = {CB47BA35-93A4-4D85-B733-F848D64445D5}
 		{21B59EDF-B01F-4654-9584-B5A411808EA8} = {CB47BA35-93A4-4D85-B733-F848D64445D5}
 		{69153F74-7EF0-4226-A9C1-2250B3BFBAA4} = {CB47BA35-93A4-4D85-B733-F848D64445D5}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F8BF3ED7-C33E-4BFB-A247-7EB53F0CCED6}
 	EndGlobalSection
 EndGlobal
