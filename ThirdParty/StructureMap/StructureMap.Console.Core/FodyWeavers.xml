@@ -1,4 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Weavers>
-  <AutoDI DebugLogLevel="Verbose"/>
+  <AutoDI DebugLogLevel="Verbose">
+    <Assembly Name="ExampleClasses" />
+    <Type Name="ExampleClasses\.Service" Lifetime="Scoped" />
+  </AutoDI>
 </Weavers>

@@ -9,6 +9,14 @@ namespace AutoDI
         {
             var map = new ContainerMap();
             
+            map.Add(new AutoDIServiceDescriptor(typeof(IServiceScopeFactory), typeof(AutoDIServiceScopeFactory),
+                provider => new AutoDIServiceScopeFactory(provider.GetRequiredService<IContainer>()), Lifetime.Scoped));
+
+            map.Add(new AutoDIServiceDescriptor(typeof(IServiceProvider), typeof(AutoDIServiceProvider),
+                provider => new AutoDIServiceProvider(provider.GetRequiredService<IContainer>()), Lifetime.Scoped));
+
+            map.Add(new AutoDIServiceDescriptor(typeof(IContainer), typeof(ContainerMap), provider => map, Lifetime.Scoped));
+
             map.Add(services);
 
             return map;

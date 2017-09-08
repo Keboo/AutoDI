@@ -89,10 +89,7 @@ namespace AutoDI
         {
             var collection = new AutoDIServiceCollection();
 
-            collection.AddAutoDISingleton<IServiceProviderFactory<IContainer>>(sp => new AutoDIServiceProviderFactory());
-            collection.AddAutoDIScoped<IServiceScopeFactory>(sp => new AutoDIServiceScopeFactory(sp.GetService<IContainer>()));
-            collection.AddAutoDIScoped<IContainer>(sp => sp.GetService<IServiceProviderFactory<IContainer>>().CreateBuilder(collection));
-            collection.AddAutoDIScoped<IServiceProvider>(sp => new AutoDIServiceProvider(sp.GetService<IContainer>()));
+            collection.AddAutoDITransient<IServiceProviderFactory<IContainer>>(sp => new AutoDIServiceProviderFactory());
 
             foreach (var @delegate in _configureServicesDelegates)
             {

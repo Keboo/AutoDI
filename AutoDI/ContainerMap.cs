@@ -24,10 +24,10 @@ namespace AutoDI
         {
             //TODO: This re-grouping seems off somewhere...
             foreach (IGrouping<Type, ServiceDescriptor> serviceDescriptors in from ServiceDescriptor service in services
-                let autoDIService = service as AutoDIServiceDescriptor
-                group service by autoDIService?.TargetType
+                                                                              let autoDIService = service as AutoDIServiceDescriptor
+                                                                              group service by autoDIService?.TargetType
                 into @group
-                select @group
+                                                                              select @group
             )
             {
                 DelegateContainer container = null;
@@ -36,16 +36,46 @@ namespace AutoDI
                     //Build up the container if it has not been generated or we do not have multiple AutoDI target types
                     if (container == null || serviceDescriptors.Key == null)
                     {
-                        AutoDIServiceDescriptor autoDIDescriptor = serviceDescriptor as AutoDIServiceDescriptor;
-                        Lifetime lifetime = autoDIDescriptor?.AutoDILifetime ?? serviceDescriptor.Lifetime.ToAutoDI();
-                        Type targetType = autoDIDescriptor?.TargetType;
-
-                        container = new DelegateContainer(lifetime, targetType, GetFactory(serviceDescriptor));
+                        container = AddInternal(serviceDescriptor);
                     }
 
                     _accessors[serviceDescriptor.ServiceType] = container;
                 }
             }
+
+            Func<IServiceProvider, object> GetFactory(ServiceDescriptor descriptor)
+            {
+                if (descriptor.ImplementationType != null)
+                {
+                    //TODO, resolve parameters
+                    return sp => Activator.CreateInstance(descriptor.ImplementationType);
+                }
+                if (descriptor.ImplementationFactory != null)
+                {
+                    return descriptor.ImplementationFactory;
+                }
+                //NB: separate the instance from the ServiceDescriptor to avoid capturing both
+                object instance = descriptor.ImplementationInstance;
+                return _ => instance;
+            }
+        }
+
+        public void Add(ServiceDescriptor serviceDescriptor)
+        {
+            AddInternal(serviceDescriptor);
+        }
+
+        private DelegateContainer AddInternal(ServiceDescriptor serviceDescriptor)
+        {
+            AutoDIServiceDescriptor autoDIDescriptor = serviceDescriptor as AutoDIServiceDescriptor;
+            Lifetime lifetime = autoDIDescriptor?.AutoDILifetime ?? serviceDescriptor.Lifetime.ToAutoDI();
+            Type targetType = autoDIDescriptor?.TargetType;
+
+            var container = new DelegateContainer(lifetime, targetType, GetFactory(serviceDescriptor));
+
+            _accessors[serviceDescriptor.ServiceType] = container;
+
+            return container;
 
             Func<IServiceProvider, object> GetFactory(ServiceDescriptor descriptor)
             {
@@ -86,12 +116,12 @@ namespace AutoDI
                 if (key.GetGenericTypeDefinition() == typeof(Lazy<>))
                 {
                     return MakeLazyMethod.MakeGenericMethod(key.GenericTypeArguments[0])
-                        .Invoke(this, new object[] {provider});
+                        .Invoke(this, new object[] { provider });
                 }
                 if (key.GetGenericTypeDefinition() == typeof(Func<>))
                 {
                     return MakeFuncMethod.MakeGenericMethod(key.GenericTypeArguments[0])
-                        .Invoke(this, new object[] {provider});
+                        .Invoke(this, new object[] { provider });
                 }
             }
             return default(object);
@@ -172,35 +202,35 @@ namespace AutoDI
                     case Lifetime.Singleton:
                     case Lifetime.LazySingleton:
                     case Lifetime.Scoped:
-                    {
-                        var syncLock = new object();
-                        object value = null;
-                        return provider =>
                         {
-                            if (value != null) return value;
-                            lock (syncLock)
+                            var syncLock = new object();
+                            object value = null;
+                            return provider =>
                             {
                                 if (value != null) return value;
-                                return value = factory(provider);
-                            }
-                        };
-                    }
-                    case Lifetime.WeakTransient:
-                    {
-                        var weakRef = new WeakReference<object>(null);
-                        return provider =>
-                        {
-                            lock (weakRef)
-                            {
-                                if (!weakRef.TryGetTarget(out object value))
+                                lock (syncLock)
                                 {
-                                    value = factory(provider);
-                                    weakRef.SetTarget(value);
+                                    if (value != null) return value;
+                                    return value = factory(provider);
                                 }
-                                return value;
-                            }
-                        };
-                    }
+                            };
+                        }
+                    case Lifetime.WeakTransient:
+                        {
+                            var weakRef = new WeakReference<object>(null);
+                            return provider =>
+                            {
+                                lock (weakRef)
+                                {
+                                    if (!weakRef.TryGetTarget(out object value))
+                                    {
+                                        value = factory(provider);
+                                        weakRef.SetTarget(value);
+                                    }
+                                    return value;
+                                }
+                            };
+                        }
                     case Lifetime.Transient:
                         return factory;
                     default:

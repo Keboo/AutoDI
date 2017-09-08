@@ -11,11 +11,22 @@ namespace StructureMap.Console.Core
         static void Main(string[] args)
         {
             IServiceProvider provider = DI.GetGlobalServiceProvider(typeof(Program).Assembly);
-            var container = provider.GetService<Container>();
-            string foo = container.WhatDoIHave();
+            var smProvider = (StructureMapServiceProvider)provider;
+            string foo = smProvider.Container.WhatDoIHave();
+            //var p2 = provider.GetService<IServiceProvider>();
+            //var container = provider.GetService<Container>();
+            //string foo = container.WhatDoIHave();
 
-            var service = provider.GetService<IService>();
-
+            IService service1, service2;
+            IServiceScopeFactory scopeFactory = provider.GetService<IServiceScopeFactory>();
+            using (var scope1 = scopeFactory.CreateScope())
+            {
+                service1 = scope1.ServiceProvider.GetService<IService>();
+            }
+            using (var scope2 = scopeFactory.CreateScope())
+            {
+                service2 = scope2.ServiceProvider.GetService<IService>();
+            }
             Program program = provider.GetService<Program>();
             program.DoStuff();
         }
@@ -29,23 +40,21 @@ namespace StructureMap.Console.Core
 
         public void DoStuff()
         {
-            
+
         }
 
         [SetupMethod]
         public static void SetupDI(IApplicationBuilder builder)
         {
             builder.UseStructureMap();
-            builder.ConfigureContinaer<Registry>(registry =>
-            {
-                
-            });
-            builder.ConfigureServices(services =>
-            {
-                var container = new Container();
-                container.Populate(services);
-                //return container.GetInstance<IServiceProvider>();
-            });
+            //builder.ConfigureContinaer<Registry>(registry =>
+            //{
+            //    
+            //});
+            //builder.ConfigureServices(services =>
+            //{
+            //    
+            //});
         }
     }
 }
