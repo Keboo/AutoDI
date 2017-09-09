@@ -4,7 +4,10 @@ using AutoDI.Fody;
 using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
+using AutoDI;
+using Map = AutoDI.Fody.Map;
 
+// ReSharper disable once CheckNamespace
 partial class ModuleWeaver
 {
     private Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes)

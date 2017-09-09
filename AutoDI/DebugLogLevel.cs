@@ -1,4 +1,4 @@
-﻿namespace AutoDI.Fody
+﻿namespace AutoDI
 {
     public enum DebugLogLevel
     {

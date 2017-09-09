@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
+using AutoDI;
 using DependencyAttribute = AutoDI.DependencyAttribute;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
@@ -82,15 +83,7 @@ public partial class ModuleWeaver
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
 
-            Settings settings = Settings.Parse(Config);
-            InternalLogDebug = (s, l) =>
-            {
-                if (l <= settings.DebugLogLevel)
-                {
-                    LogDebug(s);
-                }
-
-            };
+            Settings settings = LoadSettings();
 
             AssemblyDefinition autoDIAssembly;
             ICollection<TypeDefinition> allTypes = GetAllTypes(settings, out autoDIAssembly);
@@ -198,7 +191,7 @@ public partial class ModuleWeaver
                 {
                     InternalLogDebug($"Failed to resolve assembly reference '{assemblyReference.FullName}'", DebugLogLevel.Verbose);
                     continue;
-                };
+                }
 
                 //Check if it references AutoDI. If it doesn't we will skip
                 if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a =>

@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace AutoDI.Fody
+namespace AutoDI
 {
     [Flags]
-    internal enum Behaviors
+    public enum Behaviors
     {
         None = 0,
         SingleInterfaceImplementation = 1,

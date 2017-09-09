@@ -14,5 +14,10 @@ namespace AutoDI.Fody
         public Lifetime Lifetime { get; }
 
         public bool Matches(string type) => _typeRegex.IsMatch(type);
+
+        public override string ToString()
+        {
+            return $"'{_typeRegex}' => {Lifetime}";
+        }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Xml.Linq;
 
 namespace AutoDI.Fody
@@ -27,10 +28,37 @@ namespace AutoDI.Fody
 
         public IList<MatchAssembly> Assemblies { get; } = new List<MatchAssembly>();
 
-        public static Settings Parse(XElement rootElement)
+        public override string ToString()
         {
-            var rv = new Settings();
-            if (rootElement == null) return rv;
+            var sb = new StringBuilder();
+
+            sb.AppendLine("AutoDI Settings:");
+            sb.AppendLine($"  Behavior(s): {Behavior}");
+            sb.AppendLine($"  AutoInit: {AutoInit}");
+            sb.AppendLine($"  GenerateRegistrations: {GenerateRegistrations}");
+            sb.AppendLine($"  DebugLogLevel: {DebugLogLevel}");
+            sb.AppendLine(" Included Assemblies:");
+            foreach (MatchAssembly assembly in Assemblies)
+            {
+                sb.AppendLine($"  {assembly}");
+            }
+            sb.AppendLine("  Maps:");
+            foreach (Map map in Maps)
+            {
+                sb.AppendLine($"  {map}");
+            }
+            sb.AppendLine($" Type Lifetimes");
+            foreach (MatchType type in Types)
+            {
+                sb.AppendLine($"  {type}");
+            }
+
+            return sb.ToString();
+        }
+
+        public static Settings Parse(Settings settings, XElement rootElement)
+        {
+            if (rootElement == null) return settings;
 
             string behaviorAttribute = rootElement.GetAttributeValue(nameof(Behavior));
             if (behaviorAttribute != null)
@@ -41,25 +69,25 @@ namespace AutoDI.Fody
                     if (Enum.TryParse(value, out Behaviors @enum))
                         behavior |= @enum;
                 }
-                rv.Behavior = behavior;
+                settings.Behavior = behavior;
             }
 
             if (bool.TryParse(rootElement.GetAttributeValue(nameof(AutoInit)) ?? bool.TrueString,
                 out bool autoInit))
             {
-                rv.AutoInit = autoInit;
+                settings.AutoInit = autoInit;
             }
 
             if (bool.TryParse(rootElement.GetAttributeValue(nameof(GenerateRegistrations)) ?? bool.TrueString,
                 out bool generateRegistrations))
             {
-                rv.GenerateRegistrations = generateRegistrations;
+                settings.GenerateRegistrations = generateRegistrations;
             }
 
             if (Enum.TryParse(rootElement.GetAttributeValue(nameof(DebugLogLevel)) ?? nameof(DebugLogLevel.Default),
                 out DebugLogLevel debugLogLevel))
             {
-                rv.DebugLogLevel = debugLogLevel;
+                settings.DebugLogLevel = debugLogLevel;
             }
 
             foreach (XElement assemblyNode in rootElement.DescendantNodes().OfType<XElement>()
@@ -68,7 +96,7 @@ namespace AutoDI.Fody
                 string assemblyName = assemblyNode.GetAttributeValue("Name");
                 if (string.IsNullOrWhiteSpace(assemblyName)) continue;
 
-                rv.Assemblies.Add(new MatchAssembly(assemblyName));
+                settings.Assemblies.Add(new MatchAssembly(assemblyName));
             }
 
             foreach (XElement typeNode in rootElement.DescendantNodes().OfType<XElement>()
@@ -83,7 +111,7 @@ namespace AutoDI.Fody
                     lifetime = Lifetime.LazySingleton;
                 }
 
-                rv.Types.Add(new MatchType(typePattern, lifetime));
+                settings.Types.Add(new MatchType(typePattern, lifetime));
             }
 
             foreach (XElement mapNode in rootElement.DescendantNodes().OfType<XElement>()
@@ -97,10 +125,11 @@ namespace AutoDI.Fody
                 {
                     force = false;
                 }
-                rv.Maps.Add(new Map(from, to, force));
+                settings.Maps.Add(new Map(from, to, force));
             }
 
-            return rv;
+            return settings;
         }
+        
     }
 }

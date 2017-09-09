@@ -1,4 +1,5 @@
-﻿using AutoDI.Fody;
+﻿using AutoDI;
+using AutoDI.Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 

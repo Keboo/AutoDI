@@ -12,5 +12,10 @@ namespace AutoDI.Fody
         }
 
         public bool Matches(string assemblyName) => _assemblyNameRegex.IsMatch(assemblyName);
+
+        public override string ToString()
+        {
+            return _assemblyNameRegex.ToString();
+        }
     }
 }
