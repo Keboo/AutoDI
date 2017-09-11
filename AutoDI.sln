@@ -49,7 +49,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StructureMap.Console.Core",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleClasses", "ThirdParty\ExampleClasses\ExampleClasses.csproj", "{CE51D18C-2EB3-421D-AE4D-E736993A80F8}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AspNet.Core", "AspNet.Core", "{A1852B41-F490-4B16-8DBB-4AEA4895A8EA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AspNetCore", "AutoDI.AspNetCore\AutoDI.AspNetCore.csproj", "{EC8FEB67-0EC6-430E-892B-20EFFC47B423}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -97,6 +97,10 @@ Global
 		{CE51D18C-2EB3-421D-AE4D-E736993A80F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE51D18C-2EB3-421D-AE4D-E736993A80F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE51D18C-2EB3-421D-AE4D-E736993A80F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -108,7 +112,6 @@ Global
 		{A09AE5C2-472D-41CC-992A-00D3DE3563F9} = {DD3FC08D-C1D3-40C7-BF19-F54CBB43BC91}
 		{A23385EC-14A2-4304-9B98-FD4F9A175351} = {DD3FC08D-C1D3-40C7-BF19-F54CBB43BC91}
 		{CE51D18C-2EB3-421D-AE4D-E736993A80F8} = {09E2A2E1-D10D-40DC-A74F-5BBFCE0CDD60}
-		{A1852B41-F490-4B16-8DBB-4AEA4895A8EA} = {09E2A2E1-D10D-40DC-A74F-5BBFCE0CDD60}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4E3F596C-3D1B-4F27-9F3F-D9D892CF6DE6}

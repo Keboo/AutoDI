@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AutoDI
 {
@@ -16,6 +17,15 @@ namespace AutoDI
             var method = autoDI.GetRuntimeMethod(nameof(Init), new[] { typeof(Action<IApplicationBuilder>) });
             if (method == null) throw new InvalidOperationException($"Could not find {nameof(Init)} method on {autoDI.FullName}");
             method.Invoke(null, new object[] { configureMethod });
+        }
+
+        public static void AddServices(IServiceCollection collection, Assembly containerAssembly = null)
+        {
+            Type autoDI = GetAutoDIType(containerAssembly);
+
+            var method = autoDI.GetRuntimeMethod(nameof(AddServices), new[] { typeof(IServiceCollection) });
+            if (method == null) throw new InvalidOperationException($"Could not find {nameof(AddServices)} method on {autoDI.FullName}");
+            method.Invoke(null, new object[] { collection });
         }
 
         public static void Dispose(Assembly containerAssembly = null)

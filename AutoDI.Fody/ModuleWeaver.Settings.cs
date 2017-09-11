@@ -2,6 +2,7 @@
 using AutoDI;
 using AutoDI.Fody;
 using Mono.Cecil;
+using System.Linq;
 
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver
@@ -9,7 +10,7 @@ public partial class ModuleWeaver
     private Settings LoadSettings()
     {
         var settings = new Settings();
-        foreach (CustomAttribute attribute in ModuleDefinition.Assembly.CustomAttributes)
+        foreach (CustomAttribute attribute in GetAllModules().SelectMany(m => m.Assembly.CustomAttributes))
         {
             if (attribute.AttributeType.IsType<SettingsAttribute>())
             {
@@ -23,19 +24,20 @@ public partial class ModuleWeaver
                                 settings.AutoInit = (bool)property.Argument.Value;
                                 break;
                             case nameof(SettingsAttribute.Behavior):
-                                settings.Behavior = (Behaviors) property.Argument.Value;
+                                settings.Behavior = (Behaviors)property.Argument.Value;
                                 break;
                             case nameof(SettingsAttribute.DebugLogLevel):
-                                settings.DebugLogLevel = (DebugLogLevel) property.Argument.Value;
+                                settings.DebugLogLevel = (DebugLogLevel)property.Argument.Value;
                                 break;
                             case nameof(SettingsAttribute.GenerateRegistrations):
-                                settings.GenerateRegistrations = (bool) property.Argument.Value;
+                                settings.GenerateRegistrations = (bool)property.Argument.Value;
                                 break;
                         }
                     }
                 }
             }
         }
+
         settings = Settings.Parse(settings, Config);
         InternalLogDebug = (s, l) =>
         {

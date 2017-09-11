@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using AutoDI.AspNetCore;
 
 namespace Web.NetCore
 {
@@ -9,6 +11,7 @@ namespace Web.NetCore
         {
             IWebHost host = new WebHostBuilder()
                 .UseKestrel()
+                .UseAutoDI()
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
                 .UseStartup<Startup>()

@@ -175,32 +175,25 @@ public partial class ModuleWeaver
         }
 
         string autoDIFullName = typeof(DependencyAttribute).Assembly.FullName;
-        foreach (AssemblyNameReference assemblyReference in ModuleDefinition.AssemblyReferences)
+        foreach (ModuleDefinition module in GetAllModules())
         {
-            if (assemblyReference.FullName == autoDIFullName)
+            if (module.Assembly.FullName == autoDIFullName)
             {
-                autoDIAssembly = AssemblyResolver.Resolve(assemblyReference);
+                autoDIAssembly = AssemblyResolver.Resolve(module.Assembly.Name);
                 continue;
             }
             bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
-            bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(assemblyReference.FullName));
+            bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(module.Assembly.FullName));
             if (useAutoDiAssebmlies || matchesAssembly)
             {
-                AssemblyDefinition assembly = AssemblyResolver.Resolve(assemblyReference);
-                if (assembly == null)
-                {
-                    InternalLogDebug($"Failed to resolve assembly reference '{assemblyReference.FullName}'", DebugLogLevel.Verbose);
-                    continue;
-                }
-
                 //Check if it references AutoDI. If it doesn't we will skip
-                if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a =>
+                if (!matchesAssembly && module.AssemblyReferences.All(a =>
                         a.FullName != autoDIFullName))
                 {
                     continue;
                 }
                 //Either references AutoDI, or was a config assembly match, include the types.
-                foreach (TypeDefinition type in FilterTypes(assembly.MainModule.GetAllTypes()))
+                foreach (TypeDefinition type in FilterTypes(module.GetAllTypes()))
                 {
                     allTypes.Add(type);
                 }
@@ -425,6 +418,31 @@ public partial class ModuleWeaver
             injector.Insert(Instruction.Create(OpCodes.Box, boxType));
         }
         LogWarning($"Unknown constant type {constant.GetType().FullName}");
+    }
+
+    private IEnumerable<ModuleDefinition> GetAllModules()
+    {
+        var seen = new HashSet<string>();
+        var queue = new Queue<ModuleDefinition>();
+        queue.Enqueue(ModuleDefinition);
+        
+        while (queue.Count > 0)
+        {
+            ModuleDefinition module = queue.Dequeue();
+            yield return module;
+
+            foreach (AssemblyNameReference assemblyReference in module.AssemblyReferences)
+            {
+                if (seen.Contains(assemblyReference.FullName)) continue;
+                AssemblyDefinition assembly = AssemblyResolver.Resolve(assemblyReference);
+                if (assembly?.MainModule == null)
+                {
+                    continue;
+                }
+                seen.Add(assembly.FullName);
+                queue.Enqueue(assembly.MainModule);
+            }
+        }
     }
 
     // Will be called when a request to cancel the build occurs. OPTIONAL

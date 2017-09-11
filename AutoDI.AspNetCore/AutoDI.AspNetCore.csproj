@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Keboo</Authors>
+    <Company>Keboo</Company>
+    <Description>AutoDI integration for ASP.NET Core</Description>
+    <PackageLicenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Keboo/AutoDI</PackageProjectUrl>
+    <PackageIconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/Keboo/AutoDI</RepositoryUrl>
+    <PackageTags>AutoDI</PackageTags>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Copyright>Copyright 2017</Copyright>
+    <Version>1.0.2</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoDI" Version="3.0.14" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="1.1.2" />
+  </ItemGroup>
+
+</Project>

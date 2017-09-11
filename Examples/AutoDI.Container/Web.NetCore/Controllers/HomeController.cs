@@ -7,12 +7,11 @@ namespace Web.NetCore.Controllers
 {
     public class HomeController : Controller
     {
-        private IQuoteService _service;
+        private readonly IQuoteService _service;
 
-        public HomeController([Dependency]IQuoteService service = null)
+        public HomeController(IQuoteService service)
         {
-            _service = service;
-            if (service == null) throw new ArgumentNullException(nameof(service));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
         }
 
         public IActionResult Index()

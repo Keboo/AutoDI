@@ -69,8 +69,8 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateConfigureMethod(Mapping mapping, TypeDefinition containerType)
     {
-        var method = new MethodDefinition("Gen_Configured",
-            MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
+        var method = new MethodDefinition(nameof(DI.AddServices),
+            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
         
         var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, ModuleDefinition.Get<IServiceCollection>());
