@@ -88,6 +88,8 @@ public partial class ModuleWeaver
             AssemblyDefinition autoDIAssembly;
             ICollection<TypeDefinition> allTypes = GetAllTypes(settings, out autoDIAssembly);
 
+            InternalLogDebug($"Found types:\r\n{string.Join("\r\n", allTypes.Select(x => x.FullName))}", DebugLogLevel.Verbose);
+
             if (autoDIAssembly == null)
             {
                 var assemblyName = typeof(DependencyAttribute).Assembly.GetName();
@@ -168,11 +170,6 @@ public partial class ModuleWeaver
         var allTypes = new HashSet<TypeDefinition>(TypeComparer.FullName);
         IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) =>
             types.Where(t => !t.IsCompilerGenerated() && !allTypes.Remove(t));
-
-        foreach (TypeDefinition type in FilterTypes(ModuleDefinition.GetAllTypes()))
-        {
-            allTypes.Add(type);
-        }
 
         string autoDIFullName = typeof(DependencyAttribute).Assembly.FullName;
         foreach (ModuleDefinition module in GetAllModules())

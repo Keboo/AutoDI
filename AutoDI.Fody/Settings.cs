@@ -42,12 +42,12 @@ namespace AutoDI.Fody
             {
                 sb.AppendLine($"  {assembly}");
             }
-            sb.AppendLine("  Maps:");
+            sb.AppendLine(" Maps:");
             foreach (Map map in Maps)
             {
                 sb.AppendLine($"  {map}");
             }
-            sb.AppendLine($" Type Lifetimes");
+            sb.AppendLine(" Type Lifetimes:");
             foreach (MatchType type in Types)
             {
                 sb.AppendLine($"  {type}");
