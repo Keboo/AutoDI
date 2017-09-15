@@ -26,7 +26,6 @@ namespace AutoDI.AssemblyGenerator
 
             IEnumerable<AssemblyInfo> GetAssemblies()
             {
-
                 var assemblyRegex = new Regex(@"<\s*assembly(:\s*(?<Name>\w+))?\s*/?>");
                 var endAssemblyRegex = new Regex(@"</\s*assembly\s*>");
                 var typeRegex = new Regex(@"<\s*type:\s*(?<Name>\w+)\s*/>");

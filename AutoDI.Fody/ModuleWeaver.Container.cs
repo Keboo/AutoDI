@@ -12,8 +12,7 @@ using Mono.Cecil.Rocks;
 partial class ModuleWeaver
 {
     //TODO: out parameters... yuck
-    private TypeDefinition GenerateAutoDIClass(Mapping mapping, 
-        out MethodDefinition getGlobalServiceProvider, 
+    private TypeDefinition GenerateAutoDIClass(Mapping mapping,
         out MethodDefinition initMethod)
     {
         var containerType = new TypeDefinition(DI.Namespace, DI.TypeName,
@@ -22,15 +21,10 @@ partial class ModuleWeaver
         {
             BaseType = ModuleDefinition.Get<object>()
         };
-        
-        FieldDefinition globalServiceProvider = 
-            ModuleDefinition.CreateStaticReadonlyField("_globalServiceProvider", false, Import.IServiceProvider);
-        containerType.Fields.Add(globalServiceProvider);
 
-        PropertyDefinition property = GenerateGlobalServiceProviderProperty(globalServiceProvider);
-        containerType.Properties.Add(property);
-        getGlobalServiceProvider = property.GetMethod;
-        containerType.Methods.Add(property.GetMethod);
+        FieldDefinition globalServiceProvider =
+            ModuleDefinition.CreateStaticReadonlyField(DI.GlobalServiceProviderName, false, Import.IServiceProvider);
+        containerType.Fields.Add(globalServiceProvider);
 
         MethodDefinition configureMethod = GenerateConfigureMethod(mapping, containerType);
         containerType.Methods.Add(configureMethod);
@@ -42,29 +36,6 @@ partial class ModuleWeaver
         containerType.Methods.Add(disposeMethod);
 
         return containerType;
-    }
-
-    private PropertyDefinition GenerateGlobalServiceProviderProperty(FieldDefinition backingField)
-    {
-        var property = new PropertyDefinition(DI.GlobalPropertyName, PropertyAttributes.None,
-            Import.IServiceProvider);
-
-        var getMethod = new MethodDefinition($"get_{property.Name}",
-            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static |
-            MethodAttributes.SpecialName, Import.IServiceProvider);
-        property.GetMethod = getMethod;
-
-        ILProcessor processor = getMethod.Body.GetILProcessor();
-        Instruction loadField = Instruction.Create(OpCodes.Ldsfld, backingField);
-        processor.Emit(OpCodes.Ldsfld, backingField);
-        processor.Emit(OpCodes.Brtrue_S, loadField);
-        
-        processor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<NotInitializedException>());
-        processor.Emit(OpCodes.Throw);
-
-        processor.Append(loadField);
-        processor.Emit(OpCodes.Ret);
-        return property;
     }
 
     private MethodDefinition GenerateConfigureMethod(Mapping mapping, TypeDefinition containerType)
@@ -233,6 +204,10 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Callvirt, buildMethod);
         initProcessor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
+        initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
+        initProcessor.Emit(OpCodes.Call, Import.GlobalDI_Register);
+
+
         initProcessor.Emit(OpCodes.Ret);
 
         return initMethod;
@@ -248,18 +223,23 @@ partial class ModuleWeaver
         disposeMethod.Body.Variables.Add(disposable);
 
         ILProcessor processor = disposeMethod.Body.GetILProcessor();
-        Instruction loadNull = Instruction.Create(OpCodes.Ldnull);
+        Instruction afterDispose = Instruction.Create(OpCodes.Nop);
 
         processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         processor.Emit(OpCodes.Isinst, ModuleDefinition.Get<IDisposable>());
         processor.Emit(OpCodes.Dup);
         processor.Emit(OpCodes.Stloc_0); //disposable
-        processor.Emit(OpCodes.Brfalse_S, loadNull);
+        processor.Emit(OpCodes.Brfalse_S, afterDispose);
         processor.Emit(OpCodes.Ldloc_0); //disposable
         processor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IDisposable>(nameof(IDisposable.Dispose)));
 
+        processor.Append(afterDispose);
+        
+        processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
+        processor.Emit(OpCodes.Call, Import.GlobalDI_Unregister);
+        processor.Emit(OpCodes.Pop);
 
-        processor.Append(loadNull);
+        processor.Emit(OpCodes.Ldnull);
         processor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
         processor.Emit(OpCodes.Ret);

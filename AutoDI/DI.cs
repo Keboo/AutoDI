@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +9,7 @@ namespace AutoDI
     {
         public const string Namespace = "AutoDI";
         public const string TypeName = "<AutoDI>";
-        public const string GlobalPropertyName = "Global";
+        public const string GlobalServiceProviderName = "_globalServiceProvider";
 
         public static void Init(Assembly containerAssembly = null, Action<IApplicationBuilder> configureMethod = null)
         {
@@ -42,9 +43,9 @@ namespace AutoDI
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
 
             Type autoDI = GetAutoDIType(assembly);
-            PropertyInfo property = autoDI.GetRuntimeProperty(GlobalPropertyName) ??
-                                    throw new InvalidOperationException($"Could not find {GlobalPropertyName} property");
-            return (IServiceProvider)property.GetValue(null);
+            FieldInfo field = autoDI.GetRuntimeFields().SingleOrDefault(f => f.Name == GlobalServiceProviderName) ??
+                        throw new InvalidOperationException($"Could not find {GlobalServiceProviderName} field");
+            return (IServiceProvider)field.GetValue(null);
         }
 
         private static Type GetAutoDIType(Assembly containerAssembly)

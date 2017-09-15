@@ -120,7 +120,7 @@ public partial class ModuleWeaver
                 mapping = null;
             }
 
-            ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, out MethodDefinition getGlobalServiceProvider, out MethodDefinition initMethod));
+            ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, out MethodDefinition initMethod));
 
             if (settings.AutoInit)
             {
@@ -129,9 +129,8 @@ public partial class ModuleWeaver
 
             foreach (TypeDefinition type in allTypes)
             {
-                ProcessType(type, getGlobalServiceProvider);
+                ProcessType(type);
             }
-
         }
         catch (Exception ex)
         {
@@ -179,13 +178,15 @@ public partial class ModuleWeaver
                 autoDIAssembly = AssemblyResolver.Resolve(module.Assembly.Name);
                 continue;
             }
+            bool isMainModule = ReferenceEquals(module, ModuleDefinition);
             bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
             bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(module.Assembly.FullName));
-            if (useAutoDiAssebmlies || matchesAssembly)
+            if (isMainModule || useAutoDiAssebmlies || matchesAssembly)
             {
                 //Check if it references AutoDI. If it doesn't we will skip
-                if (!matchesAssembly && module.AssemblyReferences.All(a =>
-                        a.FullName != autoDIFullName))
+                //We also always process the main module since the weaver was directly added to it
+                if (!isMainModule && !matchesAssembly && 
+                    module.AssemblyReferences.All(a => a.FullName != autoDIFullName))
                 {
                     continue;
                 }
@@ -199,16 +200,16 @@ public partial class ModuleWeaver
         return allTypes;
     }
 
-    private void ProcessType(TypeDefinition type, MethodDefinition getGlobalServiceProvider)
+    private void ProcessType(TypeDefinition type)
     {
         foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
         {
             InternalLogDebug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
-            ProcessConstructor(type, ctor, getGlobalServiceProvider);
+            ProcessConstructor(type, ctor);
         }
     }
 
-    private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor, MethodDefinition getGlobalServiceProvider)
+    private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor)
     {
         List<ParameterDefinition> dependencyParameters = constructor.Parameters.Where(
                         p => p.CustomAttributes.Any(a => a.AttributeType.IsType<DependencyAttribute>())).ToList();
@@ -221,19 +222,6 @@ public partial class ModuleWeaver
             var injector = new Injector(constructor);
 
             var end = Instruction.Create(OpCodes.Nop);
-
-            var serviceProviderVariable = new VariableDefinition(Import.IServiceProvider);
-            constructor.Body.Variables.Add(serviceProviderVariable);
-
-            //Get the global IServiceProvider => AutoDI.<AutoDI>.Global
-            injector.Insert(OpCodes.Call, getGlobalServiceProvider);
-
-            //Store the resolver in our local variable
-            injector.Insert(OpCodes.Stloc, serviceProviderVariable);
-            //Push the resolver on top of the stack
-            injector.Insert(OpCodes.Ldloc, serviceProviderVariable);
-            //Branch to the end if the resolver is null
-            injector.Insert(OpCodes.Brfalse, end);
 
             foreach (ParameterDefinition parameter in dependencyParameters)
             {
@@ -253,7 +241,6 @@ public partial class ModuleWeaver
                     null,
                     Instruction.Create(OpCodes.Starg, parameter));
             }
-
 
             foreach (PropertyDefinition property in dependencyProperties)
             {
@@ -307,7 +294,6 @@ public partial class ModuleWeaver
                 {
                     injector.Insert(resolveAssignmentTarget);
                 }
-                injector.Insert(OpCodes.Ldloc, serviceProviderVariable);
 
                 //Create parameters array
                 var dependencyAttribute = source.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
@@ -334,7 +320,7 @@ public partial class ModuleWeaver
                 }
 
                 //Call the resolve method
-                var getServiceMethod = new GenericInstanceMethod(Import.ServiceProviderMixins_GetService)
+                var getServiceMethod = new GenericInstanceMethod(Import.GlobalDI_GetService)
                 {
                     GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
                 };

@@ -9,7 +9,6 @@ using Mono.Cecil.Rocks;
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver
 {
-
     private Imports Import { get; set; }
 
     private void LoadRequiredData(AssemblyDefinition autoDIAssembly)
@@ -42,6 +41,14 @@ public partial class ModuleWeaver
                 UpdateMethod(autoDIAssembly.MainModule.GetType(typeof(ServiceCollectionMixins).FullName)
                     .GetMethods().Single(m => m.Name == nameof(ServiceCollectionMixins.AddAutoDIService))));
 
+            var globalDiType = autoDIAssembly.MainModule.GetType(typeof(GlobalDI).FullName);
+            GlobalDI_Register = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
+                .Single(m => m.Name == nameof(GlobalDI.Register))));
+            GlobalDI_Unregister = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
+                .Single(m => m.Name == nameof(GlobalDI.Unregister))));
+            GlobalDI_GetService = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
+                .Single(m => m.Name == nameof(GlobalDI.GetService))));
+
             MethodReference UpdateMethod(MethodReference method)
             {
                 method.ReturnType = UpdateType(method.ReturnType);
@@ -71,6 +78,9 @@ public partial class ModuleWeaver
             }
         }
 
+        public MethodReference GlobalDI_Register { get; }
+        public MethodReference GlobalDI_Unregister { get; }
+        public MethodReference GlobalDI_GetService { get; }
 
         public MethodReference ServiceProviderMixins_GetService { get; }
 

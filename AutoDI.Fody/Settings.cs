@@ -37,21 +37,48 @@ namespace AutoDI.Fody
             sb.AppendLine($"  AutoInit: {AutoInit}");
             sb.AppendLine($"  GenerateRegistrations: {GenerateRegistrations}");
             sb.AppendLine($"  DebugLogLevel: {DebugLogLevel}");
-            sb.AppendLine(" Included Assemblies:");
-            foreach (MatchAssembly assembly in Assemblies)
+            sb.Append(" Included Assemblies: ");
+            if (Assemblies.Any())
             {
-                sb.AppendLine($"  {assembly}");
+                sb.AppendLine();
+                foreach (MatchAssembly assembly in Assemblies)
+                {
+                    sb.AppendLine($"  {assembly}");
+                }
             }
-            sb.AppendLine(" Maps:");
-            foreach (Map map in Maps)
+            else
             {
-                sb.AppendLine($"  {map}");
+                sb.AppendLine("<none>");
             }
-            sb.AppendLine(" Type Lifetimes:");
-            foreach (MatchType type in Types)
+
+            sb.Append(" Maps: ");
+            if (Maps.Any())
             {
-                sb.AppendLine($"  {type}");
+                sb.AppendLine();
+                foreach (Map map in Maps)
+                {
+                    sb.AppendLine($"  {map}");
+                }
             }
+            else
+            {
+                sb.AppendLine("<none>");
+            }
+
+            sb.Append(" Type Lifetimes: ");
+            if (Types.Any())
+            {
+                sb.AppendLine();
+                foreach (MatchType type in Types)
+                {
+                    sb.AppendLine($"  {type}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("<none>");
+            }
+
 
             return sb.ToString();
         }
@@ -130,6 +157,6 @@ namespace AutoDI.Fody
 
             return settings;
         }
-        
+
     }
 }
