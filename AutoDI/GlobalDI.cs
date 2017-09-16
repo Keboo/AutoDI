@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AutoDI
 {
@@ -16,7 +15,7 @@ namespace AutoDI
                 if (Providers.Count == 0)
                     throw new NotInitializedException();
 
-                return Providers.Select(provider => provider.GetService<T>())
+                return Providers.Select(provider => provider.GetService<T>(parameters))
                     .FirstOrDefault(service => service != null);
             }
         }

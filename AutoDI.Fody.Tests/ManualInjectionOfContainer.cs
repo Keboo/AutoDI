@@ -31,22 +31,24 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanManuallyInjectTheGeneratedContainer()
         {
-            //Invoke the entry point, since this is where the automatic injdection would occur
+            //Invoke the entry point, since this is where the automatic injection would occur
             _testAssembly.InvokeEntryPoint();
 
+            dynamic sut;
             try
             {
-                _testAssembly.CreateInstance<Sut>();
-                Assert.Fail("Excepted an exception");
+                //This should throw or return null since AutoDI has not been initialized
+                sut = _testAssembly.CreateInstance<Sut>();
+                Assert.IsNull(sut.Service);
             }
             catch (TargetInvocationException e) 
                 when (e.InnerException is NotInitializedException)
-            {
-            }
+            { }
+            
 
             DI.Init(_testAssembly);
 
-            dynamic sut = _testAssembly.CreateInstance<Sut>();
+            sut = _testAssembly.CreateInstance<Sut>();
             Assert.IsTrue(((object)sut.Service).Is<Service>());
         }
     }
