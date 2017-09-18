@@ -12,6 +12,7 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using AutoDI;
 
 namespace XamarinForms.UWP
 {
@@ -19,6 +20,7 @@ namespace XamarinForms.UWP
     {
         public MainPage()
         {
+            GlobalDI.Unregister(null);
             this.InitializeComponent();
 
             LoadApplication(new XamarinForms.App());
