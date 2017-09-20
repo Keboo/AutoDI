@@ -83,6 +83,8 @@ public partial class ModuleWeaver
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
 
+            LogDebug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}");
+
             Settings settings = LoadSettings();
 
             AssemblyDefinition autoDIAssembly;

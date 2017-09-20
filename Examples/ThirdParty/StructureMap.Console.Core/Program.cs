@@ -10,13 +10,15 @@ namespace StructureMap.Console.Core
     {
         static void Main(string[] args)
         {
+            //Get the provider from the entry assembly
+            //Alternatively you can use GlobalDI.GetService<IServiceProvider>(new object[0]);
             IServiceProvider provider = DI.GetGlobalServiceProvider(typeof(Program).Assembly);
-            var smProvider = (StructureMapServiceProvider)provider;
-            string foo = smProvider.Container.WhatDoIHave();
-            //var p2 = provider.GetService<IServiceProvider>();
-            //var container = provider.GetService<Container>();
-            //string foo = container.WhatDoIHave();
 
+            //Use SM specific calls
+            var smProvider = (StructureMapServiceProvider)provider;
+            string whatDoIHave = smProvider.Container.WhatDoIHave();
+
+            //Do stuff with nested scopes
             IService service1, service2;
             IServiceScopeFactory scopeFactory = provider.GetService<IServiceScopeFactory>();
             using (var scope1 = scopeFactory.CreateScope())
@@ -27,6 +29,8 @@ namespace StructureMap.Console.Core
             {
                 service2 = scope2.ServiceProvider.GetService<IService>();
             }
+
+            //Create program instance and start running
             Program program = provider.GetService<Program>();
             program.DoStuff();
         }
@@ -49,11 +53,11 @@ namespace StructureMap.Console.Core
             builder.UseStructureMap();
             //builder.ConfigureContinaer<Registry>(registry =>
             //{
-            //    
+            //    Do any SM specific registration on the registry
             //});
             //builder.ConfigureServices(services =>
             //{
-            //    
+            //    Configure any additional services
             //});
         }
     }
