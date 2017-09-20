@@ -16,7 +16,7 @@ namespace AutoDI.Fody
         public bool AutoInit { get; set; } = true;
 
         /// <summary>
-        /// Generate registration calls to the container.
+        /// Generate registration calls no the container. Setting to false will negate AutoInit.
         /// </summary>
         public bool GenerateRegistrations { get; set; } = true;
 
@@ -37,13 +37,13 @@ namespace AutoDI.Fody
             sb.AppendLine($"  AutoInit: {AutoInit}");
             sb.AppendLine($"  GenerateRegistrations: {GenerateRegistrations}");
             sb.AppendLine($"  DebugLogLevel: {DebugLogLevel}");
-            sb.Append(" Included Assemblies: ");
+            sb.Append("  Included Assemblies: ");
             if (Assemblies.Any())
             {
                 sb.AppendLine();
-                foreach (MatchAssembly assembly in Assemblies)
-                {
-                    sb.AppendLine($"  {assembly}");
+                 foreach (MatchAssembly assembly in Assemblies)
+               {
+                    sb.AppendLine($"    {assembly}");
                 }
             }
             else
@@ -51,13 +51,13 @@ namespace AutoDI.Fody
                 sb.AppendLine("<none>");
             }
 
-            sb.Append(" Maps: ");
+            sb.Append("  Maps: ");
             if (Maps.Any())
             {
                 sb.AppendLine();
                 foreach (Map map in Maps)
                 {
-                    sb.AppendLine($"  {map}");
+                    sb.AppendLine($"    {map}");
                 }
             }
             else
@@ -65,13 +65,13 @@ namespace AutoDI.Fody
                 sb.AppendLine("<none>");
             }
 
-            sb.Append(" Type Lifetimes: ");
+            sb.Append("  Type Lifetimes: ");
             if (Types.Any())
             {
                 sb.AppendLine();
                 foreach (MatchType type in Types)
                 {
-                    sb.AppendLine($"  {type}");
+                    sb.AppendLine($"    {type}");
                 }
             }
             else

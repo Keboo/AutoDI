@@ -1,10 +1,8 @@
-﻿using System;
+﻿using AutoDI.AssemblyGenerator;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using AutoDI.AssemblyGenerator;
-using AutoDI.Fody.Tests.DisableGeneratedRegistrationsNamespace;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Fody.Tests
 {
@@ -33,7 +31,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void WhenGenerateRegistrationsIsFalseResolutionFails()
         {
-            Assert.IsNull(_testAssembly.Resolve<Service>(GetType()));
+            Assert.IsNull(_testAssembly.GetType($"{DI.Namespace}.{DI.TypeName}"));
         }
     }
 

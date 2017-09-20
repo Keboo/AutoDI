@@ -10,7 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoDI" Version="3.0.19" />
-    <PackageReference Include="AutoDI.Fody" Version="3.0.19" />
+    <PackageReference Include="AutoDI" Version="3.0.20" />
+    <PackageReference Include="AutoDI.Fody" Version="3.0.20" />
   </ItemGroup>
 </Project>

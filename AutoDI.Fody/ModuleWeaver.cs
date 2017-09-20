@@ -107,27 +107,26 @@ public partial class ModuleWeaver
 
             LoadRequiredData(autoDIAssembly);
 
-            Mapping mapping;
             if (settings.GenerateRegistrations)
             {
-                mapping = GetMapping(settings, allTypes);
+                Mapping mapping = GetMapping(settings, allTypes);
 
                 InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
+
+                ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, out MethodDefinition initMethod));
+
+                if (settings.AutoInit)
+                {
+                    InjectInitCall(initMethod);
+                }
             }
             else
             {
                 InternalLogDebug("Skipping registration", DebugLogLevel.Verbose);
-                mapping = null;
             }
 
-            ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, out MethodDefinition initMethod));
-
-            if (settings.AutoInit)
-            {
-                InjectInitCall(initMethod);
-            }
-
-            foreach (TypeDefinition type in allTypes)
+            //We only update types in our module
+            foreach (TypeDefinition type in allTypes.Where(type => type.Module == ModuleDefinition))
             {
                 ProcessType(type);
             }
