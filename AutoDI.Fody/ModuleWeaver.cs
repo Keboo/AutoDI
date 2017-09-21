@@ -191,6 +191,7 @@ public partial class ModuleWeaver
                 {
                     continue;
                 }
+                InternalLogDebug($"Including types from '{module.Assembly.FullName}'", DebugLogLevel.Default);
                 //Either references AutoDI, or was a config assembly match, include the types.
                 foreach (TypeDefinition type in FilterTypes(module.GetAllTypes()))
                 {

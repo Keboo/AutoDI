@@ -1,13 +1,13 @@
 ﻿using System;
 using AutoDI;
 
-namespace ExampleClasses
+namespace ExampleLib
 {
-    public class Class
+    public class Manager
     {
         public IService Service { get; }
 
-        public Class([Dependency]IService service = null)
+        public Manager([Dependency]IService service = null)
         {
             Service = service ?? throw new ArgumentNullException(nameof(service));
         }

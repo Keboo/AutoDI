@@ -1,4 +1,4 @@
-﻿namespace ExampleClasses
+﻿namespace ExampleLib
 {
     public interface IService
     {

@@ -42,6 +42,8 @@ public partial class ModuleWeaver
                     .GetMethods().Single(m => m.Name == nameof(ServiceCollectionMixins.AddAutoDIService))));
 
             var globalDiType = autoDIAssembly.MainModule.GetType(typeof(GlobalDI).FullName);
+            if (globalDiType == null)
+                throw new AutoDIException($"Could not find '{typeof(GlobalDI).FullName}' in '{autoDIAssembly.FullName}' - {autoDIAssembly.MainModule.FileName}");
             GlobalDI_Register = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
                 .Single(m => m.Name == nameof(GlobalDI.Register))));
             GlobalDI_Unregister = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()

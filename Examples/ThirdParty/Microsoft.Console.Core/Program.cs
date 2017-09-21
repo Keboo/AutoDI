@@ -2,7 +2,7 @@
 using AutoDI;
 using Microsoft.DependencyInjection.AutoDI;
 using Microsoft.Extensions.DependencyInjection;
-using ExampleClasses;
+using ExampleLib;
 
 namespace Microsoft.Console.Core
 {
@@ -14,7 +14,7 @@ namespace Microsoft.Console.Core
             //Alternatively you can use GlobalDI.GetService<IServiceProvider>(new object[0]);
             IServiceProvider provider = DI.GetGlobalServiceProvider(typeof(Program).Assembly);
 
-            //Do stuff with nested scopes
+            //Do stuff with nested scopes - if you want to
             IService service1, service2;
             IServiceScopeFactory scopeFactory = provider.GetService<IServiceScopeFactory>();
             using (var scope1 = scopeFactory.CreateScope())

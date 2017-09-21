@@ -1,6 +1,6 @@
 ﻿using System;
 using AutoDI;
-using ExampleClasses;
+using ExampleLib;
 using Microsoft.Extensions.DependencyInjection;
 using StructureMap.AutoDI;
 
@@ -18,7 +18,7 @@ namespace StructureMap.Console.Core
             var smProvider = (StructureMapServiceProvider)provider;
             string whatDoIHave = smProvider.Container.WhatDoIHave();
 
-            //Do stuff with nested scopes
+            //Do stuff with nested scopes - if you want to
             IService service1, service2;
             IServiceScopeFactory scopeFactory = provider.GetService<IServiceScopeFactory>();
             using (var scope1 = scopeFactory.CreateScope())
