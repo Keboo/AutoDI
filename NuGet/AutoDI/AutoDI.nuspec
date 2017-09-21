@@ -1,21 +1,23 @@
 <?xml version="1.0"?>
-<package >
+<package>
   <metadata>
-    <id>AutoDI</id>
-    <version>0.0.0</version>
-    <title>AutoDI</title>
+    <id>AutoDI.Fody</id>
+    <version>3.4.5</version>
+    <title>AutoDI.Fody</title>
     <authors>Keboo</authors>
     <owners>Keboo</owners>
     <licenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
     <iconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <description>AutoDI classes. These are expected to be used with the AutoDI.Fody extension.</description>
-    <releaseNotes>Creating stand alonge AutoDI lib to be referenced by unit test projects.</releaseNotes>
+    <description>Fody extension for simplifying the creation of objects from your favorite DI container</description>
+    <releaseNotes>Fixed assembly resolution issue when compiling with Visual Studio 2017 RC</releaseNotes>
     <copyright>Copyright 2017</copyright>
-    <tags>AutoDI</tags>
+    <tags>AutoDI, Fody</tags>
     <dependencies>
-      <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="[1.1.1,2.0.0)" />
+      <dependency id="Fody" version="2.1.*" />
+      <dependency id="AutoDI" version="[3.4.5,3.5.5)" />
+      <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="[1.1.1,2.0.0]" />
     </dependencies>
   </metadata>
 </package>

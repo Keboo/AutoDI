@@ -7,6 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "Assemb
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
+		NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec = NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec
 		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
 	EndProjectSection
@@ -49,7 +50,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AspNetCore", "AutoDI
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Microsoft", "Microsoft", "{86907BD5-8EC2-4214-810D-D345F9266E72}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.DependencyInjection.AutoDI", "ThirdParty\Microsoft\Microsoft.DependencyInjection.AutoDI\Microsoft.DependencyInjection.AutoDI.csproj", "{7EFD3203-D574-4D6D-AD50-4BC0B60CA562}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.DependencyInjection.AutoDI", "ThirdParty\Microsoft\Microsoft.DependencyInjection.AutoDI\Microsoft.DependencyInjection.AutoDI.csproj", "{7EFD3203-D574-4D6D-AD50-4BC0B60CA562}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

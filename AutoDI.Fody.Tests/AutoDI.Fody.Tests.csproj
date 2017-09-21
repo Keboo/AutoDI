@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\AutoDI.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>

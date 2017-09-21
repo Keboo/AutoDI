@@ -1,7 +1,7 @@
 # configuration for master/CI branch
 -
   environment:
-    autodi_version: 2.1.5
+    autodi_version: 3.0.0
   branches:
     only:
     - master
@@ -39,7 +39,7 @@
 #Configuration for releases
 -
   environment:
-    autodi_version: 2.1.5
+    autodi_version: 3.0.0
   branches:
     only:
     - release

@@ -15,7 +15,7 @@ using DependencyAttribute = AutoDI.DependencyAttribute;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
-[assembly: InternalsVisibleTo("AutoDI.Fody.Tests")]
+[assembly: InternalsVisibleTo("AutoDI.Fody.Tests,PublicKey=0024000004800000940000000602000000240000525341310004000001000100b1dea4b114e8b5e90517da2675026729c1d0d117cfd860f9c6b07d2701d907882b41e817a411429c06002063a6b4a9990ec1bb45ebed0365445ead498fe0660b5826c078712143dde2a9c5eafeab3b7b67e9aebfb1d79cf17ba8f02ad5b5ff79d8243208b15e57ea86118fff800232a9ae664d0740ce94c367b4a5d662488c9b")]
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver
 {

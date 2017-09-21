@@ -2,23 +2,25 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Authors>Keboo</Authors>
-    <Company>Keboo</Company>
-    <Description>AutoDI integration for ASP.NET Core</Description>
-    <PackageLicenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/Keboo/AutoDI</PackageProjectUrl>
-    <PackageIconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/Keboo/AutoDI</RepositoryUrl>
-    <PackageTags>AutoDI</PackageTags>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Copyright>Copyright 2017</Copyright>
-    <Version>1.0.2</Version>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\AutoDI.snk</AssemblyOriginatorKeyFile>
+    <ApplicationIcon>..\needle.ico</ApplicationIcon>
+    <DebugType>full</DebugType>
+    <DebugSymbols>True</DebugSymbols>
+    <Version Condition="'$(AUTODI_VERSION_FULL)' != ''">$(AUTODI_VERSION_FULL)</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoDI" Version="3.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="1.1.2" />
   </ItemGroup>
+
+  <Target Name="CopyOutput" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
+      <CopyItmes Include="$(TargetDir)..\**\$(TargetName).pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
+  </Target>
 
 </Project>
