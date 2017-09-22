@@ -29,6 +29,8 @@
     verbosity: minimal
   after_build:
   - ps: >-
+      .\Nuget\UpdateNuspecFiles.ps1 -Version "$env:autodi_version-ci$env:appveyor_build_number"
+    
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
       nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
@@ -64,6 +66,8 @@
     verbosity: minimal
   after_build:
   - ps: >-
+      .\Nuget\UpdateNuspecFiles.ps1 -Version "$env:autodi_version"
+    
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
     
       nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
