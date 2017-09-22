@@ -6,7 +6,7 @@ namespace AutoDI.Fody
     internal static class MethodDefinitionMixins
     {
         //Based on example from here: https://stackoverflow.com/questions/16430947/emit-call-to-system-lazyt-constructor-with-mono-cecil
-        public static MethodReference MakeGenericType(this MethodReference self, params TypeReference[] args)
+        public static MethodReference MakeGenericTypeConstructor(this MethodReference self, params TypeReference[] args)
         {
             var reference = new MethodReference(
                 self.Name,

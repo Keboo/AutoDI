@@ -67,10 +67,8 @@ namespace AutoDI.Fody.Tests
             }
 
             Assert.IsNull(GetInitMap());
-            AutoDIContainer.Inject(_manualAssembly);
+            DI.Init(_manualAssembly);
             Assert.IsNotNull(GetInitMap());
-            Assert.IsTrue(_manualAssembly.GetStaticProperty<SetupMethodManualInjectionTests.TestClass>(
-                    nameof(SetupMethodManualInjectionTests.TestClass.Manager)).Is<SetupMethodManualInjectionTests.Manager>());
             
         }
     }
@@ -85,7 +83,7 @@ namespace SetupMethodPublicTests
 
     public class Program
     {
-        public static ContainerMap InitMap { get; set; }
+        public static IContainer InitMap { get; set; }
 
         public static void Main(string[] args)
         {
@@ -93,20 +91,12 @@ namespace SetupMethodPublicTests
         }
 
         [SetupMethod]
-        public static void InitializeContainer(ContainerMap map)
+        public static void Setup(IApplicationBuilder builder)
         {
-            InitMap = map;
-        }
-    }
-
-    public class Container
-    {
-        private static readonly ContainerMap _map;
-        static Container()
-        {
-            _map = new ContainerMap();
-
-            Program.InitializeContainer(_map);
+            builder.ConfigureContinaer<IContainer>(map =>
+            {
+                InitMap = map;
+            });
         }
     }
 }
@@ -122,7 +112,7 @@ namespace SetupMethodInternalTests
 
     public class Program
     {
-        public static ContainerMap InitMap { get; set; }
+        public static IContainer InitMap { get; set; }
 
         public static void Main(string[] args)
         {
@@ -130,9 +120,12 @@ namespace SetupMethodInternalTests
         }
 
         [SetupMethod]
-        internal static void InitializeContainer(ContainerMap map)
+        internal static void Setup(IApplicationBuilder builder)
         {
-            InitMap = map;
+            builder.ConfigureContinaer<IContainer>(map =>
+            {
+                InitMap = map;
+            });
         }
     }
 }
@@ -148,15 +141,15 @@ namespace SetupMethodManualInjectionTests
 
     public class TestClass
     {
-        public static ContainerMap InitMap { get; set; }
-        public static Manager Manager { get; private set; }
+        public static IContainer InitMap { get; set; }
 
         [SetupMethod]
-        internal static void InitializeContainer(ContainerMap map)
+        internal static void InitializeContainer(IApplicationBuilder builder)
         {
-            InitMap = map;
-            //This ensures the 
-            Manager = map.Get<Manager>();
+            builder.ConfigureContinaer<IContainer>(map =>
+            {
+                InitMap = map;
+            });
         }
     }
 

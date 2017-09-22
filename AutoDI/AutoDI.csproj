@@ -3,15 +3,16 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard1.0;net45</TargetFrameworks>
     <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>AutoDI.snk</AssemblyOriginatorKeyFile>
-    <ApplicationIcon>needle.ico</ApplicationIcon>
+    <AssemblyOriginatorKeyFile>..\AutoDI.snk</AssemblyOriginatorKeyFile>
+    <ApplicationIcon>..\needle.ico</ApplicationIcon>
     <DebugType>full</DebugType>
     <DebugSymbols>True</DebugSymbols>
     <Version Condition="'$(AUTODI_VERSION_FULL)' != ''">$(AUTODI_VERSION_FULL)</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="gitlink" Version="3.0.0" />
+    <PackageReference Include="gitlink" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="1.1.1" />
   </ItemGroup>
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">

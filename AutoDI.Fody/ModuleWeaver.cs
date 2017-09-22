@@ -1,18 +1,21 @@
-﻿using AutoDI;
-using AutoDI.Fody;
+﻿using AutoDI.Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Xml.Linq;
+using AutoDI;
 using DependencyAttribute = AutoDI.DependencyAttribute;
+using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
-[assembly: InternalsVisibleTo("AutoDI.Fody.Tests")]
+[assembly: InternalsVisibleTo("AutoDI.Fody.Tests,PublicKey=0024000004800000940000000602000000240000525341310004000001000100b1dea4b114e8b5e90517da2675026729c1d0d117cfd860f9c6b07d2701d907882b41e817a411429c06002063a6b4a9990ec1bb45ebed0365445ead498fe0660b5826c078712143dde2a9c5eafeab3b7b67e9aebfb1d79cf17ba8f02ad5b5ff79d8243208b15e57ea86118fff800232a9ae664d0740ce94c367b4a5d662488c9b")]
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver
 {
@@ -78,33 +81,54 @@ public partial class ModuleWeaver
     {
         try
         {
-            Settings settings = Settings.Parse(Config);
-            InternalLogDebug = (s, l) =>
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
+
+            LogDebug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}");
+
+            Settings settings = LoadSettings();
+
+            AssemblyDefinition autoDIAssembly;
+            ICollection<TypeDefinition> allTypes = GetAllTypes(settings, out autoDIAssembly);
+
+            InternalLogDebug($"Found types:\r\n{string.Join("\r\n", allTypes.Select(x => x.FullName))}", DebugLogLevel.Verbose);
+
+            if (autoDIAssembly == null)
             {
-                if (l <= settings.DebugLogLevel)
+                var assemblyName = typeof(DependencyAttribute).Assembly.GetName();
+                autoDIAssembly = AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
+                if (autoDIAssembly == null)
                 {
-                    LogDebug(s);
+                    LogError("Could not find AutoDI assembly");
+                    return;
                 }
+                else
+                {
+                    LogWarning($"Failed to find AutoDI assembly. Manually injecting '{autoDIAssembly.MainModule.FileName}'");
+                }
+            }
 
-            };
+            LoadRequiredData(autoDIAssembly);
 
-            ICollection<TypeDefinition> allTypes = GetAllTypes(settings);
-            if (settings.GenerateContainer)
+            if (settings.GenerateRegistrations)
             {
                 Mapping mapping = GetMapping(settings, allTypes);
 
                 InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
-                TypeDefinition resolverType = CreateAutoDIContainer(mapping);
 
-                ModuleDefinition.Types.Add(resolverType);
+                ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, out MethodDefinition initMethod));
 
-                if (settings.InjectContainer)
+                if (settings.AutoInit)
                 {
-                    InjectContainer(resolverType);
+                    InjectInitCall(initMethod);
                 }
             }
+            else
+            {
+                InternalLogDebug("Skipping registration", DebugLogLevel.Verbose);
+            }
 
-            foreach (TypeDefinition type in allTypes)
+            //We only update types in our module
+            foreach (TypeDefinition type in allTypes.Where(type => type.Module == ModuleDefinition))
             {
                 ProcessType(type);
             }
@@ -116,36 +140,60 @@ public partial class ModuleWeaver
                 sb.AppendLine(e.ToString());
             LogError(sb.ToString());
         }
+        finally
+        {
+            AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomainOnAssemblyResolve;
+        }
     }
 
-    private ICollection<TypeDefinition> GetAllTypes(Settings settings)
+    private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
     {
+        var assemblyName = new AssemblyName(args.Name);
+        var assembly = AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
+        if (assembly == null)
+        {
+            LogWarning($"Failed to resolve assembly '{assemblyName.FullName}'");
+            return null;
+        }
+        InternalLogDebug($"Resolved assembly '{assembly.FullName}'", DebugLogLevel.Verbose);
+        using (var memoryStream = new MemoryStream())
+        {
+            assembly.Write(memoryStream);
+            memoryStream.Position = 0;
+            return Assembly.Load(memoryStream.ToArray());
+        }
+    }
+
+    private ICollection<TypeDefinition> GetAllTypes(Settings settings, out AssemblyDefinition autoDIAssembly)
+    {
+        autoDIAssembly = null;
         var allTypes = new HashSet<TypeDefinition>(TypeComparer.FullName);
         IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) =>
             types.Where(t => !t.IsCompilerGenerated() && !allTypes.Remove(t));
 
-        foreach (TypeDefinition type in FilterTypes(ModuleDefinition.GetAllTypes()))
+        string autoDIFullName = typeof(DependencyAttribute).Assembly.FullName;
+        foreach (ModuleDefinition module in GetAllModules())
         {
-            allTypes.Add(type);
-        }
-
-        foreach (AssemblyNameReference assemblyReference in ModuleDefinition.AssemblyReferences)
-        {
-            bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
-            bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(assemblyReference.FullName));
-            if (useAutoDiAssebmlies || matchesAssembly)
+            if (module.Assembly.FullName == autoDIFullName)
             {
-                AssemblyDefinition assembly = AssemblyResolver.Resolve(assemblyReference);
-                if (assembly == null) continue;
-
+                autoDIAssembly = AssemblyResolver.Resolve(module.Assembly.Name);
+                continue;
+            }
+            bool isMainModule = ReferenceEquals(module, ModuleDefinition);
+            bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
+            bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(module.Assembly.FullName));
+            if (isMainModule || useAutoDiAssebmlies || matchesAssembly)
+            {
                 //Check if it references AutoDI. If it doesn't we will skip
-                if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(a =>
-                        a.FullName != typeof(DependencyAttribute).Assembly.FullName))
+                //We also always process the main module since the weaver was directly added to it
+                if (!isMainModule && !matchesAssembly && 
+                    module.AssemblyReferences.All(a => a.FullName != autoDIFullName))
                 {
                     continue;
                 }
+                InternalLogDebug($"Including types from '{module.Assembly.FullName}'", DebugLogLevel.Default);
                 //Either references AutoDI, or was a config assembly match, include the types.
-                foreach (TypeDefinition type in FilterTypes(assembly.MainModule.GetAllTypes()))
+                foreach (TypeDefinition type in FilterTypes(module.GetAllTypes()))
                 {
                     allTypes.Add(type);
                 }
@@ -153,7 +201,6 @@ public partial class ModuleWeaver
         }
         return allTypes;
     }
-
 
     private void ProcessType(TypeDefinition type)
     {
@@ -174,26 +221,9 @@ public partial class ModuleWeaver
 
         if (dependencyParameters.Any() || dependencyProperties.Any())
         {
-            var resolverType = ModuleDefinition.Get<IDependencyResolver>();
-            var dependencyResolverType = ModuleDefinition.ImportReference(typeof(DependencyResolver));
-
             var injector = new Injector(constructor);
 
             var end = Instruction.Create(OpCodes.Nop);
-
-            var resolverVariable = new VariableDefinition(resolverType);
-            constructor.Body.Variables.Add(resolverVariable);
-
-            //Get the IDependencyResolver by calling DependencyResolver.Get()
-            injector.Insert(OpCodes.Call,
-                new MethodReference(nameof(DependencyResolver.Get), resolverType, dependencyResolverType));
-
-            //Store the resolver in our local variable
-            injector.Insert(OpCodes.Stloc, resolverVariable);
-            //Push the resolver on top of the stack
-            injector.Insert(OpCodes.Ldloc, resolverVariable);
-            //Branch to the end if the resolver is null
-            injector.Insert(OpCodes.Brfalse, end);
 
             foreach (ParameterDefinition parameter in dependencyParameters)
             {
@@ -214,14 +244,13 @@ public partial class ModuleWeaver
                     Instruction.Create(OpCodes.Starg, parameter));
             }
 
-
             foreach (PropertyDefinition property in dependencyProperties)
             {
                 FieldDefinition backingField = null;
                 //Store the return from the resolve method in the method parameter
                 if (property.SetMethod == null)
                 {
-                    //TODO: Constant string, compiler detail... yuck yuck and double duck
+                    //NB: Constant string, compiler detail... yuck yuck and double duck
                     backingField = property.DeclaringType.Fields.FirstOrDefault(f => f.Name == $"<{property.Name}>k__BackingField");
                     if (backingField == null)
                     {
@@ -244,13 +273,12 @@ public partial class ModuleWeaver
                         : Instruction.Create(OpCodes.Stfld, backingField));
             }
 
-
             injector.Insert(end);
 
             constructor.Body.OptimizeMacros();
 
-            void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source, 
-                IEnumerable<Instruction> loadSource, 
+            void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source,
+                IEnumerable<Instruction> loadSource,
                 Instruction resolveAssignmentTarget,
                 Instruction setResult)
             {
@@ -268,7 +296,6 @@ public partial class ModuleWeaver
                 {
                     injector.Insert(resolveAssignmentTarget);
                 }
-                injector.Insert(OpCodes.Ldloc, resolverVariable);
 
                 //Create parameters array
                 var dependencyAttribute = source.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
@@ -295,13 +322,11 @@ public partial class ModuleWeaver
                 }
 
                 //Call the resolve method
-                var resolveMethod = ModuleDefinition.ImportReference(
-                    typeof(IDependencyResolver).GetMethods().Single(m => m.Name == nameof(IDependencyResolver.Resolve) && m.IsGenericMethod));
-                resolveMethod = new GenericInstanceMethod(resolveMethod)
+                var getServiceMethod = new GenericInstanceMethod(Import.GlobalDI_GetService)
                 {
                     GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
                 };
-                injector.Insert(OpCodes.Callvirt, resolveMethod);
+                injector.Insert(OpCodes.Call, getServiceMethod);
                 //Set the return from the resolve method into the parameter
                 injector.Insert(setResult);
                 injector.Insert(afterParam);
@@ -378,6 +403,31 @@ public partial class ModuleWeaver
             injector.Insert(Instruction.Create(OpCodes.Box, boxType));
         }
         LogWarning($"Unknown constant type {constant.GetType().FullName}");
+    }
+
+    private IEnumerable<ModuleDefinition> GetAllModules()
+    {
+        var seen = new HashSet<string>();
+        var queue = new Queue<ModuleDefinition>();
+        queue.Enqueue(ModuleDefinition);
+        
+        while (queue.Count > 0)
+        {
+            ModuleDefinition module = queue.Dequeue();
+            yield return module;
+
+            foreach (AssemblyNameReference assemblyReference in module.AssemblyReferences)
+            {
+                if (seen.Contains(assemblyReference.FullName)) continue;
+                AssemblyDefinition assembly = AssemblyResolver.Resolve(assemblyReference);
+                if (assembly?.MainModule == null)
+                {
+                    continue;
+                }
+                seen.Add(assembly.FullName);
+                queue.Enqueue(assembly.MainModule);
+            }
+        }
     }
 
     // Will be called when a request to cancel the build occurs. OPTIONAL

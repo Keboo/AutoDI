@@ -1,12 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.15
+VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
+		NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec = NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec
 		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
 	EndProjectSection
@@ -14,11 +15,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}"
 	ProjectSection(SolutionItems) = preProject
 		appveyor.yml = appveyor.yml
-		Nuget\build\AutoDI.Fody.nuspec = Nuget\build\AutoDI.Fody.nuspec
 		AutoDI.snk = AutoDI.snk
 		BuildLocalNugets.ps1 = BuildLocalNugets.ps1
 		local.testsettings = local.testsettings
 		README.md = README.md
+		testing.runsettings = testing.runsettings
+		NuGet\UpdateNuspecFiles.ps1 = NuGet\UpdateNuspecFiles.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AssemblyGenerator", "AutoDI.AssemblyGenerator\AutoDI.AssemblyGenerator.csproj", "{8167477F-2716-49C2-AFB5-357E51DF6F9D}"
@@ -36,6 +38,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Fody.Tests", "AutoDI.Fody.Tests\AutoDI.Fody.Tests.csproj", "{BE841CC3-5817-4F04-A776-B1A319E216E1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Tests", "AutoDI.Tests\AutoDI.Tests.csproj", "{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AspNetCore", "AutoDI.AspNetCore\AutoDI.AspNetCore.csproj", "{EC8FEB67-0EC6-430E-892B-20EFFC47B423}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,11 +71,18 @@ Global
 		{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1A6636EB-C26C-4F4D-9644-EC1BD8A725C0} = {D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4E3F596C-3D1B-4F27-9F3F-D9D892CF6DE6}
 	EndGlobalSection
 EndGlobal

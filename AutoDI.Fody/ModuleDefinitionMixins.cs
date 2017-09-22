@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
+using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 
 namespace AutoDI.Fody
@@ -43,6 +46,119 @@ namespace AutoDI.Fody
                 MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, module.ImportReference(typeof(void)));
 
             return ctor;
+        }
+
+        public static FieldDefinition CreateStaticReadonlyField<T>(this ModuleDefinition moduleDefintion, string name, bool @public)
+        {
+            if (moduleDefintion == null) throw new ArgumentNullException(nameof(moduleDefintion));
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            return moduleDefintion.CreateStaticReadonlyField(name, @public, moduleDefintion.Get<T>());
+        }
+
+        public  static FieldDefinition CreateStaticReadonlyField(this ModuleDefinition moduleDefinition, string name, 
+            bool @public, TypeReference type)
+        {
+            if (moduleDefinition == null) throw new ArgumentNullException(nameof(moduleDefinition));
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            return new FieldDefinition(name,
+                (@public ? FieldAttributes.Public : FieldAttributes.Private) | FieldAttributes.Static |
+                FieldAttributes.InitOnly, moduleDefinition.ImportReference(type));
+        }
+
+        public static FieldDefinition CreateReadonlyField<T>(this ModuleDefinition moduleDefinition, string name, bool @public)
+        {
+            if (moduleDefinition == null) throw new ArgumentNullException(nameof(moduleDefinition));
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            return moduleDefinition.CreateReadonlyField(name, @public, moduleDefinition.Get<T>());
+        }
+
+        public static FieldDefinition CreateReadonlyField(this ModuleDefinition moduleDefinition,
+            string name, bool @public, TypeReference type)
+        {
+            if (moduleDefinition == null) throw new ArgumentNullException(nameof(moduleDefinition));
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            return new FieldDefinition(name,
+                (@public ? FieldAttributes.Public : FieldAttributes.Private) |
+                FieldAttributes.InitOnly, moduleDefinition.ImportReference(type));
+        }
+
+        public static MethodReference GetDefaultConstructor<T>(this ModuleDefinition moduleDefinition)
+        {
+            if (moduleDefinition == null) throw new ArgumentNullException(nameof(moduleDefinition));
+
+            var defualtCtor = typeof(T).GetConstructor(new Type[0]);
+            if (defualtCtor == null)
+            {
+                throw new InvalidOperationException($"Could not find default constructor for '{typeof(T).FullName}'");
+            }
+            return moduleDefinition.ImportReference(defualtCtor);
+        }
+
+        public static MethodReference GetConstructor<T>(this ModuleDefinition moduleDefinition, params Type[] argumentTypes)
+        {
+            return moduleDefinition.GetConstructor(typeof(T), argumentTypes);
+        }
+
+        public static MethodReference GetConstructor(this ModuleDefinition moduleDefinition, Type targetType, params Type[] argumentTypes)
+        {
+            if (moduleDefinition == null) throw new ArgumentNullException(nameof(moduleDefinition));
+
+            var ctors = targetType.GetConstructors();
+
+            if (argumentTypes?.Any() == true)
+            {
+                ctors = ctors.Where(c => c.GetParameters().Select(x => x.ParameterType).SequenceEqual(argumentTypes))
+                    .ToArray();
+            }
+
+            switch (ctors.Length)
+            {
+                case 0:
+                    throw new InvalidOperationException($"Could not find any matching constructors for '{targetType.FullName}'");
+                case 1:
+                    return moduleDefinition.ImportReference(ctors[0]);
+                default:
+                    throw new InvalidOperationException($"Found multiple matching constructors for '{targetType.FullName}'");
+            }
+        }
+
+        public static MethodReference GetMethod<TContainingType>(this ModuleDefinition moduleDefinition,
+            string methodName)
+        {
+            return moduleDefinition.GetMethod(typeof(TContainingType), methodName);
+        }
+
+        public static MethodReference GetMethod(this ModuleDefinition moduleDefinition,
+            Type containingType, string methodName)
+        {
+            if (moduleDefinition == null) throw new ArgumentNullException(nameof(moduleDefinition));
+            if (containingType == null) throw new ArgumentNullException(nameof(containingType));
+            if (methodName == null) throw new ArgumentNullException(nameof(methodName));
+
+            MethodInfo method = containingType.GetMethod(methodName);
+            if (method == null) throw new InvalidOperationException($"Could not find method '{methodName}' on '{containingType.FullName}'");
+
+            return moduleDefinition.ImportReference(method);
+        }
+
+        public static MethodDefinition ResolveCoreConstructor(this ModuleDefinition moduleDefinition, Type targetType)
+        {
+            return ResolveCoreType(moduleDefinition, targetType)?.GetConstructors().Single();
+        }
+
+        public static TypeDefinition ResolveCoreType(this ModuleDefinition moduleDefinition, Type targetType)
+        {
+            TypeReference coreType = moduleDefinition.ImportReference(targetType);
+            //NB: This null fall back is due to an issue with Mono.Cecil 0.10.0
+            //From GitHub issues it looks like it make be resolved in some of the beta builds, however this would require modifying Fody.
+            //For now we will just manually resolve this way and assume the type lives in the core library.
+            return coreType.Resolve() ?? moduleDefinition.AssemblyResolver
+                       .Resolve((AssemblyNameReference) moduleDefinition.TypeSystem.CoreLibrary)
+                       .MainModule.GetType(targetType.FullName);
         }
     }
 }

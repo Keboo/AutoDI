@@ -18,13 +18,13 @@ namespace AutoDI.Fody.Tests
             var gen = new Generator();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
-            AutoDIContainer.Inject(_testAssembly);
+            DI.Init(_testAssembly);
         }
 
         [ClassCleanup]
         public static void Cleanup()
         {
-            DependencyResolver.Set(null);
+            DI.Dispose(_testAssembly);
         }
 
         [TestMethod]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Xml.Linq;
 
 namespace AutoDI.Fody
@@ -9,9 +10,15 @@ namespace AutoDI.Fody
     {
         public Behaviors Behavior { get; set; } = Behaviors.Default;
 
-        public bool InjectContainer { get; set; } = true;
+        /// <summary>
+        /// Automatically initialize AutoDI in assembly entry point (if avialible)
+        /// </summary>
+        public bool AutoInit { get; set; } = true;
 
-        public bool GenerateContainer { get; set; } = true;
+        /// <summary>
+        /// Generate registration calls no the container. Setting to false will negate AutoInit.
+        /// </summary>
+        public bool GenerateRegistrations { get; set; } = true;
 
         public DebugLogLevel DebugLogLevel { get; set; } = DebugLogLevel.Default;
 
@@ -21,10 +28,64 @@ namespace AutoDI.Fody
 
         public IList<MatchAssembly> Assemblies { get; } = new List<MatchAssembly>();
 
-        public static Settings Parse(XElement rootElement)
+        public override string ToString()
         {
-            var rv = new Settings();
-            if (rootElement == null) return rv;
+            var sb = new StringBuilder();
+
+            sb.AppendLine("AutoDI Settings:");
+            sb.AppendLine($"  Behavior(s): {Behavior}");
+            sb.AppendLine($"  AutoInit: {AutoInit}");
+            sb.AppendLine($"  GenerateRegistrations: {GenerateRegistrations}");
+            sb.AppendLine($"  DebugLogLevel: {DebugLogLevel}");
+            sb.Append("  Included Assemblies: ");
+            if (Assemblies.Any())
+            {
+                sb.AppendLine();
+                 foreach (MatchAssembly assembly in Assemblies)
+               {
+                    sb.AppendLine($"    {assembly}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("<none>");
+            }
+
+            sb.Append("  Maps: ");
+            if (Maps.Any())
+            {
+                sb.AppendLine();
+                foreach (Map map in Maps)
+                {
+                    sb.AppendLine($"    {map}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("<none>");
+            }
+
+            sb.Append("  Type Lifetimes: ");
+            if (Types.Any())
+            {
+                sb.AppendLine();
+                foreach (MatchType type in Types)
+                {
+                    sb.AppendLine($"    {type}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("<none>");
+            }
+
+
+            return sb.ToString();
+        }
+
+        public static Settings Parse(Settings settings, XElement rootElement)
+        {
+            if (rootElement == null) return settings;
 
             string behaviorAttribute = rootElement.GetAttributeValue(nameof(Behavior));
             if (behaviorAttribute != null)
@@ -35,25 +96,25 @@ namespace AutoDI.Fody
                     if (Enum.TryParse(value, out Behaviors @enum))
                         behavior |= @enum;
                 }
-                rv.Behavior = behavior;
+                settings.Behavior = behavior;
             }
 
-            if (bool.TryParse(rootElement.GetAttributeValue(nameof(InjectContainer)) ?? bool.TrueString,
-                out bool injectContainer))
+            if (bool.TryParse(rootElement.GetAttributeValue(nameof(AutoInit)) ?? bool.TrueString,
+                out bool autoInit))
             {
-                rv.InjectContainer = injectContainer;
+                settings.AutoInit = autoInit;
             }
 
-            if (bool.TryParse(rootElement.GetAttributeValue(nameof(GenerateContainer)) ?? bool.TrueString,
-                out bool generateContainer))
+            if (bool.TryParse(rootElement.GetAttributeValue(nameof(GenerateRegistrations)) ?? bool.TrueString,
+                out bool generateRegistrations))
             {
-                rv.GenerateContainer = generateContainer;
+                settings.GenerateRegistrations = generateRegistrations;
             }
 
             if (Enum.TryParse(rootElement.GetAttributeValue(nameof(DebugLogLevel)) ?? nameof(DebugLogLevel.Default),
                 out DebugLogLevel debugLogLevel))
             {
-                rv.DebugLogLevel = debugLogLevel;
+                settings.DebugLogLevel = debugLogLevel;
             }
 
             foreach (XElement assemblyNode in rootElement.DescendantNodes().OfType<XElement>()
@@ -62,7 +123,7 @@ namespace AutoDI.Fody
                 string assemblyName = assemblyNode.GetAttributeValue("Name");
                 if (string.IsNullOrWhiteSpace(assemblyName)) continue;
 
-                rv.Assemblies.Add(new MatchAssembly(assemblyName));
+                settings.Assemblies.Add(new MatchAssembly(assemblyName));
             }
 
             foreach (XElement typeNode in rootElement.DescendantNodes().OfType<XElement>()
@@ -77,7 +138,7 @@ namespace AutoDI.Fody
                     lifetime = Lifetime.LazySingleton;
                 }
 
-                rv.Types.Add(new MatchType(typePattern, lifetime));
+                settings.Types.Add(new MatchType(typePattern, lifetime));
             }
 
             foreach (XElement mapNode in rootElement.DescendantNodes().OfType<XElement>()
@@ -91,10 +152,11 @@ namespace AutoDI.Fody
                 {
                     force = false;
                 }
-                rv.Maps.Add(new Map(from, to, force));
+                settings.Maps.Add(new Map(from, to, force));
             }
 
-            return rv;
+            return settings;
         }
+
     }
 }

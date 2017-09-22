@@ -1,9 +1,8 @@
-﻿using System;
+﻿using AutoDI.AssemblyGenerator;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Fody.Tests
 {
@@ -21,17 +20,18 @@ namespace AutoDI.Fody.Tests
                 if (args.Weaver.Name == "AutoDI")
                 {
                     dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse(@"<AutoDI GenerateContainer=""False"" />");
+                    weaver.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
                 }
             };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
+            _testAssembly.InvokeEntryPoint();
         }
 
-        [TestMethod, ExpectedException(typeof(InvalidOperationException))]
-        public void WhenGenerateContainerIsFalseTheContainerIsNotGenerated()
+        [TestMethod]
+        public void WhenGenerateRegistrationsIsFalseResolutionFails()
         {
-            AutoDIContainer.GetMap(_testAssembly);
+            Assert.IsNull(_testAssembly.GetType($"{DI.Namespace}.{DI.TypeName}"));
         }
     }
 
@@ -39,17 +39,17 @@ namespace AutoDI.Fody.Tests
     //<type:ConsoleApplication/>
     //<ref: AutoDI />
     //<weaver: AutoDI />
-    namespace DisableContainerGenerationNamespace
+    namespace DisableGeneratedRegistrationsNamespace
     {
-        public partial class Program
+        public class Program
         {
             public static void Main(string[] args)
             { }
         }
     
-        public partial interface IService { }
+        public interface IService { }
     
-        public partial class Service : IService { }
+        public class Service : IService { }
     }
     //</assembly>
 }

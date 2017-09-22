@@ -40,7 +40,7 @@ namespace AutoDI.Fody.Tests
                 .IsCreated), GetType());
             Assert.IsFalse(isCreated);
 
-            AutoDIContainer.Inject(_singleton);
+            DI.Init(_singleton);
 
             isCreated = (bool)_singleton.GetStaticProperty<SingletonResolutionTest.Service>(nameof(SingletonResolutionTest.Service
                 .IsCreated), GetType());
@@ -55,7 +55,7 @@ namespace AutoDI.Fody.Tests
                 .IsCreated), GetType());
             Assert.IsFalse(isCreated);
 
-            AutoDIContainer.Inject(_inSetup);
+            DI.Init(_inSetup);
         }
     }
 
@@ -82,7 +82,7 @@ namespace AutoDI.Fody.Tests
         public static class Foo
         {
             [SetupMethod]
-            public static void Setup(ContainerMap map)
+            public static void Setup(IApplicationBuilder builder)
             {
                 if (Service.IsCreated) throw new Exception();
             }
@@ -113,12 +113,14 @@ namespace AutoDI.Fody.Tests
         public static class Foo
         {
             [SetupMethod]
-            public static void Setup(ContainerMap map)
+            public static void Setup(IApplicationBuilder builder)
             {
                 if (Service.IsCreated) throw new Exception();
-                var service = map.Get<IService>();
-                if (!(service is Service)) throw new Exception();
-                if (!Service.IsCreated) throw new Exception();
+                builder.ConfigureContinaer<IContainer>(map =>
+                {
+                    var service = map.Get<IService>(null);
+                    if (!(service is Service)) throw new Exception();
+                });
             }
         }
     }

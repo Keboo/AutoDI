@@ -1,9 +1,8 @@
+using Mono.Cecil;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Mono.Cecil;
-using Mono.Cecil.Rocks;
 
 namespace AutoDI.Fody
 {
@@ -13,7 +12,9 @@ namespace AutoDI.Fody
 
         public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior)
         {
-            if (!HasValidConstructor(targetType)) return;
+            //TODO Better filtering, mostly just to remove <Module>
+            if (targetType.FullName.Contains('<') || targetType.FullName.Contains('>')) return;
+
 
             //Last key in wins, this allows for manual mapping to override things added with behaviors
             bool duplicateKey = false;
@@ -60,12 +61,6 @@ namespace AutoDI.Fody
                     }
                 }
             }
-        }
-
-        //TODO: This behavior is duplicated when it builds the map :/
-        private bool HasValidConstructor(TypeDefinition type)
-        {
-            return type.GetConstructors().Any(c => c.Parameters.All(pd => pd.HasDefault && pd.Constant == null));
         }
 
         public IEnumerator<TypeMap> GetEnumerator()

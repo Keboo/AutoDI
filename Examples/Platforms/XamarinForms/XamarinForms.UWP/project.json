@@ -1,0 +1,19 @@
+﻿{
+  "dependencies": {
+    "AutoDI": "3.0.20",
+    "AutoDI.Fody": "3.0.20",
+    "Microsoft.NETCore.UniversalWindowsPlatform": "5.4.0",
+    "Xamarin.Forms": "2.3.4.270"
+  },
+  "frameworks": {
+    "uap10.0.10586": {}
+  },
+  "runtimes": {
+    "win10-arm": {},
+    "win10-arm-aot": {},
+    "win10-x86": {},
+    "win10-x86-aot": {},
+    "win10-x64": {},
+    "win10-x64-aot": {}
+  }
+}
