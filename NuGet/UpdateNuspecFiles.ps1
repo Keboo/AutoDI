@@ -5,9 +5,6 @@ $regex = [regex]"(?<=\d+\.)\d+(?=\.\d+)"
 $match = $regex.Match($Version)
 $MaxVersion = $regex.Replace($Version, ([int]$match.Value) + 1)
 
-#[Version]$MaxVersion = "$($Version.Major).$($Version.Minor).$($Version.Build)"
-
-
 foreach($nuspecFile in Get-ChildItem ".\**\*.nuspec") {
     [xml] $file = Get-Content $nuspecFile
     $metadata = $file.package.metadata
