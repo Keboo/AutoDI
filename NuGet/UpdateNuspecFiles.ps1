@@ -5,7 +5,7 @@ $regex = [regex]"(?<=\d+\.)\d+(?=\.\d+)"
 $match = $regex.Match($Version)
 $MaxVersion = $regex.Replace($Version, ([int]$match.Value) + 1)
 
-foreach($nuspecFile in Get-ChildItem ".\**\*.nuspec") {
+foreach($nuspecFile in Get-ChildItem "NuGet\*.nuspec" -Recurse) {
     [xml] $file = Get-Content $nuspecFile
     $metadata = $file.package.metadata
     $metadata.copyright = "Copyright " + (Get-Date).Year
