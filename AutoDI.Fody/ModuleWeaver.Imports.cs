@@ -30,11 +30,6 @@ public partial class ModuleWeaver
             var coreType = moduleDefinition.ResolveCoreType(typeof(Type));
             System_Type = moduleDefinition.ImportReference(coreType);
             
-            ServiceProviderMixins_GetService = moduleDefinition.ImportReference(
-                UpdateMethod(
-                    autoDIAssembly.MainModule.GetType(typeof(ServiceProviderMixins).FullName).GetMethods()
-                .Single(m => m.Name == nameof(ServiceProviderMixins.GetService) && m.HasGenericParameters)));
-
             Type_GetTypeFromHandle = moduleDefinition.ImportReference(coreType.GetMethods().Single(m => m.Name == nameof(Type.GetTypeFromHandle)));
 
             ServiceCollectionMixins_AddAutoDIService = moduleDefinition.ImportReference(
@@ -83,9 +78,7 @@ public partial class ModuleWeaver
         public MethodReference GlobalDI_Register { get; }
         public MethodReference GlobalDI_Unregister { get; }
         public MethodReference GlobalDI_GetService { get; }
-
-        public MethodReference ServiceProviderMixins_GetService { get; }
-
+        
         public MethodReference Type_GetTypeFromHandle { get; }
 
         public MethodReference ServiceCollectionMixins_AddAutoDIService { get; }

@@ -15,15 +15,13 @@ namespace Microsoft.Console.Core
             IServiceProvider provider = DI.GetGlobalServiceProvider(typeof(Program).Assembly);
 
             //Do stuff with nested scopes - if you want to
-            IService service1, service2;
             IServiceScopeFactory scopeFactory = provider.GetService<IServiceScopeFactory>();
-            using (var scope1 = scopeFactory.CreateScope())
+            using (IServiceScope scope1 = scopeFactory.CreateScope())
+            using (IServiceScope scope2 = scopeFactory.CreateScope())
             {
-                service1 = scope1.ServiceProvider.GetService<IService>();
-            }
-            using (var scope2 = scopeFactory.CreateScope())
-            {
-                service2 = scope2.ServiceProvider.GetService<IService>();
+                IService service1 = scope1.ServiceProvider.GetService<IService>();
+                IService service2 = scope2.ServiceProvider.GetService<IService>();
+                System.Console.WriteLine($"Are scoped instances different? {(ReferenceEquals(service1, service2) ? "no" : "yes")}");
             }
 
             //Create program instance and start running
@@ -40,7 +38,8 @@ namespace Microsoft.Console.Core
 
         public void DoStuff()
         {
-
+            System.Console.WriteLine($"Started with service? {(_service != null ? "yes" : "no")}");
+            System.Console.ReadLine();
         }
 
         [SetupMethod]

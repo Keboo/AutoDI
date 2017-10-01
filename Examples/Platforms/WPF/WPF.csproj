@@ -36,8 +36,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AutoDI, Version=3.0.20.0, Culture=neutral, PublicKeyToken=11e8ae7f3e8c05af, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\AutoDI.3.0.20\lib\net45\AutoDI.dll</HintPath>
+    <Reference Include="AutoDI, Version=3.0.0.95, Culture=neutral, PublicKeyToken=11e8ae7f3e8c05af, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\AutoDI.3.0.0-ci95\lib\net45\AutoDI.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.1.1.1\lib\netstandard1.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>

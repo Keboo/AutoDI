@@ -17,18 +17,19 @@ namespace StructureMap.Console.Core
             //Use SM specific calls
             var smProvider = (StructureMapServiceProvider)provider;
             string whatDoIHave = smProvider.Container.WhatDoIHave();
+            System.Console.WriteLine("StructureMap specific call");
+            System.Console.WriteLine(whatDoIHave);
 
             //Do stuff with nested scopes - if you want to
-            IService service1, service2;
             IServiceScopeFactory scopeFactory = provider.GetService<IServiceScopeFactory>();
-            using (var scope1 = scopeFactory.CreateScope())
+            using (IServiceScope scope1 = scopeFactory.CreateScope())
+            using (IServiceScope scope2 = scopeFactory.CreateScope())
             {
-                service1 = scope1.ServiceProvider.GetService<IService>();
+                IService service1 = scope1.ServiceProvider.GetService<IService>();
+                IService service2 = scope2.ServiceProvider.GetService<IService>();
+                System.Console.WriteLine($"Are scoped instances different? {(ReferenceEquals(service1, service2) ? "no" : "yes")}");
             }
-            using (var scope2 = scopeFactory.CreateScope())
-            {
-                service2 = scope2.ServiceProvider.GetService<IService>();
-            }
+
 
             //Create program instance and start running
             Program program = provider.GetService<Program>();
@@ -44,7 +45,8 @@ namespace StructureMap.Console.Core
 
         public void DoStuff()
         {
-
+            System.Console.WriteLine($"Started with service? {(_service != null ? "yes" : "no")}");
+            System.Console.ReadLine();
         }
 
         [SetupMethod]

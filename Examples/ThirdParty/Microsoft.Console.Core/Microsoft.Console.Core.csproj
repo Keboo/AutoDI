@@ -6,13 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoDI.Fody" Version="3.0.22" />
+    <PackageReference Include="AutoDI.Fody" Version="3.0.0-ci95" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\ThirdParty\Microsoft\Microsoft.DependencyInjection.AutoDI\Microsoft.DependencyInjection.AutoDI.csproj" />
-    <ProjectReference Include="..\..\ExampleLib\ExampleLib.csproj" />
+    <ProjectReference Include="..\..\..\ThirdParty\Microsoft\Microsoft.DependencyInjection.AutoDI\Microsoft.DependencyInjection.AutoDI.csproj" />
+    <ProjectReference Include="..\ExampleLib\ExampleLib.csproj" />
   </ItemGroup>
 
 </Project>

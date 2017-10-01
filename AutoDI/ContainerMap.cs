@@ -42,22 +42,6 @@ namespace AutoDI
                     _accessors[serviceDescriptor.ServiceType] = container;
                 }
             }
-
-            Func<IServiceProvider, object> GetFactory(ServiceDescriptor descriptor)
-            {
-                if (descriptor.ImplementationType != null)
-                {
-                    //TODO, resolve parameters
-                    return sp => Activator.CreateInstance(descriptor.ImplementationType);
-                }
-                if (descriptor.ImplementationFactory != null)
-                {
-                    return descriptor.ImplementationFactory;
-                }
-                //NB: separate the instance from the ServiceDescriptor to avoid capturing both
-                object instance = descriptor.ImplementationInstance;
-                return _ => instance;
-            }
         }
 
         public void Add(ServiceDescriptor serviceDescriptor)

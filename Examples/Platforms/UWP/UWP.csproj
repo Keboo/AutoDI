@@ -133,10 +133,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AutoDI">
-      <Version>3.0.20</Version>
+      <Version>3.0.0-ci95</Version>
     </PackageReference>
     <PackageReference Include="AutoDI.Fody">
-      <Version>3.0.20</Version>
+      <Version>3.0.0-ci95</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>5.4.0</Version>
