@@ -20,7 +20,7 @@ See the [wiki](https://github.com/Keboo/AutoDI/wiki) for more details or check o
 
 The goal of this library is to make dependency injection as simple as adding a nuget. 
 
-In addition to standard constructor dependency injection, it also allows you to simply declare optional constructor parameters that will be resolved anytime you invoke them.
+In addition to standard constructor dependency injection, it also allows you to simply declare optional constructor parameters that will be resolved anytime the constructor is invoked.
 
 In a typical DI setup you can often find your objects needing to take in dependencies that the object is not actually using, but needs the dependencies to pass into some other object. The bigger and deeper the object model gets, the worse this becomes. 
 As a specific example, imagine you are inside of class `Foo` and wish to create an instance of `Bar`, but `Bar` has a dependency on `IService`. 
