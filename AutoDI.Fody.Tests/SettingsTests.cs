@@ -1,5 +1,4 @@
-﻿using AutoDI.Fody;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Xml.Linq;
 
 namespace AutoDI.Fody.Tests
@@ -12,7 +11,7 @@ namespace AutoDI.Fody.Tests
         {
             var xml = XElement.Parse(@"<AutoDI />");
 
-            var settings = Settings.Parse(xml);
+            var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(Behaviors.Default, settings.Behavior);
         }
@@ -22,7 +21,7 @@ namespace AutoDI.Fody.Tests
         {
             var xml = XElement.Parse($@"<AutoDI behavior=""{Behaviors.SingleInterfaceImplementation}""/>");
 
-            var settings = Settings.Parse(xml);
+            var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(Behaviors.SingleInterfaceImplementation, settings.Behavior);
         }
@@ -32,7 +31,7 @@ namespace AutoDI.Fody.Tests
         {
             var xml = XElement.Parse($@"<AutoDI behavior=""{Behaviors.SingleInterfaceImplementation},{Behaviors.IncludeClasses}""/>");
 
-            var settings = Settings.Parse(xml);
+            var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(Behaviors.SingleInterfaceImplementation | Behaviors.IncludeClasses, settings.Behavior);
         }
@@ -45,7 +44,7 @@ namespace AutoDI.Fody.Tests
                         <type name=""MyType.*"" lifetime=""Transient"" />
                     </AutoDI>");
 
-            var settings = Settings.Parse(xml);
+            var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Types.Count);
             Assert.IsTrue(settings.Types[0].Matches("MyType2"));
@@ -60,7 +59,7 @@ namespace AutoDI.Fody.Tests
                         <map from=""IService"" to=""Service"" />
                     </AutoDI>");
 
-            var settings = Settings.Parse(xml);
+            var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Maps.Count);
             string mappedType;
@@ -76,7 +75,7 @@ namespace AutoDI.Fody.Tests
                         <map from=""ViewModels.(.*)"" to=""Views.$1"" />
                     </AutoDI>");
 
-            var settings = Settings.Parse(xml);
+            var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Maps.Count);
             string mappedType;
@@ -92,7 +91,7 @@ namespace AutoDI.Fody.Tests
                         <assembly name=""MyAssembly.*"" />
                     </AutoDI>");
 
-            var settings = Settings.Parse(xml);
+            var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Assemblies.Count);
             Assert.IsTrue(settings.Assemblies[0].Matches("MyAssembly.Test"));
@@ -101,11 +100,11 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanSkipContainerGeneration()
         {
-            var xml = XElement.Parse(@"<AutoDI GenerateContainer=""False"" />");
+            var xml = XElement.Parse(@"<AutoDI GenerateRegistrations=""False"" />");
 
-            var settings = Settings.Parse(xml);
+            var settings = Settings.Parse(new Settings(), xml);
 
-            Assert.IsFalse(settings.GenerateContainer);
+            Assert.IsFalse(settings.GenerateRegistrations);
         }
     }
 }

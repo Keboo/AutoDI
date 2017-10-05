@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using AutoDI;
 using AutoDI.Fody;
+using Microsoft.Extensions.DependencyInjection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -10,233 +11,263 @@ using Mono.Cecil.Rocks;
 // ReSharper disable once CheckNamespace
 partial class ModuleWeaver
 {
-    private TypeDefinition CreateAutoDIContainer(Mapping mapping)
+    //TODO: out parameters... yuck
+    private TypeDefinition GenerateAutoDIClass(Mapping mapping,
+        out MethodDefinition initMethod)
     {
-        var containerType = new TypeDefinition("AutoDI", "AutoDIContainer",
-            TypeAttributes.Class | TypeAttributes.Public)
+        var containerType = new TypeDefinition(DI.Namespace, DI.TypeName,
+            TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
+            | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit)
         {
-            BaseType = ModuleDefinition.Get<BaseResolver>()
+            BaseType = ModuleDefinition.Get<object>()
         };
-        MethodDefinition ctor = ModuleDefinition.CreateDefaultConstructor(typeof(BaseResolver));
-        containerType.Methods.Add(ctor);
 
+        FieldDefinition globalServiceProvider =
+            ModuleDefinition.CreateStaticReadonlyField(DI.GlobalServiceProviderName, false, Import.IServiceProvider);
+        containerType.Fields.Add(globalServiceProvider);
 
-        //Create static constructor
-        MethodDefinition staticConstructor = ModuleDefinition.CreateStaticConstructor();
-        ILProcessor staticBody = staticConstructor.Body.GetILProcessor();
+        MethodDefinition configureMethod = GenerateConfigureMethod(mapping, containerType);
+        containerType.Methods.Add(configureMethod);
 
-        //Declare and initialize dictionary map
-        FieldDefinition mapField = CreateStaticReadonlyField<ContainerMap>("_items", false);
-        containerType.Fields.Add(mapField);
-        MethodReference mapConstructor = ModuleDefinition.ImportReference(typeof(ContainerMap).GetConstructor(new Type[0]));
-        staticBody.Emit(OpCodes.Newobj, mapConstructor);
-        staticBody.Emit(OpCodes.Stsfld, mapField);
+        initMethod = GenerateInitMethod(configureMethod, globalServiceProvider);
+        containerType.Methods.Add(initMethod);
 
-        BuildMap(mapField, staticBody, containerType, mapping);
+        MethodDefinition disposeMethod = GenerateDisposeMethod(globalServiceProvider);
+        containerType.Methods.Add(disposeMethod);
 
-        staticBody.Emit(OpCodes.Ret);
-
-        containerType.Methods.Add(staticConstructor);
-
-        //Override BaseResolver.Resolve(Type, params object[]) method.
-        {
-            //Create resolve method
-            var resolveMethod = new MethodDefinition(nameof(BaseResolver.Resolve),
-                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.Virtual
-                , ModuleDefinition.Get<object>());
-            resolveMethod.Parameters.Add(new ParameterDefinition("desiredType", ParameterAttributes.None,
-                ModuleDefinition.Get<Type>()));
-            resolveMethod.Parameters.Add(new ParameterDefinition("parameters", ParameterAttributes.None,
-                ModuleDefinition.Get<object[]>()));
-
-            var body = resolveMethod.Body.GetILProcessor();
-            body.Emit(OpCodes.Ldsfld, mapField);
-
-            MethodReference getMethod =
-                ModuleDefinition.ImportReference(
-                    typeof(ContainerMap).GetMethod(nameof(ContainerMap.Get), new[] { typeof(Type) }));
-            //TODO: parameters too
-            body.Emit(OpCodes.Ldarg_1);
-            body.Emit(OpCodes.Call, getMethod);
-            body.Emit(OpCodes.Ret);
-
-            containerType.Methods.Add(resolveMethod);
-        }
-
-        //Override BaseResolver.Initialize()
-        {
-            var initializeMethod = new MethodDefinition(nameof(BaseResolver.Initialize),
-                MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.HideBySig |
-                MethodAttributes.Virtual,
-                ModuleDefinition.ImportReference(typeof(void)));
-
-            var body = initializeMethod.Body.GetILProcessor();
-
-            //Pass map to setup method if one exists
-            MethodDefinition setupMethod = FindSetupMethod();
-            if (setupMethod != null)
-            {
-                InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Verbose);
-                body.Emit(OpCodes.Ldsfld, mapField);
-                body.Emit(OpCodes.Call, setupMethod);
-                body.Emit(OpCodes.Nop);
-            }
-
-            //Create singleton instances
-            var createInstancesMethod =
-                ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.CreateSingletons)));
-            body.Emit(OpCodes.Ldsfld, mapField);
-            body.Emit(OpCodes.Call, createInstancesMethod);
-            body.Emit(OpCodes.Nop);
-
-            body.Emit(OpCodes.Ret);
-
-            containerType.Methods.Add(initializeMethod);
-        }
         return containerType;
     }
 
-    private void BuildMap(FieldDefinition mapField, ILProcessor staticBody, TypeDefinition delegateContainer, Mapping mapping)
+    private MethodDefinition GenerateConfigureMethod(Mapping mapping, TypeDefinition containerType)
     {
-        bool InvokeConstructor(TypeDefinition targetType, ILProcessor processor)
+        var method = new MethodDefinition(nameof(DI.AddServices),
+            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
+            ModuleDefinition.ImportReference(typeof(void)));
+        
+        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, ModuleDefinition.Get<IServiceCollection>());
+        method.Parameters.Add(serviceCollection);
+
+        ILProcessor processor = method.Body.GetILProcessor();
+
+        MethodDefinition funcCtor = ModuleDefinition.ResolveCoreConstructor(typeof(Func<,>));
+
+        if (mapping != null)
         {
-            foreach (MethodDefinition targetTypeCtor in targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count))
+            int factoryIndex = 0;
+            foreach (TypeMap map in mapping)
             {
-                if (targetTypeCtor.Parameters.All(pd => pd.HasDefault && pd.Constant == null))
+                try
                 {
-                    for (int i = 0; i < targetTypeCtor.Parameters.Count; i++)
+                    InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
+
+                    MethodDefinition factoryMethod = GenerateFactoryMethod(map.TargetType, factoryIndex);
+                    if (factoryMethod == null)
                     {
-                        processor.Emit(OpCodes.Ldnull);
+                        InternalLogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
+                            DebugLogLevel.Verbose);
+                        continue;
                     }
-                    processor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
-                    return true;
+                    containerType.Methods.Add(factoryMethod);
+                    factoryIndex++;
+
+                    processor.Emit(OpCodes.Ldarg_0); //collection parameter
+
+                    processor.Emit(OpCodes.Ldnull);
+                    processor.Emit(OpCodes.Ldftn, factoryMethod);
+                    processor.Emit(OpCodes.Newobj,
+                        ModuleDefinition.ImportReference(
+                            funcCtor.MakeGenericTypeConstructor(Import.IServiceProvider,
+                                map.TargetType)));
+
+                    processor.Emit(OpCodes.Ldc_I4, map.Keys.Count);
+                    processor.Emit(OpCodes.Newarr, Import.System_Type);
+
+                    int arrayIndex = 0;
+                    foreach (TypeDefinition key in map.Keys)
+                    {
+                        TypeReference importedKey = ModuleDefinition.ImportReference(key);
+                        InternalLogDebug(
+                            $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({map.Lifetime})",
+                            DebugLogLevel.Default);
+                        processor.Emit(OpCodes.Dup);
+                        processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
+                        processor.Emit(OpCodes.Ldtoken, importedKey);
+                        processor.Emit(OpCodes.Call, Import.Type_GetTypeFromHandle);
+                        processor.Emit(OpCodes.Stelem_Ref);
+                    }
+
+                    processor.Emit(OpCodes.Ldc_I4, (int) map.Lifetime);
+
+                    var genericAddMethod = new GenericInstanceMethod(Import.ServiceCollectionMixins_AddAutoDIService);
+                    genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
+                    processor.Emit(OpCodes.Call, genericAddMethod);
+                    processor.Emit(OpCodes.Pop);
+                }
+                catch (Exception e)
+                {
+                    LogWarning($"Failed to create map for {map}\r\n{e}");
                 }
             }
-            return false;
         }
 
-        MethodReference addSingleton =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddSingleton)));
-        MethodReference addLazySingleton =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddLazySingleton)));
-        MethodReference addWeakTransient =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddWeakTransient)));
-        MethodReference addTransient =
-            ModuleDefinition.ImportReference(typeof(ContainerMap).GetMethod(nameof(ContainerMap.AddTransient)));
+        processor.Emit(OpCodes.Ret);
 
-        TypeReference funcType = ModuleDefinition.ImportReference(typeof(Func<>));
-        //NB: This null fall back is due to an issue with Mono.Cecil 0.10.0
-        //From GitHub issues it looks like it make be resolved in some of the beta builds, however this would require modifying Fody.
-        //For now we will just manually resolve this way. Since we know Func<>> lives in the core library.
-        TypeDefinition funcDefinition = funcType.Resolve() ?? ModuleDefinition.AssemblyResolver
-                                            .Resolve((AssemblyNameReference)ModuleDefinition.TypeSystem.CoreLibrary)
-                                            .MainModule.GetType(typeof(Func<>).FullName);
-        if (funcDefinition == null)
+        return method;
+    }
+
+    private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
+    {
+        //TODO: allow for specifying which constructor to use
+        MethodDefinition targetTypeCtor = targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count)
+            .FirstOrDefault();
+
+        if (targetTypeCtor == null) return null;
+
+        var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
+            MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
+            ModuleDefinition.ImportReference(targetType));
+        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.IServiceProvider));
+
+        ILProcessor factoryProcessor = factory.Body.GetILProcessor();
+
+        MethodReference getServiceMethod = ModuleDefinition.GetMethod(typeof(ServiceProviderServiceExtensions),
+            nameof(ServiceProviderServiceExtensions.GetService));
+
+        foreach (ParameterDefinition parameter in targetTypeCtor.Parameters)
         {
-            LogError($"Failed to resolve type '{typeof(Func<>).FullName}'");
-            return;
+            factoryProcessor.Emit(OpCodes.Ldarg_0);
+            var genericGetService = new GenericInstanceMethod(getServiceMethod);
+            genericGetService.GenericArguments.Add(ModuleDefinition.ImportReference(parameter.ParameterType));
+            factoryProcessor.Emit(OpCodes.Call, genericGetService);
         }
-        MethodDefinition funcCtor = funcDefinition.GetConstructors().Single();
 
-        TypeReference type = ModuleDefinition.ImportReference(typeof(Type));
-        MethodReference getTypeMethod = ModuleDefinition.ImportReference(typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle)));
+        factoryProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
+        factoryProcessor.Emit(OpCodes.Ret);
+        return factory;
+    }
 
-        int delegateMethodCount = 0;
-        foreach (TypeMap map in mapping)
+    private MethodDefinition GenerateInitMethod(MethodDefinition configureMethod, FieldDefinition globalServiceProvider)
+    {
+        var initMethod = new MethodDefinition(nameof(DI.Init),
+            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
+            ModuleDefinition.ImportReference(typeof(void)));
+        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, ModuleDefinition.Get<Action<IApplicationBuilder>>());
+        initMethod.Parameters.Add(configureAction);
+
+        var applicationBuilder = new VariableDefinition(ModuleDefinition.Get<IApplicationBuilder>());
+        initMethod.Body.Variables.Add(applicationBuilder);
+        ILProcessor initProcessor = initMethod.Body.GetILProcessor();
+
+        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, ModuleDefinition.GetDefaultConstructor<ApplicationBuilder>());
+
+        initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
+        initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
+        //Compare
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AlreadyInitializedException>());
+        initProcessor.Emit(OpCodes.Throw);
+
+        initProcessor.Append(createApplicationbuilder);
+        initProcessor.Emit(OpCodes.Stloc_0);
+
+        initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
+        initProcessor.Emit(OpCodes.Ldnull);
+        initProcessor.Emit(OpCodes.Ldftn, configureMethod);
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<Action<IServiceCollection>>());
+        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.ConfigureServices)));
+        initProcessor.Emit(OpCodes.Pop);
+
+        MethodDefinition setupMethod = FindSetupMethod();
+        if (setupMethod != null)
         {
-            try
-            {
-                InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
-
-                TypeDefinition targetType = map.TargetType;
-                staticBody.Emit(OpCodes.Ldsfld, mapField);
-
-                var delegateMethod = new MethodDefinition($"<{targetType.Name}>_generated_{delegateMethodCount++}",
-                    MethodAttributes.Assembly | MethodAttributes.HideBySig | MethodAttributes.Static |
-                    MethodAttributes.Private, ModuleDefinition.ImportReference(targetType));
-                ILProcessor delegateProcessor = delegateMethod.Body.GetILProcessor();
-                if (!InvokeConstructor(targetType, delegateProcessor))
-                {
-                    delegateMethodCount--;
-                    staticBody.Remove(staticBody.Body.Instructions.Last());
-                    InternalLogDebug($"No acceptable constructor for '{targetType.FullName}', skipping map", DebugLogLevel.Verbose);
-                    continue;
-                }
-                delegateProcessor.Emit(OpCodes.Ret);
-                delegateContainer.Methods.Add(delegateMethod);
-
-                staticBody.Emit(OpCodes.Ldnull);
-                staticBody.Emit(OpCodes.Ldftn, delegateMethod);
-
-                staticBody.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(funcCtor.MakeGenericType(targetType)));
-
-                staticBody.Emit(OpCodes.Ldc_I4, map.Keys.Count);
-                staticBody.Emit(OpCodes.Newarr, type);
-
-                int arrayIndex = 0;
-                foreach (TypeDefinition key in map.Keys)
-                {
-                    TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                    InternalLogDebug($"Mapping {importedKey.FullName} => {targetType.FullName} ({map.Lifetime})", DebugLogLevel.Default);
-                    staticBody.Emit(OpCodes.Dup);
-                    staticBody.Emit(OpCodes.Ldc_I4, arrayIndex++);
-                    staticBody.Emit(OpCodes.Ldtoken, importedKey);
-                    staticBody.Emit(OpCodes.Call, getTypeMethod);
-                    staticBody.Emit(OpCodes.Stelem_Ref);
-                }
-
-                MethodReference addMethod;
-                switch (map.Lifetime)
-                {
-                    case Lifetime.Singleton:
-                        addMethod = addSingleton;
-                        break;
-                    case Lifetime.LazySingleton:
-                        addMethod = addLazySingleton;
-                        break;
-                    case Lifetime.WeakTransient:
-                        addMethod = addWeakTransient;
-                        break;
-                    case Lifetime.Transient:
-                        addMethod = addTransient;
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Invalid Crate value '{map.Lifetime}'");
-                }
-                var addGenericMethod = new GenericInstanceMethod(addMethod);
-                addGenericMethod.GenericArguments.Add(ModuleDefinition.ImportReference(targetType));
-
-                staticBody.Emit(OpCodes.Call, addGenericMethod);
-                staticBody.Emit(OpCodes.Nop);
-            }
-            catch (Exception e)
-            {
-                LogWarning($"Failed to create map for {map}\r\n{e}");
-            }
+            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
+            initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
+            initProcessor.Emit(OpCodes.Call, setupMethod);
+            initProcessor.Emit(OpCodes.Nop);
         }
+        else
+        {
+            InternalLogDebug("No setup method found", DebugLogLevel.Default);
+        }
+
+        Instruction loadForBuild = Instruction.Create(OpCodes.Ldloc_0);
+
+        initProcessor.Emit(OpCodes.Ldarg_0);
+        initProcessor.Emit(OpCodes.Brfalse_S, loadForBuild);
+        initProcessor.Emit(OpCodes.Ldarg_0);
+        initProcessor.Emit(OpCodes.Ldloc_0);
+        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<Action<IApplicationBuilder>>(nameof(Action<IApplicationBuilder>.Invoke)));
+
+
+        initProcessor.Append(loadForBuild);
+        var buildMethod = ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.Build));
+        buildMethod.ReturnType = Import.IServiceProvider; //Must update the return type to handle .net core apps
+        initProcessor.Emit(OpCodes.Callvirt, buildMethod);
+        initProcessor.Emit(OpCodes.Stsfld, globalServiceProvider);
+
+        initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
+        initProcessor.Emit(OpCodes.Call, Import.GlobalDI_Register);
+
+
+        initProcessor.Emit(OpCodes.Ret);
+
+        return initMethod;
+    }
+
+    private MethodDefinition GenerateDisposeMethod(FieldDefinition globalServiceProvider)
+    {
+        var disposeMethod = new MethodDefinition(nameof(DI.Dispose),
+            MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
+            ModuleDefinition.ImportReference(typeof(void)));
+
+        VariableDefinition disposable = new VariableDefinition(ModuleDefinition.Get<IDisposable>());
+        disposeMethod.Body.Variables.Add(disposable);
+
+        ILProcessor processor = disposeMethod.Body.GetILProcessor();
+        Instruction afterDispose = Instruction.Create(OpCodes.Nop);
+
+        processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
+        processor.Emit(OpCodes.Isinst, ModuleDefinition.Get<IDisposable>());
+        processor.Emit(OpCodes.Dup);
+        processor.Emit(OpCodes.Stloc_0); //disposable
+        processor.Emit(OpCodes.Brfalse_S, afterDispose);
+        processor.Emit(OpCodes.Ldloc_0); //disposable
+        processor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IDisposable>(nameof(IDisposable.Dispose)));
+
+        processor.Append(afterDispose);
+        
+        processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
+        processor.Emit(OpCodes.Call, Import.GlobalDI_Unregister);
+        processor.Emit(OpCodes.Pop);
+
+        processor.Emit(OpCodes.Ldnull);
+        processor.Emit(OpCodes.Stsfld, globalServiceProvider);
+
+        processor.Emit(OpCodes.Ret);
+        return disposeMethod;
     }
 
     private MethodDefinition FindSetupMethod()
     {
-        return ModuleDefinition
-            .GetAllTypes()
-            .SelectMany(t => t.GetMethods())
-            .FirstOrDefault(md => md.IsStatic &&
-                                  (md.IsPublic || md.IsAssembly) &&
-                                  md.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>()) &&
-                                  md.Parameters.Count == 1 &&
-                                  md.Parameters[0].ParameterType.IsType<ContainerMap>());
-    }
-
-    private FieldDefinition CreateStaticReadonlyField<T>(string name, bool @public)
-    {
-        return CreateStaticReadonlyField(name, @public, ModuleDefinition.Get<T>());
-    }
-
-    private static FieldDefinition CreateStaticReadonlyField(string name, bool @public, TypeReference type)
-    {
-        return new FieldDefinition(name,
-            (@public ? FieldAttributes.Public : FieldAttributes.Private) | FieldAttributes.Static |
-            FieldAttributes.InitOnly, type);
+        foreach (var method in ModuleDefinition.GetAllTypes().SelectMany(t => t.GetMethods())
+            .Where(m => m.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>())))
+        {
+            if (!method.IsStatic)
+            {
+                LogWarning($"Setup method '{method.FullName}' must be static");
+                return null;
+            }
+            if (!method.IsPublic && !method.IsAssembly)
+            {
+                LogWarning($"Setup method '{method.FullName}' must be public or internal");
+                return null;
+            }
+            if (method.Parameters.Count != 1 || !method.Parameters[0].ParameterType.IsType<IApplicationBuilder>())
+            {
+                LogWarning($"Setup method '{method.FullName}' must take a single parameter of type '{typeof(IApplicationBuilder).FullName}'");
+                return null;
+            }
+            return method;
+        }
+        return null;
     }
 }

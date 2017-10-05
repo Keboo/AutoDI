@@ -5,6 +5,7 @@ namespace AutoDI
         None,
         LazySingleton,
         Singleton,
+        Scoped,
         WeakTransient,
         Transient
     }

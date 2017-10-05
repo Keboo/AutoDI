@@ -4,7 +4,10 @@ using AutoDI.Fody;
 using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
+using AutoDI;
+using Map = AutoDI.Fody.Map;
 
+// ReSharper disable once CheckNamespace
 partial class ModuleWeaver
 {
     private Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes)
@@ -104,12 +107,23 @@ partial class ModuleWeaver
         {
             foreach (Map settingsMap in settings.Maps)
             {
-                //TODO: Logging for the various cases where we don't map...
-                if (settingsMap.TryGetMap(typeName, out string mappedType) &&
-                    allTypes.TryGetValue(mappedType, out TypeDefinition mapped) &&
-                    (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped)))
+                if (settingsMap.TryGetMap(typeName, out string mappedType))
                 {
-                    map.Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace);
+                    if (allTypes.TryGetValue(mappedType, out TypeDefinition mapped))
+                    {
+                        if (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped))
+                        {
+                            map.Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace);
+                        }
+                        else
+                        {
+                            InternalLogDebug($"Found map '{typeName}' => '{mappedType}', but {mappedType} cannot be cast to '{typeName}'. Ignoring.", DebugLogLevel.Verbose);
+                        }
+                    }
+                    else
+                    {
+                        InternalLogDebug($"Found map '{typeName}' => '{mappedType}', but {mappedType} does not exist. Ignoring.", DebugLogLevel.Verbose);
+                    }
                 }
             }
         }

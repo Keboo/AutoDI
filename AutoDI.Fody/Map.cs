@@ -27,5 +27,10 @@ namespace AutoDI.Fody
             mappedType = null;
             return false;
         }
+
+        public override string ToString()
+        {
+            return $"'{_fromRegex}' => '{_to}'";
+        }
     }
 }

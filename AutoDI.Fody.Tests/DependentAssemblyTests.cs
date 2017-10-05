@@ -11,7 +11,7 @@ namespace AutoDI.Fody.Tests
     [TestClass]
     public class DependentAssemblyTests
     {
-        private static Assembly _sharedAssembly;
+        //private static Assembly _sharedAssembly;
         private static Assembly _mainAssembly;
 
         [ClassInitialize]
@@ -20,25 +20,50 @@ namespace AutoDI.Fody.Tests
             var gen = new Generator();
 
             var testAssemblies = await gen.Execute();
-            _sharedAssembly = testAssemblies["shared"].Assembly;
+            
+            //_sharedAssembly = testAssemblies["shared"].Assembly;
             _mainAssembly = testAssemblies["main"].Assembly;
+
+        }
+
+        [TestCleanup]
+        public void Cleanup()
+        {
+            DI.Dispose(_mainAssembly);
         }
 
         [TestMethod]
         public void CanLoadTypesFromDependentAssemblies()
         {
-            ContainerMap map = AutoDIContainer.GetMap(_mainAssembly);
+            IContainer map = null;
+            DI.Init(_mainAssembly, builder =>
+            {
+                builder.ConfigureContinaer<IContainer>(container =>
+                {
+                    map = container;
+                });
+            });
+
             Assert.IsNotNull(map);
-            Assert.IsTrue(map.IsMapped<IService, Service>(typeof(DependentAssemblyTests)));
-            Assert.IsTrue(map.IsMapped<Service, Service>(typeof(DependentAssemblyTests)));
-            Assert.IsTrue(map.IsMapped<Manager, Manager>(typeof(DependentAssemblyTests)));
-            Assert.IsTrue(map.IsMapped<Program, Program>(typeof(DependentAssemblyTests)));
+            Assert.IsTrue(map.IsMapped<IService, Service>(GetType()));
+            Assert.IsTrue(map.IsMapped<Service, Service>(GetType()));
+            Assert.IsTrue(map.IsMapped<Manager, Manager>(GetType()));
+            Assert.IsTrue(map.IsMapped<Program, Program>(GetType()));
+        }
+
+        [TestMethod]
+        public void DependenciesInReferencedAssembliesResolve()
+        {
+            _mainAssembly.InvokeEntryPoint();
+            dynamic manager = _mainAssembly.GetStaticProperty<Program>(nameof(Program.Manager), GetType());
+            Assert.IsNotNull(manager);
+            Assert.IsNotNull(manager.Service);
         }
     }
 
     //<assembly:shared />
-    //<ref: AutoDI/>
     //<weaver: AutoDI />
+    //<ref: AutoDI/>
     namespace SharedAssembly
     {
         using AutoDI;
@@ -49,24 +74,37 @@ namespace AutoDI.Fody.Tests
 
         public class Manager
         {
+            public IService Service { get; }
+
             public Manager([Dependency] IService service = null)
-            { }
+            {
+                Service = service;
+            }
         }
     }
 
     //<assembly:main />
     //<type:consoleApplication />
     //<ref: shared />
+    //<ref: AutoDI />
     //<weaver: AutoDI />
     namespace MainAssembly
     {
+        using AutoDI;
         using SharedAssembly;
 
         public class Program
         {
+            public static Manager Manager { get; set; }
+
             public static void Main(string[] args)
             {
-                var manager = new Manager();
+                Manager = new Manager();
+            }
+
+            public Program([Dependency] IService service = null)
+            {
+                
             }
         }
     }

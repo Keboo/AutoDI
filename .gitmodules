@@ -1,0 +1,3 @@
+[submodule "ThirdParty/StructureMap/StructureMap.Microsoft.DependencyInjection"]
+	path = ThirdParty/StructureMap/StructureMap.Microsoft.DependencyInjection
+	url = https://github.com/structuremap/StructureMap.Microsoft.DependencyInjection.git

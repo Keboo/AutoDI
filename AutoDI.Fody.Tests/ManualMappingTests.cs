@@ -1,5 +1,4 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Fody;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 using System.Reflection;
@@ -14,6 +13,7 @@ namespace AutoDI.Fody.Tests
     public class ManualMappingTests
     {
         private static Assembly _testAssembly;
+        private IContainer _map;
 
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
@@ -26,8 +26,8 @@ namespace AutoDI.Fody.Tests
                     dynamic weaver = args.Weaver;
                     weaver.Config = XElement.Parse($@"
     <AutoDI Behavior=""{Behaviors.None}"">
-        <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from="".*"" to=""$0"" />
+        <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
         <map from=""IService4"" to=""Service4"" force=""true"" />
         <map from=""Service5"" to=""Service5Extended"" />
 
@@ -40,17 +40,32 @@ namespace AutoDI.Fody.Tests
             _testAssembly = (await gen.Execute()).SingleAssembly();
         }
 
+        [TestInitialize]
+        public void TestSetup()
+        {
+            DI.Init(_testAssembly, builder =>
+            {
+                builder.ConfigureContinaer<IContainer>(map =>
+                {
+                    _map = map;
+                });
+            });
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            DI.Dispose(_testAssembly);
+        }
+
         [TestMethod]
         public void CanManuallyMapTypes()
         {
-            AutoDIContainer.Inject(_testAssembly);
-
             dynamic sut = _testAssembly.CreateInstance<Manager>(typeof(ManualMappingTests));
             Assert.IsTrue(((object)sut.Service).Is<Service>(typeof(ManualMappingTests)));
             Assert.IsNull(sut.Service2);
-
-            var map = AutoDIContainer.GetMap(_testAssembly);
-            var mappings = map.GetMappings().ToArray();
+            
+            var mappings = _map.GetMappings().ToArray();
 
             Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService2>(typeof(ManualMappingTests)) || m.TargetType.Is<Service2>(typeof(ManualMappingTests))));
         }
@@ -80,8 +95,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void WhenClassDoesNotImplementInterfaceItIsNotMapped()
         {
-            var map = AutoDIContainer.GetMap(_testAssembly);
-            var mapings = map.GetMappings().ToArray();
+            var mapings = _map.GetMappings().ToArray();
 
             Assert.IsFalse(mapings.Any(m => m.SourceType.Is<IService3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
             Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
@@ -90,14 +104,12 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanForceMappingWhenClassDoesNotImplementInterface()
         {
-            var map = AutoDIContainer.GetMap(_testAssembly);
-            var mapings = map.GetMappings().ToArray();
+            var mapings = _map.GetMappings().ToArray();
 
             Assert.IsTrue(mapings.Any(m => m.SourceType.Is<IService4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
             Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
-
-            //Just because you can map them, doesn't mean you can actually get anything back!
-            Assert.IsNull(_testAssembly.Resolve<IService4>(typeof(ManualMappingTests)));
+            
+            Assert.IsTrue(_testAssembly.Resolve<IService4>(typeof(ManualMappingTests)).Is<Service4>(typeof(ManualMappingTests)));
         }
 
         [TestMethod]

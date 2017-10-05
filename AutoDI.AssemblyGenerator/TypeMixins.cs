@@ -25,7 +25,7 @@ namespace AutoDI.AssemblyGenerator
             if (type == null) return null;
             string rv = type.FullName;
 
-            if (containerType?.Namespace != null && rv.StartsWith(containerType.Namespace))
+            if (containerType?.Namespace != null && rv?.StartsWith(containerType.Namespace) == true)
             {
                 rv = rv.Substring(containerType.Namespace.Length).TrimStart('.');
             }

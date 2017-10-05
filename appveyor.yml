@@ -1,7 +1,7 @@
 # configuration for master/CI branch
 -
   environment:
-    autodi_version: 2.1.4
+    autodi_version: 3.0.0
   branches:
     only:
     - master
@@ -29,9 +29,13 @@
     verbosity: minimal
   after_build:
   - ps: >-
+      .\Nuget\UpdateNuspecFiles.ps1 -Version "$env:autodi_version-ci$env:appveyor_build_number"
+    
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
       nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
+    
+      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
   artifacts:
   - path: '*.nupkg'
     name: NuGets
@@ -39,7 +43,7 @@
 #Configuration for releases
 -
   environment:
-    autodi_version: 2.1.4
+    autodi_version: 3.0.0
   branches:
     only:
     - release
@@ -64,9 +68,13 @@
     verbosity: minimal
   after_build:
   - ps: >-
+      .\Nuget\UpdateNuspecFiles.ps1 -Version "$env:autodi_version"
+    
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
     
       nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
+    
+      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$env:autodi_version"  -Symbols
   artifacts:
   - path: '*.nupkg'
     name: NuGets

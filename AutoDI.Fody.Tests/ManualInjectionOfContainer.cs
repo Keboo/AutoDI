@@ -7,8 +7,6 @@ using System.Xml.Linq;
 
 namespace AutoDI.Fody.Tests
 {
-
-
     [TestClass]
     public class ManualInjectionOfContainer
     {
@@ -23,7 +21,7 @@ namespace AutoDI.Fody.Tests
                 if (args.Weaver.Name == "AutoDI")
                 {
                     dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse(@"<AutoDI InjectContainer=""False"" />");
+                    weaver.Config = XElement.Parse(@"<AutoDI AutoInit=""False"" />");
                 }
             };
             
@@ -33,13 +31,22 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanManuallyInjectTheGeneratedContainer()
         {
-            //Invoke the entry point, since this is where the automatic injdection would occur
+            //Invoke the entry point, since this is where the automatic injection would occur
             _testAssembly.InvokeEntryPoint();
 
-            dynamic sut = _testAssembly.CreateInstance<Sut>();
-            Assert.IsFalse(((object)sut.Service).Is<Service>());
+            dynamic sut;
+            try
+            {
+                //This should throw or return null since AutoDI has not been initialized
+                sut = _testAssembly.CreateInstance<Sut>();
+                Assert.IsNull(sut.Service);
+            }
+            catch (TargetInvocationException e) 
+                when (e.InnerException is NotInitializedException)
+            { }
+            
 
-            AutoDIContainer.Inject(_testAssembly);
+            DI.Init(_testAssembly);
 
             sut = _testAssembly.CreateInstance<Sut>();
             Assert.IsTrue(((object)sut.Service).Is<Service>());
