@@ -26,10 +26,10 @@ namespace AutoDI
             {
                 case Lifetime.Singleton:
                 case Lifetime.LazySingleton:
+                case Lifetime.WeakSingleton:
                     return ServiceLifetime.Singleton;
                 case Lifetime.Scoped:
                     return ServiceLifetime.Scoped;
-                case Lifetime.WeakTransient:
                 case Lifetime.Transient:
                     return ServiceLifetime.Transient;
                 default:

@@ -169,7 +169,7 @@ namespace AutoDI
                 switch (Lifetime)
                 {
                     case Lifetime.Scoped:
-                    case Lifetime.WeakTransient:
+                    case Lifetime.WeakSingleton:
                         return new DelegateContainer(Lifetime, TargetType, _creationFactory);
                     default:
                         return this;
@@ -199,7 +199,7 @@ namespace AutoDI
                                 }
                             };
                         }
-                    case Lifetime.WeakTransient:
+                    case Lifetime.WeakSingleton:
                         {
                             var weakRef = new WeakReference<object>(null);
                             return provider =>
