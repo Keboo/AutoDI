@@ -131,9 +131,8 @@ namespace AutoDI.Fody
             {
                 string typePattern = typeNode.GetAttributeValue("Name");
                 if (string.IsNullOrWhiteSpace(typePattern)) continue;
-                string createStr = typeNode.GetAttributeValue(nameof(Lifetime));
-                Lifetime lifetime;
-                if (createStr == null || !Enum.TryParse(createStr, out lifetime))
+                string createStr = typeNode.GetAttributeValue("Lifetime");
+                if (createStr == null || !Enum.TryParse(createStr, out Lifetime lifetime))
                 {
                     lifetime = Lifetime.LazySingleton;
                 }

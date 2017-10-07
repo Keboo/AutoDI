@@ -82,47 +82,47 @@ namespace Microsoft.Extensions.DependencyInjection
                 Lifetime.Transient);
         }
 
-        public static IServiceCollection AddAutoDIWeakTransient(this IServiceCollection services, Type serviceType,
+        public static IServiceCollection AddAutoDIWeakSingleton(this IServiceCollection services, Type serviceType,
             Type implementationType)
         {
-            return services.AddAutoDIService(serviceType, implementationType, Lifetime.WeakTransient);
+            return services.AddAutoDIService(serviceType, implementationType, Lifetime.WeakSingleton);
         }
 
-        public static IServiceCollection AddAutoDIWeakTransient(this IServiceCollection services, Type serviceType,
+        public static IServiceCollection AddAutoDIWeakSingleton(this IServiceCollection services, Type serviceType,
             Func<IServiceProvider, object> implementationFactory)
         {
-            return services.AddAutoDIService(serviceType, serviceType, implementationFactory, Lifetime.WeakTransient);
+            return services.AddAutoDIService(serviceType, serviceType, implementationFactory, Lifetime.WeakSingleton);
         }
 
-        public static IServiceCollection AddAutoDIWeakTransient<TService, TImplementation>(this IServiceCollection services)
+        public static IServiceCollection AddAutoDIWeakSingleton<TService, TImplementation>(this IServiceCollection services)
             where TService : class where TImplementation : class, TService
         {
-            return services.AddAutoDIService(typeof(TService), typeof(TImplementation), Lifetime.WeakTransient);
+            return services.AddAutoDIService(typeof(TService), typeof(TImplementation), Lifetime.WeakSingleton);
         }
 
-        public static IServiceCollection AddAutoDIWeakTransient(this IServiceCollection services, Type serviceType)
+        public static IServiceCollection AddAutoDIWeakSingleton(this IServiceCollection services, Type serviceType)
         {
-            return services.AddAutoDIService(serviceType, serviceType, Lifetime.WeakTransient);
+            return services.AddAutoDIService(serviceType, serviceType, Lifetime.WeakSingleton);
         }
 
-        public static IServiceCollection AddAutoDIWeakTransient<TService>(this IServiceCollection services) where TService : class
+        public static IServiceCollection AddAutoDIWeakSingleton<TService>(this IServiceCollection services) where TService : class
         {
-            return services.AddAutoDIService(typeof(TService), typeof(TService), Lifetime.WeakTransient);
+            return services.AddAutoDIService(typeof(TService), typeof(TService), Lifetime.WeakSingleton);
         }
 
-        public static IServiceCollection AddAutoDIWeakTransient<TService>(this IServiceCollection services,
+        public static IServiceCollection AddAutoDIWeakSingleton<TService>(this IServiceCollection services,
             Func<IServiceProvider, TService> implementationFactory) where TService : class
         {
             return services.AddAutoDIService(typeof(TService), typeof(TService), implementationFactory,
-                Lifetime.WeakTransient);
+                Lifetime.WeakSingleton);
         }
 
-        public static IServiceCollection AddAutoDIWeakTransient<TService, TImplementation>(this IServiceCollection services,
+        public static IServiceCollection AddAutoDIWeakSingleton<TService, TImplementation>(this IServiceCollection services,
             Func<IServiceProvider, TImplementation> implementationFactory)
             where TService : class where TImplementation : class, TService
         {
             return services.AddAutoDIService(typeof(TService), typeof(TImplementation), implementationFactory,
-                Lifetime.WeakTransient);
+                Lifetime.WeakSingleton);
         }
 
         public static IServiceCollection AddAutoDIScoped(this IServiceCollection services, Type serviceType,
