@@ -10,8 +10,11 @@
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
     <iconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <description>AutoDI integration for ASP.NET Core.</description>
-    <releaseNotes>Initial release.</releaseNotes>
+    <description>
+AutoDI integration for ASP.NET Core.
+
+Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
+    </description>
     <copyright>Copyright 2017</copyright>
     <tags>AutoDI</tags>
     <dependencies>
