@@ -41,13 +41,13 @@ namespace AutoDI.Fody.Tests
         {
             var xml = XElement.Parse(@"
                     <AutoDI>
-                        <type name=""MyType.*"" lifetime=""Transient"" />
+                        <type name=""NS.MyType*"" lifetime=""Transient"" />
                     </AutoDI>");
 
             var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Types.Count);
-            Assert.IsTrue(settings.Types[0].Matches("MyType2"));
+            Assert.IsTrue(settings.Types[0].Matches("NS.MyType2"));
             Assert.AreEqual(Lifetime.Transient, settings.Types[0].Lifetime);
         }
 
@@ -72,14 +72,13 @@ namespace AutoDI.Fody.Tests
         {
             var xml = XElement.Parse(@"
                     <AutoDI>
-                        <map from=""ViewModels.(.*)"" to=""Views.$1"" />
+                        <map from=""regex:ViewModels.(.*)"" to=""Views.$1"" />
                     </AutoDI>");
 
             var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Maps.Count);
-            string mappedType;
-            Assert.IsTrue(settings.Maps[0].TryGetMap("ViewModels.Test", out mappedType));
+            Assert.IsTrue(settings.Maps[0].TryGetMap("ViewModels.Test", out var mappedType));
             Assert.AreEqual("Views.Test", mappedType);
         }
 

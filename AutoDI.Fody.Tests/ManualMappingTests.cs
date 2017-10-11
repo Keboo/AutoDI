@@ -26,13 +26,13 @@ namespace AutoDI.Fody.Tests
                     dynamic weaver = args.Weaver;
                     weaver.Config = XElement.Parse($@"
     <AutoDI Behavior=""{Behaviors.None}"">
-        <map from="".*"" to=""$0"" />
-        <map from=""(.*)\.I(.+)"" to=""$1.$2"" />
+        <map from=""regex:.*"" to=""$0"" />
+        <map from=""regex:(.*)\.I(.+)"" to=""$1.$2"" />
         <map from=""IService4"" to=""Service4"" force=""true"" />
         <map from=""Service5"" to=""Service5Extended"" />
 
         <type name=""Service2"" Lifetime=""{Lifetime.None}"" />
-        <type name=""My.*"" Lifetime=""{Lifetime.Transient}"" />
+        <type name=""My*"" Lifetime=""{Lifetime.Transient}"" />
     </AutoDI>");
                 }
             };
