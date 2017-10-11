@@ -1,5 +1,7 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Xml.Linq;
+using Mono.Cecil;
 
 namespace AutoDI.Fody.Tests
 {
@@ -62,8 +64,8 @@ namespace AutoDI.Fody.Tests
             var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Maps.Count);
-            string mappedType;
-            Assert.IsTrue(settings.Maps[0].TryGetMap("IService", out mappedType));
+            var type = new TypeDefinition("", "IService", TypeAttributes.Interface);
+            Assert.IsTrue(settings.Maps[0].TryGetMap(type, out string mappedType));
             Assert.AreEqual("Service", mappedType);
         }
 
@@ -78,7 +80,8 @@ namespace AutoDI.Fody.Tests
             var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Maps.Count);
-            Assert.IsTrue(settings.Maps[0].TryGetMap("ViewModels.Test", out var mappedType));
+            var type = new TypeDefinition("ViewModels", "Test", TypeAttributes.Class);
+            Assert.IsTrue(settings.Maps[0].TryGetMap(type, out var mappedType));
             Assert.AreEqual("Views.Test", mappedType);
         }
 
@@ -93,7 +96,8 @@ namespace AutoDI.Fody.Tests
             var settings = Settings.Parse(new Settings(), xml);
 
             Assert.AreEqual(1, settings.Assemblies.Count);
-            Assert.IsTrue(settings.Assemblies[0].Matches("MyAssembly.Test"));
+            var assembly = AssemblyDefinition.CreateAssembly(new AssemblyNameDefinition("MyAssembly.Test", new Version(1, 0, 0)), "<Module>", ModuleKind.Dll);
+            Assert.IsTrue(settings.Assemblies[0].Matches(assembly));
         }
 
         [TestMethod]

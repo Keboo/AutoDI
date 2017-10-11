@@ -2,10 +2,10 @@
 {
     internal class MatchType
     {
-        private readonly Matcher _matcher;
+        private readonly Matcher<string> _matcher;
         public MatchType(string type, Lifetime lifetime)
         {
-            _matcher = new Matcher(type);
+            _matcher = new Matcher<string>(x => x, type);
             Lifetime = lifetime;
         }
 

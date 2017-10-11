@@ -101,13 +101,13 @@ partial class ModuleWeaver
 
     private void AddSettingsMap(Settings settings, Mapping map, IEnumerable<TypeDefinition> types)
     {
-        var allTypes = types.ToDictionary(x => x.FullName);
+        Dictionary<string, TypeDefinition> allTypes = types.ToDictionary(x => x.FullName);
 
         foreach (string typeName in allTypes.Keys)
         {
             foreach (Map settingsMap in settings.Maps)
             {
-                if (settingsMap.TryGetMap(typeName, out string mappedType))
+                if (settingsMap.TryGetMap(allTypes[typeName], out string mappedType))
                 {
                     if (allTypes.TryGetValue(mappedType, out TypeDefinition mapped))
                     {

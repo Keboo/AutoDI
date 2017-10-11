@@ -1,15 +1,17 @@
-﻿namespace AutoDI.Fody
+﻿using Mono.Cecil;
+
+namespace AutoDI.Fody
 {
     internal class MatchAssembly
     {
-        private readonly Matcher _assemblyNameMatcher;
+        private readonly Matcher<AssemblyDefinition> _assemblyNameMatcher;
 
         public MatchAssembly(string assemblyName)
         {
-            _assemblyNameMatcher = new Matcher(assemblyName);
+            _assemblyNameMatcher = new Matcher<AssemblyDefinition>(ad => ad.FullName, assemblyName);
         }
 
-        public bool Matches(string assemblyName) => _assemblyNameMatcher.TryMatch(assemblyName, out _);
+        public bool Matches(AssemblyDefinition assemblyName) => _assemblyNameMatcher.TryMatch(assemblyName, out _);
 
         public override string ToString()
         {

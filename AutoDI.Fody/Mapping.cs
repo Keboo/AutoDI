@@ -15,7 +15,6 @@ namespace AutoDI.Fody
             //TODO Better filtering, mostly just to remove <Module>
             if (targetType.FullName.Contains('<') || targetType.FullName.Contains('>')) return;
 
-
             //Last key in wins, this allows for manual mapping to override things added with behaviors
             bool duplicateKey = false;
             foreach (var kvp in _maps.Where(kvp => kvp.Value.Keys.Contains(key)).ToList())

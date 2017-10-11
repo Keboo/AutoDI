@@ -1,20 +1,23 @@
-﻿using System.Text.RegularExpressions;
+﻿using Mono.Cecil;
 
 namespace AutoDI.Fody
 {
     internal class Map
     {
-        private readonly Matcher _matcher;
+        private readonly Matcher<TypeDefinition> _matcher;
 
         public bool Force { get; }
 
         public Map(string from, string to, bool force)
         {
-            _matcher = new Matcher(from, to);
+            _matcher = new Matcher<TypeDefinition>(type => type.FullName, from, to);
+            _matcher.AddVariable("ns", type => type.Namespace);
+            _matcher.AddVariable("fn", type => type.FullName);
+            _matcher.AddVariable("name", type => type.Name);
             Force = force;
         }
 
-        public bool TryGetMap(string fromType, out string mappedType)
+        public bool TryGetMap(TypeDefinition fromType, out string mappedType)
         {
             return _matcher.TryMatch(fromType, out mappedType);
         }
