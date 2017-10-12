@@ -20,6 +20,28 @@ namespace AutoDI
             }
         }
 
+        public static T GetService<T>()
+        {
+            return GetService<T>(new object[] { });
+        }
+
+        public static object GetService(Type serviceType, object[] parameters)
+        {
+            lock(Providers)
+            {
+                if (Providers.Count == 0)
+                    throw new NotInitializedException();
+
+                return Providers.Select(provider => provider.GetService(serviceType, parameters))
+                    .FirstOrDefault(service => service != null);
+            }
+        }
+
+        public static object GetService(Type serviceType)
+        {
+            return GetService(serviceType, new object[] { });
+        }
+
         public static void Register(IServiceProvider provider)
         {
             lock (Providers)
