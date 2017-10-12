@@ -44,7 +44,7 @@ public partial class ModuleWeaver
             GlobalDI_Unregister = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
                 .Single(m => m.Name == nameof(GlobalDI.Unregister))));
             GlobalDI_GetService = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
-                .Single(m => m.Name == nameof(GlobalDI.GetService))));
+                .Single(m => m.Name == nameof(GlobalDI.GetService) && m.HasGenericParameters == true && m.Parameters.Count == 1)));
 
             MethodReference UpdateMethod(MethodReference method)
             {
