@@ -40,4 +40,25 @@ namespace AutoDI
             : base(message)
         { }
     }
+
+    public class RequiredMethodMissingException : AutoDIException
+    {
+        public RequiredMethodMissingException(string message)
+            : base(message)
+        { }
+    }
+
+    public class GeneratedClassMissingException : AutoDIException
+    {
+        public GeneratedClassMissingException(string message)
+            : base(message)
+        { }
+    }
+
+    public class GlobalServiceProviderNotFoundException : AutoDIException
+    {
+        public GlobalServiceProviderNotFoundException(string message)
+            : base(message)
+        { }
+    }
 }

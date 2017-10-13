@@ -16,8 +16,7 @@ namespace AutoDI
             Type autoDI = GetAutoDIType(containerAssembly);
 
             var method = autoDI.GetRuntimeMethod(nameof(Init), new[] { typeof(Action<IApplicationBuilder>) });
-            //TODO: Better exception type
-            if (method == null) throw new InvalidOperationException($"Could not find {nameof(Init)} method on {autoDI.FullName}");
+            if (method == null) throw new RequiredMethodMissingException($"Could not find {nameof(Init)} method on {autoDI.FullName}");
             method.Invoke(null, new object[] { configureMethod });
         }
 
@@ -26,8 +25,7 @@ namespace AutoDI
             Type autoDI = GetAutoDIType(containerAssembly);
 
             var method = autoDI.GetRuntimeMethod(nameof(AddServices), new[] { typeof(IServiceCollection) });
-            //TODO: Better exception type
-            if (method == null) throw new InvalidOperationException($"Could not find {nameof(AddServices)} method on {autoDI.FullName}");
+            if (method == null) throw new RequiredMethodMissingException($"Could not find {nameof(AddServices)} method on {autoDI.FullName}");
             method.Invoke(null, new object[] { collection });
         }
 
@@ -36,8 +34,7 @@ namespace AutoDI
             Type autoDI = GetAutoDIType(containerAssembly);
 
             var method = autoDI.GetRuntimeMethod(nameof(Dispose), new Type[0]);
-            //TODO: Better exception type
-            if (method == null) throw new InvalidOperationException($"Could not find {nameof(Dispose)} method on {autoDI.FullName}");
+            if (method == null) throw new RequiredMethodMissingException($"Could not find {nameof(Dispose)} method on {autoDI.FullName}");
             method.Invoke(null, new object[0]);
         }
 
@@ -46,9 +43,8 @@ namespace AutoDI
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
 
             Type autoDI = GetAutoDIType(assembly);
-            //TODO: Better exception type
             FieldInfo field = autoDI.GetRuntimeFields().SingleOrDefault(f => f.Name == GlobalServiceProviderName) ??
-                        throw new InvalidOperationException($"Could not find {GlobalServiceProviderName} field");
+                        throw new GlobalServiceProviderNotFoundException($"Could not find {GlobalServiceProviderName} field");
             return (IServiceProvider)field.GetValue(null);
         }
 
@@ -60,9 +56,8 @@ namespace AutoDI
                 ? containerAssembly.GetType(typeName)
                 : Type.GetType(typeName);
 
-            //TODO: Better exception type
             if (containerType == null)
-                throw new InvalidOperationException("Could not find AutoDI class. Was the fody weaver run on this assembly?");
+                throw new GeneratedClassMissingException("Could not find AutoDI class. Was the fody weaver run on this assembly?");
             return containerType;
         }
 
