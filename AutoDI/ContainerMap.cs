@@ -109,7 +109,7 @@ namespace AutoDI
                 }
             }
             //Type key not found
-            RaiseTypeKeyNotFoundEvent(new TypeKeyNotFoundEventArgs(key));
+            TypeKeyNotFoundEvent?.Invoke(this, new TypeKeyNotFoundEventArgs(key));
             return default(object);
         }
 
@@ -228,13 +228,6 @@ namespace AutoDI
         #region ContainerMap Events
 
         public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFoundEvent;
-
-        void RaiseTypeKeyNotFoundEvent(AutoDI.TypeKeyNotFoundEventArgs e)
-        {
-            var handler = TypeKeyNotFoundEvent;
-            handler?.Invoke(this, e);
-        }
-
         #endregion
     }
 }

@@ -6,19 +6,19 @@ namespace AutoDI
 {
     public class TypeKeyNotFoundEventArgs : EventArgs
     {
-        Type Key_;
-        DateTime EventTime_;
+        private readonly Type _Key;
+        private readonly DateTime _EventTime;
 
-        public Type Key { get => Key_; }
-        public DateTime EventTime { get => EventTime_; }
+        public Type Key { get => _Key; }
+        public DateTime EventTime { get => _EventTime; }
 
         public TypeKeyNotFoundEventArgs(Type key)
         {
-            Key_ = key;
-            EventTime_ = DateTime.Now;
+            _Key = key;
+            _EventTime = DateTime.Now;
         }
 
         public override string ToString() =>
-            $"{EventTime_.ToString()}: Type key \"{Key_.ToString()}\" not found.";
+            $"{_EventTime.ToString()}: Type key \"{_Key.ToString()}\" not found.";
     }
 }

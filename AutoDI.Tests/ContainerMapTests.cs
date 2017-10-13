@@ -22,7 +22,7 @@ namespace AutoDI.Tests
             services.AddAutoDISingleton<IInterface, Class>();
             map.Add(services);
 
-            var c = map.Get("I'm not your type".GetType(), null);
+            var c = map.Get<string>(null);
             Assert.IsTrue(eventRaised);
         }
 
