@@ -41,7 +41,7 @@ namespace AutoDI.Tests
             services.AddAutoDISingleton<IInterface, Class>();
             map.Add(services);
 
-            var c = map.Get(services.GetType(), null);
+            var c = map.Get<IInterface>(null);
             Assert.IsFalse(eventRaised);
         }
 
