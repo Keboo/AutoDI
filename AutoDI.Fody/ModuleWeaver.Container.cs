@@ -117,9 +117,24 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
     {
-        //TODO: allow for specifying which constructor to use
-        MethodDefinition targetTypeCtor = targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count)
-            .FirstOrDefault();
+        var targetTypeCtors = targetType.GetConstructors();
+        var annotatedConstructors = targetTypeCtors
+            .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.IsType<DiConstructorAttribute>())).ToArray();
+        MethodDefinition targetTypeCtor;
+
+        if (annotatedConstructors.Length > 0)
+        {
+            if (annotatedConstructors.Length > 1)
+            {
+                throw new AutoDIException($"More then one DiConstructor found for type - {targetType.Name}");
+            }
+            targetTypeCtor = annotatedConstructors[0];
+        }
+        else
+        {
+            targetTypeCtor = targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count)
+                .FirstOrDefault();
+        }
 
         if (targetTypeCtor == null) return null;
 
