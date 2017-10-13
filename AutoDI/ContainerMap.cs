@@ -81,11 +81,12 @@ namespace AutoDI
         public T Get<T>(IServiceProvider provider)
         {
             //https://github.com/Keboo/DoubleDownWat
-            object value = Get(typeof(T), provider);
+            object value = Get(typeof(T), provider); //This will raise the TypeKeyNotFound event if Get(...) defaults
             if (value is T result)
             {
                 return result;
             }
+                        
             return default(T);
         }
 
@@ -108,6 +109,8 @@ namespace AutoDI
                         .Invoke(this, new object[] { provider });
                 }
             }
+            //Type key not found
+            RaiseTypeKeyNotFoundEvent(new TypeKeyNotFoundEventArgs(key));
             return default(object);
         }
 
@@ -222,5 +225,17 @@ namespace AutoDI
                 }
             }
         }
+
+        #region ContainerMap Events
+
+        public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFoundEvent;
+
+        void RaiseTypeKeyNotFoundEvent(AutoDI.TypeKeyNotFoundEventArgs e)
+        {
+            var handler = TypeKeyNotFoundEvent;
+            handler?.Invoke(this, e);
+        }
+
+        #endregion
     }
 }

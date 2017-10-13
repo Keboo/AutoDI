@@ -8,6 +8,25 @@ namespace AutoDI.Tests
     public class ContainerMapTests
     {
         [TestMethod]
+        public void TestTypeKeyNotFoundEvent()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            bool eventRaised = false;
+
+            map.TypeKeyNotFoundEvent += delegate (object sender, TypeKeyNotFoundEventArgs e)
+            {
+                eventRaised = true;
+            };
+
+            services.AddAutoDISingleton<IInterface, Class>();
+            map.Add(services);
+
+            var c = map.Get("I'm not your type".GetType(), null);
+            Assert.IsTrue(eventRaised);
+        }
+
+        [TestMethod]
         public void TestGetSingleton()
         {
             var map = new ContainerMap();
