@@ -117,7 +117,6 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
     {
-        //TODO: allow for specifying which constructor to use
         var targetTypeCtors = targetType.GetConstructors();
         var annotatedConstructors = targetTypeCtors
             .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.IsType<DiConstructorAttribute>())).ToArray();
