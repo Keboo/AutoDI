@@ -1,8 +1,9 @@
-﻿using AutoDI.AssemblyGenerator;
+﻿using System;
+using System.Linq;
+using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoDI.Fody.Tests.NestedClassesTestsNamespace;
 
 namespace AutoDI.Fody.Tests
 {
@@ -29,14 +30,58 @@ namespace AutoDI.Fody.Tests
 
         [TestMethod]
         [Description("Issue 75")]
-        public void NestedClassIsNotMapped()
+        public void PrivateNestedClassIsNotMapped()
         {
-            dynamic service = _testAssembly.CreateInstance<Service>();
-            Assert.IsNotNull(service);
-            var nestedServiceName = service.GetNested().GetType().Name;
-            Assert.AreEqual("NestedService", nestedServiceName);
-            var twiceNested = service.GetTwiceNested().GetType().Name;
-            Assert.AreEqual("TwiceNested", twiceNested);
+            var provider = DI.GetGlobalServiceProvider(_testAssembly);
+            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+
+            foreach (var mappedType in containerMap.GetMappings()
+                .Select(m => m.TargetType)
+                .Where(t => t.FullName.StartsWith(nameof(NestedClassesTestsNamespace)) &&
+                            t.Name.Contains("Nested")))
+            {
+                if (mappedType.Name.Contains("Private"))
+                {
+                    Assert.Fail($"Should not have mapped private type '{mappedType.FullName}'");
+                }
+                if (mappedType.Name.Contains("Protected") && !mappedType.Name.Contains("ProtectedInternal"))
+                {
+                    Assert.Fail($"Should not have mapped protected type '{mappedType.FullName}'");
+                }
+            }
+        }
+
+        [TestMethod]
+        [Description("Issue 75")]
+        public void PublicNestedClassIsMapped()
+        {
+            var provider = DI.GetGlobalServiceProvider(_testAssembly);
+            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+
+            //1 for the first nested class, 3 for each of the accessible sub nested classes
+            Assert.AreEqual(4, containerMap.GetMappings().Count(m => m.TargetType.Name.StartsWith("PublicNested")));
+        }
+
+        [TestMethod]
+        [Description("Issue 75")]
+        public void ProtectedInternalNestedClassIsMapped()
+        {
+            var provider = DI.GetGlobalServiceProvider(_testAssembly);
+            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+
+            //1 for the first nested class, 3 for each of the accessible sub nested classes
+            Assert.AreEqual(4, containerMap.GetMappings().Count(m => m.TargetType.Name.StartsWith("ProtectedInternalNested")));
+        }
+
+        [TestMethod]
+        [Description("Issue 75")]
+        public void InternalNestedClassIsMapped()
+        {
+            var provider = DI.GetGlobalServiceProvider(_testAssembly);
+            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+
+            //1 for the first nested class, 3 for each of the accessible sub nested classes
+            Assert.AreEqual(4, containerMap.GetMappings().Count(m => m.TargetType.Name.StartsWith("InternalNested")));
         }
     }
 
@@ -47,20 +92,94 @@ namespace AutoDI.Fody.Tests
     {
         public class Service
         {
-            public object GetNested() => new NestedService();
-            public object GetTwiceNested() => new OtherNestedClass().GetTwiceNested();
-
-            private class NestedService
+            private class PrivateNested
             {
+                private class PrivateNestedNested
+                { }
+
+                protected class ProtectedNestedNested
+                { }
+
+                internal class InternalNestedNested
+                { }
+
+                protected internal class ProtectedInternalNestedNested
+                { }
+
+                public class PublicNestedNested
+                { }
             }
 
-            private class OtherNestedClass
+            protected class ProtectedNested
             {
-                public object GetTwiceNested() => new TwiceNested();
-                private class TwiceNested
-                {
-                    
-                }
+                private class PrivateNestedNested
+                { }
+
+                protected class ProtectedNestedNested
+                { }
+
+                internal class InternalNestedNested
+                { }
+
+                protected internal class ProtectedInternalNestedNested
+                { }
+
+                public class PublicNestedNested
+                { }
+            }
+
+            internal class InternalNested
+            {
+                private class PrivateNestedNested
+                { }
+
+                protected class ProtectedNestedNested
+                { }
+
+                internal class InternalNestedNested
+                { }
+
+                protected internal class ProtectedInternalNestedNested
+                { }
+
+                public class PublicNestedNested
+                { }
+            }
+
+            protected internal class ProtectedInternalNested
+            {
+                private class PrivateNestedNested
+                { }
+
+                protected class ProtectedNestedNested
+                { }
+
+                internal class InternalNestedNested
+                { }
+
+                protected internal class ProtectedInternalNestedNested
+                { }
+
+                public class PublicNestedNested
+                { }
+            }
+
+            public class PublicNested
+            {
+                private class PrivateNestedNested
+                { }
+
+                protected class ProtectedNestedNested
+                { }
+
+                internal class InternalNestedNested
+                { }
+
+                protected internal class ProtectedInternalNestedNested
+                { }
+
+                public class PublicNestedNested
+                { }
             }
         }
     }
