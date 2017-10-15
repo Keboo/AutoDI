@@ -117,6 +117,8 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
     {
+        if (!CanMapType(targetType)) return null;
+
         var targetTypeCtors = targetType.GetConstructors();
         var annotatedConstructors = targetTypeCtors
             .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.IsType<DiConstructorAttribute>())).ToArray();
@@ -284,5 +286,16 @@ partial class ModuleWeaver
             return method;
         }
         return null;
+    }
+
+    //Issue 75
+    private static bool CanMapType(TypeDefinition type)
+    {
+        if (!type.IsNested) return true;
+
+        //public, protected internal, and internal
+        if (!type.IsNestedPublic && !type.IsNestedFamilyOrAssembly && !type.IsNestedAssembly) return false;
+
+        return CanMapType(type.DeclaringType);
     }
 }
