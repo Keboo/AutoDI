@@ -33,7 +33,7 @@ AutoDI uses the latest C# and Visual Studio. If you are experiencing compile iss
 
  * If you have a feature request please open a new issue so we can discuss it.
  * If you have questions or problems, consider posting them in the [gitter chat](https://gitter.im/AutoDIContainer/Lobby).
- * If there is an existing issue marked [Help wanted](/issues?q=is%3Aissue+is%3Aopen+label%3A"help+wanted") feel free to comment so others know you are working on it. If it has been longer than a week, please post an additional comment indicating if you are still working on the issue or not so others know if they should work on it.
+ * If there is an existing issue marked [Help wanted](/issues?q=is%3Aissue+is%3Aopen+label%3A"help+wanted") feel free to comment so others know you are working on it. If it has been longer than a week, please post an additional comment indicating if you are still working on the issue or not so others know if they should work on it. If an issue goes longer than a week without a response, it may be updated so others can work on it.
  
 ### Submitting a Pull Request
 
