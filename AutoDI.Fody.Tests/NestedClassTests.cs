@@ -4,6 +4,7 @@ using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace AutoDI.Fody.Tests
 {
@@ -16,6 +17,18 @@ namespace AutoDI.Fody.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
+
+            gen.WeaverAdded += (sender, args) =>
+            {
+                if (args.Weaver.Name == "AutoDI")
+                {
+                    dynamic weaver = args.Weaver;
+                    weaver.Config = XElement.Parse(@"
+    <AutoDI>
+        <map from=""Service+IService1"" to=""Service+MyService2"" />
+    </AutoDI>");
+                }
+            };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
@@ -82,6 +95,17 @@ namespace AutoDI.Fody.Tests
 
             //1 for the first nested class, 3 for each of the accessible sub nested classes
             Assert.AreEqual(4, containerMap.GetMappings().Count(m => m.TargetType.Name.StartsWith("InternalNested")));
+        }
+
+        [TestMethod]
+        [Description("Issue 59")]
+        public void CanMapNestedTypeWithPlus()
+        {
+            var provider = DI.GetGlobalServiceProvider(_testAssembly);
+            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+
+            var mappings = containerMap.GetMappings().ToList();
+            Assert.IsTrue(mappings.Any(m => m.SourceType.Name == "IService1" && m.TargetType.Name == "MyService2"));
         }
     }
 
@@ -181,6 +205,10 @@ namespace AutoDI.Fody.Tests
                 public class PublicNestedNested
                 { }
             }
+
+            public interface IService1 { }
+            public class MyService1 : IService1 { }
+            public class MyService2 : IService1 { }
         }
     }
     //</assembly>

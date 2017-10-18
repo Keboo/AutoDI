@@ -39,14 +39,27 @@ namespace AutoDI.Fody
 
         public bool TryMatch(T input, out string replacement)
         {
-            string inputValue = _valueProvider(input);
-            if (_regex.IsMatch(inputValue))
+            string providedValue = _valueProvider(input);
+
+            if (GetReplacement(providedValue, out replacement) ||
+                GetReplacement(providedValue.Replace('/', '+'), out replacement))
             {
-                replacement = _replacement != null ? _regex.Replace(inputValue, _replacement) : null;
+                replacement = replacement?.Replace('+', '/');
                 return true;
             }
-            replacement = "";
+
             return false;
+
+            bool GetReplacement(string inputValue, out string replace)
+            {
+                if (_regex.IsMatch(inputValue))
+                {
+                    replace = _replacement != null ? _regex.Replace(inputValue, _replacement) : null;
+                    return true;
+                }
+                replace = null;
+                return false;
+            }
         }
 
         public override string ToString()

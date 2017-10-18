@@ -20,7 +20,7 @@ namespace AutoDI.Fody
         public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior)
         {
             //TODO Better filtering, mostly just to remove <Module>
-            if (targetType.FullName.Contains('<') || targetType.FullName.Contains('>')) return;
+            if (targetType.Name.StartsWith("<") || targetType.Name.EndsWith(">")) return;
 
             //Issue 59 - don't allow compile-time mapping to open generics
             if (targetType.HasGenericParameters || key.HasGenericParameters)
