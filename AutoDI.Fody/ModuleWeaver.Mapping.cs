@@ -12,7 +12,7 @@ partial class ModuleWeaver
 {
     private Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes)
     {
-        var rv = new Mapping();
+        var rv = new Mapping(InternalLogDebug);
 
         if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
         {
@@ -52,7 +52,7 @@ partial class ModuleWeaver
         foreach (KeyValuePair<TypeReference, List<TypeDefinition>> kvp in types)
         {
             if (kvp.Value.Count != 1) continue;
-            map.Add(kvp.Key.Resolve(), kvp.Value[0], DuplicateKeyBehavior.RemoveAll);
+            map.Add(kvp.Key.Resolve(), kvp.Value[0], DuplicateKeyBehavior.RemoveAll, Lifetime.LazySingleton);
         }
     }
 
@@ -60,7 +60,7 @@ partial class ModuleWeaver
     {
         foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract))
         {
-            map.Add(type, type, DuplicateKeyBehavior.RemoveAll);
+            map.Add(type, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
         }
     }
 
@@ -77,7 +77,7 @@ partial class ModuleWeaver
             {
                 if (t.FullName != typeof(object).FullName)
                 {
-                    map.Add(t, type, DuplicateKeyBehavior.RemoveAll);
+                    map.Add(t, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
                 }
             }
         }
@@ -101,19 +101,19 @@ partial class ModuleWeaver
 
     private void AddSettingsMap(Settings settings, Mapping map, IEnumerable<TypeDefinition> types)
     {
-        var allTypes = types.ToDictionary(x => x.FullName);
+        Dictionary<string, TypeDefinition> allTypes = types.ToDictionary(x => x.FullName);
 
         foreach (string typeName in allTypes.Keys)
         {
             foreach (Map settingsMap in settings.Maps)
             {
-                if (settingsMap.TryGetMap(typeName, out string mappedType))
+                if (settingsMap.TryGetMap(allTypes[typeName], out string mappedType))
                 {
                     if (allTypes.TryGetValue(mappedType, out TypeDefinition mapped))
                     {
                         if (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped))
                         {
-                            map.Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace);
+                            map.Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace, settingsMap.Lifetime);
                         }
                         else
                         {

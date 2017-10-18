@@ -181,7 +181,7 @@ public partial class ModuleWeaver
             }
             bool isMainModule = ReferenceEquals(module, ModuleDefinition);
             bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
-            bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(module.Assembly.FullName));
+            bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(module.Assembly));
             if (isMainModule || useAutoDiAssebmlies || matchesAssembly)
             {
                 //Check if it references AutoDI. If it doesn't we will skip

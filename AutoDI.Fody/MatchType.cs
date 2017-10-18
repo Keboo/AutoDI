@@ -1,23 +1,21 @@
-﻿using System.Text.RegularExpressions;
-
-namespace AutoDI.Fody
+﻿namespace AutoDI.Fody
 {
     internal class MatchType
     {
-        private readonly Regex _typeRegex;
+        private readonly Matcher<string> _matcher;
         public MatchType(string type, Lifetime lifetime)
         {
-            _typeRegex = new Regex(type);
+            _matcher = new Matcher<string>(x => x, type);
             Lifetime = lifetime;
         }
 
         public Lifetime Lifetime { get; }
 
-        public bool Matches(string type) => _typeRegex.IsMatch(type);
+        public bool Matches(string type) => _matcher.TryMatch(type, out string _);
 
         public override string ToString()
         {
-            return $"'{_typeRegex}' => {Lifetime}";
+            return $"'{_matcher}' => {Lifetime}";
         }
     }
 }
