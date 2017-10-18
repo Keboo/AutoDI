@@ -12,7 +12,7 @@ partial class ModuleWeaver
 {
     private Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes)
     {
-        var rv = new Mapping();
+        var rv = new Mapping(InternalLogDebug);
 
         if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
         {

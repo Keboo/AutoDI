@@ -1,3 +1,4 @@
+using System;
 using Mono.Cecil;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,12 +9,25 @@ namespace AutoDI.Fody
 {
     internal class Mapping : IEnumerable<TypeMap>
     {
+        private readonly Action<string, DebugLogLevel> _logMessage;
         private readonly Dictionary<string, TypeMap> _maps = new Dictionary<string, TypeMap>();
+
+        public Mapping(Action<string, DebugLogLevel> logMessage)
+        {
+            _logMessage = logMessage ?? throw new ArgumentNullException(nameof(logMessage));
+        }
 
         public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior)
         {
             //TODO Better filtering, mostly just to remove <Module>
             if (targetType.FullName.Contains('<') || targetType.FullName.Contains('>')) return;
+
+            //Issue 59 - don't allow compile-time mapping to open generics
+            if (targetType.HasGenericParameters || key.HasGenericParameters)
+            {
+                _logMessage($"Ignoring map from '{key.FullName}' => '{targetType.FullName}' because it contains an open generic", DebugLogLevel.Verbose);
+                return;
+            }
 
             //Last key in wins, this allows for manual mapping to override things added with behaviors
             bool duplicateKey = false;
@@ -29,6 +43,7 @@ namespace AutoDI.Fody
 
             if (duplicateKey && behavior == DuplicateKeyBehavior.RemoveAll)
             {
+                _logMessage($"Removing duplicate maps with service key '{key.FullName}'", DebugLogLevel.Verbose);
                 return;
             }
 
