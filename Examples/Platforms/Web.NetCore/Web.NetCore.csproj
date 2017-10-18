@@ -8,8 +8,8 @@
     <PackageTargetFallback>$(PackageTargetFallback);portable-net45+win8+wp8+wpa81;</PackageTargetFallback>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AutoDI.AspNetCore" Version="3.0.0-ci96" />
-    <PackageReference Include="AutoDI.Fody" Version="3.0.0-ci96" />
+    <PackageReference Include="AutoDI.AspNetCore" Version="3.0.0" />
+    <PackageReference Include="AutoDI.Fody" Version="3.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.0" />
