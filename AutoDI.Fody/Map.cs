@@ -8,13 +8,16 @@ namespace AutoDI.Fody
 
         public bool Force { get; }
 
-        public Map(string from, string to, bool force)
+        public Lifetime? Lifetime { get; }
+
+        public Map(string from, string to, bool force, Lifetime? lifetime)
         {
             _matcher = new Matcher<TypeDefinition>(type => type.FullName, from, to);
             _matcher.AddVariable("ns", type => type.Namespace);
             _matcher.AddVariable("fn", type => type.FullName);
             _matcher.AddVariable("name", type => type.Name);
             Force = force;
+            Lifetime = lifetime;
         }
 
         public bool TryGetMap(TypeDefinition fromType, out string mappedType)

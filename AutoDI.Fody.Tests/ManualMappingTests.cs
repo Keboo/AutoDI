@@ -29,7 +29,7 @@ namespace AutoDI.Fody.Tests
         <map from=""regex:.*"" to=""$0"" />
         <map from=""regex:(.*)\.I(.+)"" to=""$1.$2"" />
         <map from=""IService4"" to=""Service4"" force=""true"" />
-        <map from=""Service5"" to=""Service5Extended"" />
+        <map from=""Service5"" to=""Service5Extended"" Lifetime=""{Lifetime.Scoped}"" />
 
         <type name=""Service2"" Lifetime=""{Lifetime.None}"" />
         <type name=""My*"" Lifetime=""{Lifetime.Transient}"" />
@@ -116,6 +116,17 @@ namespace AutoDI.Fody.Tests
         public void CanMapFromBaseClassToDerivedClass()
         {
             Assert.IsTrue(_testAssembly.Resolve<Service5>(typeof(ManualMappingTests)).Is<Service5Extended>(typeof(ManualMappingTests)));
+        }
+
+        [TestMethod]
+        [Description("Issue 59")]
+        public void CanDeclareLifetimeInMap()
+        {
+            var mapings = _map.GetMappings().ToArray();
+
+            var map = mapings.Single(m => m.SourceType.Name == nameof(Service5) && m.TargetType.Name == nameof(Service5Extended));
+
+            Assert.AreEqual(Lifetime.Scoped, map.LifetimeMode);
         }
     }
 

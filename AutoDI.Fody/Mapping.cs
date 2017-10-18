@@ -17,7 +17,7 @@ namespace AutoDI.Fody
             _logMessage = logMessage ?? throw new ArgumentNullException(nameof(logMessage));
         }
 
-        public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior)
+        public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior, Lifetime? lifetime)
         {
             //TODO Better filtering, mostly just to remove <Module>
             if (targetType.Name.StartsWith("<") || targetType.Name.EndsWith(">")) return;
@@ -31,14 +31,9 @@ namespace AutoDI.Fody
 
             //Last key in wins, this allows for manual mapping to override things added with behaviors
             bool duplicateKey = false;
-            foreach (var kvp in _maps.Where(kvp => kvp.Value.Keys.Contains(key)).ToList())
+            foreach (var kvp in _maps.Where(kvp => kvp.Value.RemoveKey(key)))
             {
                 duplicateKey = true;
-                kvp.Value.Keys.Remove(key);
-                if (!kvp.Value.Keys.Any())
-                {
-                    _maps.Remove(kvp.Key);
-                }
             }
 
             if (duplicateKey && behavior == DuplicateKeyBehavior.RemoveAll)
@@ -51,8 +46,8 @@ namespace AutoDI.Fody
             {
                 _maps[targetType.FullName] = typeMap = new TypeMap(targetType);
             }
-
-            typeMap.Keys.Add(key);
+            
+            typeMap.AddKey(key, lifetime ?? Settings.DefaultLifetime);
         }
 
         public void UpdateCreation(ICollection<MatchType> matchTypes)
@@ -69,7 +64,7 @@ namespace AutoDI.Fody
                                 _maps.Remove(targetType);
                                 break;
                             default:
-                                _maps[targetType].Lifetime = type.Lifetime;
+                                _maps[targetType].SetLifetime(type.Lifetime);
                                 break;
                         }
                     }

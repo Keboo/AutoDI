@@ -52,7 +52,7 @@ partial class ModuleWeaver
         foreach (KeyValuePair<TypeReference, List<TypeDefinition>> kvp in types)
         {
             if (kvp.Value.Count != 1) continue;
-            map.Add(kvp.Key.Resolve(), kvp.Value[0], DuplicateKeyBehavior.RemoveAll);
+            map.Add(kvp.Key.Resolve(), kvp.Value[0], DuplicateKeyBehavior.RemoveAll, Lifetime.LazySingleton);
         }
     }
 
@@ -60,7 +60,7 @@ partial class ModuleWeaver
     {
         foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract))
         {
-            map.Add(type, type, DuplicateKeyBehavior.RemoveAll);
+            map.Add(type, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
         }
     }
 
@@ -77,7 +77,7 @@ partial class ModuleWeaver
             {
                 if (t.FullName != typeof(object).FullName)
                 {
-                    map.Add(t, type, DuplicateKeyBehavior.RemoveAll);
+                    map.Add(t, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
                 }
             }
         }
@@ -113,7 +113,7 @@ partial class ModuleWeaver
                     {
                         if (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped))
                         {
-                            map.Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace);
+                            map.Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace, settingsMap.Lifetime);
                         }
                         else
                         {
