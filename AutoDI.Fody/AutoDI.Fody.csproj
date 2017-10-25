@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FodyCecil" Version="2.1.2" />
+    <PackageReference Include="FodyCecil" Version="2.2.0" />
     <PackageReference Include="gitlink" Version="3.1.0" />
   </ItemGroup>
 
