@@ -8,7 +8,7 @@ Have a question? [![Join the chat at https://gitter.im/AutoDIContainer/Lobby](ht
 [![Build status](https://ci.appveyor.com/api/projects/status/ybmv50xxi3lb086o?svg=true)](https://ci.appveyor.com/project/Keboo/autodi)
 
 
-AutoDI is both a dependency injection contrain and a framework to simplify working with dependency injection (DI). It is built on top of the [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/). It works very similar to [the way ASP.NET Core handles dependency injection](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection).
+AutoDI is both a dependency injection container and a framework to simplify working with dependency injection (DI). It is built on top of the [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/). It works very similar to [the way ASP.NET Core handles dependency injection](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection).
 
 It serves two purposes
 1. It builds on the Microsoft.Extensions.DependencyInjection.Abstractions library to bring that same type of dependency injection to other platforms (.NET Framework, WPF, Xamarin, UWP, etc). 
