@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace AutoDI.Fody
@@ -11,13 +10,12 @@ namespace AutoDI.Fody
         private readonly Regex _regex;
         private readonly Func<T, string> _valueProvider;
         private readonly string _replacement;
-        private readonly List<Variable> _variables = new List<Variable>();
 
         public Matcher(Func<T, string> valueProvider, string pattern, string replacement = null)
         {
             _valueProvider = valueProvider ?? throw new ArgumentNullException(nameof(valueProvider));
             if (pattern == null) throw new ArgumentNullException(nameof(pattern));
-            _replacement = replacement;
+
             if (pattern.StartsWith(RegexPrefix, StringComparison.OrdinalIgnoreCase))
             {
                 _regex = new Regex(pattern.Substring(RegexPrefix.Length));
@@ -25,16 +23,18 @@ namespace AutoDI.Fody
             else
             {
                 pattern = Regex.Escape(pattern);
-                pattern = pattern.Replace("*", ".*");
+                pattern = pattern.Replace(@"\*", "(.*)");
                 _regex = new Regex(pattern);
             }
-        }
 
-        public void AddVariable(string name, Func<T, string> parameterValueProvider)
-        {
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            if (parameterValueProvider == null) throw new ArgumentNullException(nameof(parameterValueProvider));
-            _variables.Add(new Variable(name, parameterValueProvider));
+            if (replacement?.StartsWith(RegexPrefix, StringComparison.OrdinalIgnoreCase) == true)
+            {
+                _replacement = replacement.Substring(RegexPrefix.Length);
+            }
+            else if (replacement != null)
+            {
+                _replacement = replacement.Replace(@"*", "$1");
+            }
         }
 
         public bool TryMatch(T input, out string replacement)
@@ -69,18 +69,6 @@ namespace AutoDI.Fody
                 return $"'{_regex}' => '{_replacement}'";
             }
             return _regex.ToString();
-        }
-
-        private class Variable
-        {
-            public Variable(string name, Func<T, string> valueProvider)
-            {
-                Name = name;
-                ValueProvider = valueProvider;
-            }
-
-            public string Name { get; }
-            public Func<T, string> ValueProvider { get; }
         }
     }
 }

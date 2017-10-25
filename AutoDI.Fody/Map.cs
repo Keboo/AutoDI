@@ -13,9 +13,6 @@ namespace AutoDI.Fody
         public Map(string from, string to, bool force, Lifetime? lifetime)
         {
             _matcher = new Matcher<TypeDefinition>(type => type.FullName, from, to);
-            _matcher.AddVariable("ns", type => type.Namespace);
-            _matcher.AddVariable("fn", type => type.FullName);
-            _matcher.AddVariable("name", type => type.Name);
             Force = force;
             Lifetime = lifetime;
         }
