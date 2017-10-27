@@ -1,0 +1,60 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1AAD948C-6BBE-4334-BFF2-AA5F16F63845}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{928425F1-020D-47AF-B760-70492D1F1B62}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+		build.ps1 = build.ps1
+		NuGet.Config = NuGet.Config
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{8037CE7A-020C-48D2-9C7E-BBEB669E19D7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{5C06EB0A-91A1-4FA1-801C-ABEDAEDBF87B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StructureMap.Microsoft.DependencyInjection", "src\StructureMap.Microsoft.DependencyInjection\StructureMap.Microsoft.DependencyInjection.csproj", "{D09D9E47-E9B7-4446-90AE-48AE3358C880}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StructureMap.Microsoft.DependencyInjection.Tests", "test\StructureMap.Microsoft.DependencyInjection.Tests\StructureMap.Microsoft.DependencyInjection.Tests.csproj", "{2B3D64C5-CA4D-41E5-AF3A-BA90AB80EB60}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StructureMap.AspNetCore", "src\StructureMap.AspNetCore\StructureMap.AspNetCore.csproj", "{6B38D654-FE83-4594-B99B-E73F117DDCE6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StructureMap.AspNetCore.Sample", "sample\StructureMap.AspNetCore.Sample\StructureMap.AspNetCore.Sample.csproj", "{3EED4375-553E-4874-80B9-427AAAF9AE04}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D09D9E47-E9B7-4446-90AE-48AE3358C880}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D09D9E47-E9B7-4446-90AE-48AE3358C880}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D09D9E47-E9B7-4446-90AE-48AE3358C880}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D09D9E47-E9B7-4446-90AE-48AE3358C880}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B3D64C5-CA4D-41E5-AF3A-BA90AB80EB60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B3D64C5-CA4D-41E5-AF3A-BA90AB80EB60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B3D64C5-CA4D-41E5-AF3A-BA90AB80EB60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B3D64C5-CA4D-41E5-AF3A-BA90AB80EB60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B38D654-FE83-4594-B99B-E73F117DDCE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B38D654-FE83-4594-B99B-E73F117DDCE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B38D654-FE83-4594-B99B-E73F117DDCE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B38D654-FE83-4594-B99B-E73F117DDCE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EED4375-553E-4874-80B9-427AAAF9AE04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EED4375-553E-4874-80B9-427AAAF9AE04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EED4375-553E-4874-80B9-427AAAF9AE04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EED4375-553E-4874-80B9-427AAAF9AE04}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D09D9E47-E9B7-4446-90AE-48AE3358C880} = {1AAD948C-6BBE-4334-BFF2-AA5F16F63845}
+		{2B3D64C5-CA4D-41E5-AF3A-BA90AB80EB60} = {8037CE7A-020C-48D2-9C7E-BBEB669E19D7}
+		{6B38D654-FE83-4594-B99B-E73F117DDCE6} = {1AAD948C-6BBE-4334-BFF2-AA5F16F63845}
+		{3EED4375-553E-4874-80B9-427AAAF9AE04} = {5C06EB0A-91A1-4FA1-801C-ABEDAEDBF87B}
+	EndGlobalSection
+EndGlobal
