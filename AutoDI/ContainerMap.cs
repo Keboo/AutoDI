@@ -111,8 +111,9 @@ namespace AutoDI
                 }
             }
             //Type key not found
-            TypeKeyNotFoundEvent?.Invoke(this, new TypeKeyNotFoundEventArgs(key));
-            return default(object);
+            var args = new TypeKeyNotFoundEventArgs(key);
+            TypeKeyNotFoundEvent?.Invoke(this, args);
+            return args.Instance;
         }
 
         public IContainer CreatedNestedContainer()

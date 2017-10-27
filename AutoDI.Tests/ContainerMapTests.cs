@@ -46,6 +46,24 @@ namespace AutoDI.Tests
         }
 
         [TestMethod]
+        public void TestTypeKeyNotFoundEventCanInsertType()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            var @class = new Class();
+
+            map.TypeKeyNotFoundEvent += (_, e) =>
+            {
+                e.Instance = @class;
+            };
+            
+            map.Add(services);
+
+            IInterface retriecedService = map.Get<IInterface>(null);
+            Assert.AreEqual(@class, retriecedService);
+        }
+
+        [TestMethod]
         public void TestGetSingleton()
         {
             var map = new ContainerMap();
