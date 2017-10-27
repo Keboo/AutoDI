@@ -8,6 +8,8 @@ namespace AutoDI
 {
     public sealed class ContainerMap : IContainer
     {
+        public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFoundEvent;
+
         private static readonly MethodInfo MakeLazyMethod;
         private static readonly MethodInfo MakeFuncMethod;
 
@@ -109,8 +111,9 @@ namespace AutoDI
                 }
             }
             //Type key not found
-            TypeKeyNotFoundEvent?.Invoke(this, new TypeKeyNotFoundEventArgs(key));
-            return default(object);
+            var args = new TypeKeyNotFoundEventArgs(key);
+            TypeKeyNotFoundEvent?.Invoke(this, args);
+            return args.Instance;
         }
 
         public IContainer CreatedNestedContainer()
@@ -224,10 +227,5 @@ namespace AutoDI
                 }
             }
         }
-
-        #region ContainerMap Events
-
-        public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFoundEvent;
-        #endregion
     }
 }
