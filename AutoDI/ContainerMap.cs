@@ -8,6 +8,8 @@ namespace AutoDI
 {
     public sealed class ContainerMap : IContainer
     {
+        public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFoundEvent;
+
         private static readonly MethodInfo MakeLazyMethod;
         private static readonly MethodInfo MakeFuncMethod;
 
@@ -224,10 +226,5 @@ namespace AutoDI
                 }
             }
         }
-
-        #region ContainerMap Events
-
-        public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFoundEvent;
-        #endregion
     }
 }

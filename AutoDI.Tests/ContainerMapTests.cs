@@ -14,7 +14,7 @@ namespace AutoDI.Tests
             var services = new AutoDIServiceCollection();
             bool eventRaised = false;
 
-            map.TypeKeyNotFoundEvent += delegate (object sender, TypeKeyNotFoundEventArgs e)
+            map.TypeKeyNotFoundEvent += (_, __) =>
             {
                 eventRaised = true;
             };
@@ -22,7 +22,7 @@ namespace AutoDI.Tests
             services.AddAutoDISingleton<IInterface, Class>();
             map.Add(services);
 
-            var c = map.Get<string>(null);
+            map.Get<string>(null);
             Assert.IsTrue(eventRaised);
         }
 
@@ -33,7 +33,7 @@ namespace AutoDI.Tests
             var services = new AutoDIServiceCollection();
             bool eventRaised = false;
 
-            map.TypeKeyNotFoundEvent += delegate (object sender, TypeKeyNotFoundEventArgs e)
+            map.TypeKeyNotFoundEvent += (_, __) =>
             {
                 eventRaised = true;
             };
@@ -41,7 +41,7 @@ namespace AutoDI.Tests
             services.AddAutoDISingleton<IInterface, Class>();
             map.Add(services);
 
-            var c = map.Get<IInterface>(null);
+            map.Get<IInterface>(null);
             Assert.IsFalse(eventRaised);
         }
 

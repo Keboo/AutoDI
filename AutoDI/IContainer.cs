@@ -5,6 +5,8 @@ namespace AutoDI
 {
     public interface IContainer
     {
+        event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFoundEvent;
+
         T Get<T>(IServiceProvider provider);
         object Get(Type key, IServiceProvider provider);
 
