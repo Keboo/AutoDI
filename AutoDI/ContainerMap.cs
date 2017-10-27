@@ -8,7 +8,7 @@ namespace AutoDI
 {
     public sealed class ContainerMap : IContainer
     {
-        public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFoundEvent;
+        public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFound;
 
         private static readonly MethodInfo MakeLazyMethod;
         private static readonly MethodInfo MakeFuncMethod;
@@ -112,7 +112,7 @@ namespace AutoDI
             }
             //Type key not found
             var args = new TypeKeyNotFoundEventArgs(key);
-            TypeKeyNotFoundEvent?.Invoke(this, args);
+            TypeKeyNotFound?.Invoke(this, args);
             return args.Instance;
         }
 

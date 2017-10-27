@@ -14,7 +14,7 @@ namespace AutoDI.Tests
             var services = new AutoDIServiceCollection();
             bool eventRaised = false;
 
-            map.TypeKeyNotFoundEvent += (_, __) =>
+            map.TypeKeyNotFound += (_, __) =>
             {
                 eventRaised = true;
             };
@@ -33,7 +33,7 @@ namespace AutoDI.Tests
             var services = new AutoDIServiceCollection();
             bool eventRaised = false;
 
-            map.TypeKeyNotFoundEvent += (_, __) =>
+            map.TypeKeyNotFound += (_, __) =>
             {
                 eventRaised = true;
             };
@@ -52,7 +52,7 @@ namespace AutoDI.Tests
             var services = new AutoDIServiceCollection();
             var @class = new Class();
 
-            map.TypeKeyNotFoundEvent += (_, e) =>
+            map.TypeKeyNotFound += (_, e) =>
             {
                 e.Instance = @class;
             };
