@@ -45,7 +45,7 @@ namespace AutoDI.Fody.Tests
         {
             DI.Init(_testAssembly, builder =>
             {
-                builder.ConfigureContinaer<IContainer>(map =>
+                builder.ConfigureContainer<IContainer>(map =>
                 {
                     _map = map;
                 });

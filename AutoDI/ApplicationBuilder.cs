@@ -13,7 +13,7 @@ namespace AutoDI
 
         private Type _specifiedContainerType;
 
-        public IApplicationBuilder ConfigureContinaer<TContainerType>(Action<TContainerType> configureContianer)
+        public IApplicationBuilder ConfigureContainer<TContainerType>(Action<TContainerType> configureContianer)
         {
             if (configureContianer == null) throw new ArgumentNullException(nameof(configureContianer));
             if (_specifiedContainerType != null) throw new InvalidOperationException($"A container type of '{_specifiedContainerType.FullName}' was already specified");
