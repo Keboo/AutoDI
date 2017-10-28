@@ -7,7 +7,7 @@ namespace AutoDI
     {
         IApplicationBuilder ConfigureServices(Action<IServiceCollection> configureServices);
 
-        IApplicationBuilder ConfigureContinaer<TContainerType>(Action<TContainerType> configureContianer);
+        IApplicationBuilder ConfigureContainer<TContainerType>(Action<TContainerType> configureContianer);
 
         IServiceProvider Build();
     }
