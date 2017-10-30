@@ -43,7 +43,7 @@ partial class ModuleWeaver
         var method = new MethodDefinition(nameof(DI.AddServices),
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
-        
+
         var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, ModuleDefinition.Get<IServiceCollection>());
         method.Parameters.Add(serviceCollection);
 
@@ -70,38 +70,47 @@ partial class ModuleWeaver
                     containerType.Methods.Add(factoryMethod);
                     factoryIndex++;
 
-                    processor.Emit(OpCodes.Ldarg_0); //collection parameter
-
-                    processor.Emit(OpCodes.Ldnull);
-                    processor.Emit(OpCodes.Ldftn, factoryMethod);
-                    processor.Emit(OpCodes.Newobj,
-                        ModuleDefinition.ImportReference(
-                            funcCtor.MakeGenericTypeConstructor(Import.IServiceProvider,
-                                map.TargetType)));
-
-                    processor.Emit(OpCodes.Ldc_I4, map.Keys.Count);
-                    processor.Emit(OpCodes.Newarr, Import.System_Type);
-
-                    int arrayIndex = 0;
-                    foreach (TypeDefinition key in map.Keys)
+                    foreach (TypeLifetime typeLifetime in map.Lifetimes)
                     {
-                        TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                        InternalLogDebug(
-                            $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({map.Lifetime})",
-                            DebugLogLevel.Default);
-                        processor.Emit(OpCodes.Dup);
-                        processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
-                        processor.Emit(OpCodes.Ldtoken, importedKey);
-                        processor.Emit(OpCodes.Call, Import.Type_GetTypeFromHandle);
-                        processor.Emit(OpCodes.Stelem_Ref);
+                        processor.Emit(OpCodes.Ldarg_0); //collection parameter
+
+                        processor.Emit(OpCodes.Ldnull);
+                        processor.Emit(OpCodes.Ldftn, factoryMethod);
+                        processor.Emit(OpCodes.Newobj,
+                            ModuleDefinition.ImportReference(
+                                funcCtor.MakeGenericTypeConstructor(Import.IServiceProvider,
+                                    map.TargetType)));
+
+                        processor.Emit(OpCodes.Ldc_I4, typeLifetime.Keys.Count);
+                        processor.Emit(OpCodes.Newarr, Import.System_Type);
+
+                        int arrayIndex = 0;
+
+                        foreach (TypeDefinition key in typeLifetime.Keys)
+                        {
+                            TypeReference importedKey = ModuleDefinition.ImportReference(key);
+                            InternalLogDebug(
+                                $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({typeLifetime.Lifetime})",
+                                DebugLogLevel.Default);
+                            processor.Emit(OpCodes.Dup);
+                            processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
+                            processor.Emit(OpCodes.Ldtoken, importedKey);
+                            processor.Emit(OpCodes.Call, Import.Type_GetTypeFromHandle);
+                            processor.Emit(OpCodes.Stelem_Ref);
+                        }
+
+                        processor.Emit(OpCodes.Ldc_I4, (int)typeLifetime.Lifetime);
+
+                        var genericAddMethod =
+                            new GenericInstanceMethod(Import.ServiceCollectionMixins_AddAutoDIService);
+                        genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
+                        processor.Emit(OpCodes.Call, genericAddMethod);
+                        processor.Emit(OpCodes.Pop);
                     }
-
-                    processor.Emit(OpCodes.Ldc_I4, (int) map.Lifetime);
-
-                    var genericAddMethod = new GenericInstanceMethod(Import.ServiceCollectionMixins_AddAutoDIService);
-                    genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
-                    processor.Emit(OpCodes.Call, genericAddMethod);
-                    processor.Emit(OpCodes.Pop);
+                }
+                catch (MultipleConstructorAutoDIException e)
+                {
+                    LogError($"Failed to create map for {map}\r\n{e}");
                 }
                 catch (Exception e)
                 {
@@ -117,9 +126,26 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
     {
-        //TODO: allow for specifying which constructor to use
-        MethodDefinition targetTypeCtor = targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count)
-            .FirstOrDefault();
+        if (!CanMapType(targetType)) return null;
+
+        var targetTypeCtors = targetType.GetConstructors();
+        var annotatedConstructors = targetTypeCtors
+            .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.IsType<DiConstructorAttribute>())).ToArray();
+        MethodDefinition targetTypeCtor;
+
+        if (annotatedConstructors.Length > 0)
+        {
+            if (annotatedConstructors.Length > 1)
+            {
+                throw new MultipleConstructorAutoDIException($"More then one constructor on '{targetType.Name}' annotated with {nameof(DiConstructorAttribute)}");
+            }
+            targetTypeCtor = annotatedConstructors[0];
+        }
+        else
+        {
+            targetTypeCtor = targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count)
+                .FirstOrDefault();
+        }
 
         if (targetTypeCtor == null) return null;
 
@@ -234,7 +260,7 @@ partial class ModuleWeaver
         processor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IDisposable>(nameof(IDisposable.Dispose)));
 
         processor.Append(afterDispose);
-        
+
         processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         processor.Emit(OpCodes.Call, Import.GlobalDI_Unregister);
         processor.Emit(OpCodes.Pop);
@@ -269,5 +295,16 @@ partial class ModuleWeaver
             return method;
         }
         return null;
+    }
+
+    //Issue 75
+    private static bool CanMapType(TypeDefinition type)
+    {
+        if (!type.IsNested) return true;
+
+        //public, protected internal, and internal
+        if (!type.IsNestedPublic && !type.IsNestedFamilyOrAssembly && !type.IsNestedAssembly) return false;
+
+        return CanMapType(type.DeclaringType);
     }
 }

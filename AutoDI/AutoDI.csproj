@@ -18,7 +18,7 @@
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
     <ItemGroup>
       <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
-      <CopyItmes Include="$(TargetDir)..\**\$(TargetName).pdb" />
+      <CopyItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
     </ItemGroup>
     <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
   </Target>

@@ -1,36 +1,27 @@
-﻿using System.Text.RegularExpressions;
+﻿using Mono.Cecil;
 
 namespace AutoDI.Fody
 {
     internal class Map
     {
-        private readonly string _to;
-        private readonly Regex _fromRegex;
+        private readonly Matcher<TypeDefinition> _matcher;
 
         public bool Force { get; }
 
-        public Map(string from, string to, bool force)
+        public Lifetime? Lifetime { get; }
+
+        public Map(string from, string to, bool force, Lifetime? lifetime)
         {
-            _to = to;
-            _fromRegex = new Regex(from);
+            _matcher = new Matcher<TypeDefinition>(type => type.FullName, from, to);
             Force = force;
+            Lifetime = lifetime;
         }
 
-        public bool TryGetMap(string fromType, out string mappedType)
+        public bool TryGetMap(TypeDefinition fromType, out string mappedType)
         {
-            Match fromMatch = _fromRegex.Match(fromType);
-            if (fromMatch.Success)
-            {
-                mappedType = _fromRegex.Replace(fromType, _to);
-                return true;
-            }
-            mappedType = null;
-            return false;
+            return _matcher.TryMatch(fromType, out mappedType);
         }
 
-        public override string ToString()
-        {
-            return $"'{_fromRegex}' => '{_to}'";
-        }
+        public override string ToString() => _matcher.ToString();
     }
 }

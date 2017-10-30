@@ -1,7 +1,8 @@
 # configuration for master/CI branch
 -
   environment:
-    autodi_version: 3.0.0
+    autodi_version: 3.1.0
+    APPVEYOR_BLOCK_DOTNETCORE_TESTS_AUTORUN: true
   branches:
     only:
     - master
@@ -39,11 +40,15 @@
   artifacts:
   - path: '*.nupkg'
     name: NuGets
+  deploy:
+  - provider: Environment
+    name: NuGet publish
 
 #Configuration for releases
 -
   environment:
-    autodi_version: 3.0.0
+    autodi_version: 3.1.0
+    APPVEYOR_BLOCK_DOTNETCORE_TESTS_AUTORUN: true
   branches:
     only:
     - release
@@ -78,3 +83,6 @@
   artifacts:
   - path: '*.nupkg'
     name: NuGets
+  deploy:
+  - provider: Environment
+    name: NuGet publish

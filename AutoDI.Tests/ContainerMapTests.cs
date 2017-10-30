@@ -8,6 +8,62 @@ namespace AutoDI.Tests
     public class ContainerMapTests
     {
         [TestMethod]
+        public void TestTypeKeyNotFoundEventIsRaised()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            bool eventRaised = false;
+
+            map.TypeKeyNotFound += (_, __) =>
+            {
+                eventRaised = true;
+            };
+
+            services.AddAutoDISingleton<IInterface, Class>();
+            map.Add(services);
+
+            map.Get<string>(null);
+            Assert.IsTrue(eventRaised);
+        }
+
+        [TestMethod]
+        public void TestTypeKeyNotFoundEventIsNotRaised()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            bool eventRaised = false;
+
+            map.TypeKeyNotFound += (_, __) =>
+            {
+                eventRaised = true;
+            };
+
+            services.AddAutoDISingleton<IInterface, Class>();
+            map.Add(services);
+
+            map.Get<IInterface>(null);
+            Assert.IsFalse(eventRaised);
+        }
+
+        [TestMethod]
+        public void TestTypeKeyNotFoundEventCanInsertType()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            var @class = new Class();
+
+            map.TypeKeyNotFound += (_, e) =>
+            {
+                e.Instance = @class;
+            };
+            
+            map.Add(services);
+
+            IInterface retriecedService = map.Get<IInterface>(null);
+            Assert.AreEqual(@class, retriecedService);
+        }
+
+        [TestMethod]
         public void TestGetSingleton()
         {
             var map = new ContainerMap();
@@ -32,11 +88,11 @@ namespace AutoDI.Tests
         }
 
         [TestMethod]
-        public void TestGetWeakTransient()
+        public void TestGetWeakSingleton()
         {
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
-            services.AddAutoDIWeakTransient<IInterface, Class>();
+            services.AddAutoDIWeakSingleton<IInterface, Class>();
             map.Add(services);
 
             IInterface c = map.Get<IInterface>(null);
@@ -106,7 +162,7 @@ namespace AutoDI.Tests
         }
 
         [TestMethod]
-        public void GetWeakTransientOnlyCreatesOneInstanceAtATime()
+        public void GetWeakSingletonOnlyCreatesOneInstanceAtATime()
         {
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
@@ -115,7 +171,7 @@ namespace AutoDI.Tests
             {
                 instanceCount++;
                 return new Class();
-            }, new[] {typeof(IInterface)}, Lifetime.WeakTransient);
+            }, new[] {typeof(IInterface)}, Lifetime.WeakSingleton);
             map.Add(services);
 
             var instance = map.Get<IInterface>(null);

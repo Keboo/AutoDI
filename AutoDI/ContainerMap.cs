@@ -8,6 +8,8 @@ namespace AutoDI
 {
     public sealed class ContainerMap : IContainer
     {
+        public event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFound;
+
         private static readonly MethodInfo MakeLazyMethod;
         private static readonly MethodInfo MakeFuncMethod;
 
@@ -108,7 +110,10 @@ namespace AutoDI
                         .Invoke(this, new object[] { provider });
                 }
             }
-            return default(object);
+            //Type key not found
+            var args = new TypeKeyNotFoundEventArgs(key);
+            TypeKeyNotFound?.Invoke(this, args);
+            return args.Instance;
         }
 
         public IContainer CreatedNestedContainer()
@@ -169,7 +174,7 @@ namespace AutoDI
                 switch (Lifetime)
                 {
                     case Lifetime.Scoped:
-                    case Lifetime.WeakTransient:
+                    case Lifetime.WeakSingleton:
                         return new DelegateContainer(Lifetime, TargetType, _creationFactory);
                     default:
                         return this;
@@ -199,7 +204,7 @@ namespace AutoDI
                                 }
                             };
                         }
-                    case Lifetime.WeakTransient:
+                    case Lifetime.WeakSingleton:
                         {
                             var weakRef = new WeakReference<object>(null);
                             return provider =>

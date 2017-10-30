@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -142,13 +141,12 @@ namespace AutoDI.AssemblyGenerator
                         {
                             file.Position = 0;
                             weaver.ApplyToAssembly(file);
+                            
                         }
                     }
                     else
                     {
-                        throw new Exception(string.Join(Environment.NewLine,
-                            emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)
-                                .Select(d => d.GetMessage())));
+                        throw new CompileException(emitResult.Diagnostics);
                     }
                 }
                 assemblyInfo.Assembly = Assembly.LoadFile(filePath);

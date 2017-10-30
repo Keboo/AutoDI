@@ -3,11 +3,12 @@ Have a question? [![Join the chat at https://gitter.im/AutoDIContainer/Lobby](ht
 
 [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.svg?style=flat&label=AutoDI)](https://www.nuget.org/packages/AutoDI/)
 [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.Fody.svg?style=flat&label=AutoDI.Fody)](https://www.nuget.org/packages/AutoDI.Fody/)
+[![NuGet Status](http://img.shields.io/nuget/v/AutoDI.AspNetCore.svg?style=flat&label=AutoDI.AspNetCore)](https://www.nuget.org/packages/AutoDI.AspNetCore/)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ybmv50xxi3lb086o?svg=true)](https://ci.appveyor.com/project/Keboo/autodi)
 
 
-AutoDI is both a dependency injection contrain and a framework to simplify working with dependency injection (DI). It is built on top of the [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/). It works very similar to [the way ASP.NET Core handles dependency injection](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection).
+AutoDI is both a dependency injection container and a framework to simplify working with dependency injection (DI). It is built on top of the [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/). It works very similar to [the way ASP.NET Core handles dependency injection](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection).
 
 It serves two purposes
 1. It builds on the Microsoft.Extensions.DependencyInjection.Abstractions library to bring that same type of dependency injection to other platforms (.NET Framework, WPF, Xamarin, UWP, etc). 
@@ -20,7 +21,7 @@ See the [wiki](https://github.com/Keboo/AutoDI/wiki) for more details or check o
 
 The goal of this library is to make dependency injection as simple as adding a nuget. 
 
-In addition to standard constructor dependency injection, it also allows you to simply declare optional constructor parameters that will be resolved anytime you invoke them.
+In addition to standard constructor dependency injection, it also allows you to simply declare optional constructor parameters that will be resolved anytime the constructor is invoked.
 
 In a typical DI setup you can often find your objects needing to take in dependencies that the object is not actually using, but needs the dependencies to pass into some other object. The bigger and deeper the object model gets, the worse this becomes. 
 As a specific example, imagine you are inside of class `Foo` and wish to create an instance of `Bar`, but `Bar` has a dependency on `IService`. 

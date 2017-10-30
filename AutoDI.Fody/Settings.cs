@@ -8,6 +8,8 @@ namespace AutoDI.Fody
 {
     internal class Settings
     {
+        internal const Lifetime DefaultLifetime = Lifetime.LazySingleton;
+
         public Behaviors Behavior { get; set; } = Behaviors.Default;
 
         /// <summary>
@@ -131,11 +133,10 @@ namespace AutoDI.Fody
             {
                 string typePattern = typeNode.GetAttributeValue("Name");
                 if (string.IsNullOrWhiteSpace(typePattern)) continue;
-                string createStr = typeNode.GetAttributeValue(nameof(Lifetime));
-                Lifetime lifetime;
-                if (createStr == null || !Enum.TryParse(createStr, out lifetime))
+                string lifetimeStr = typeNode.GetAttributeValue("Lifetime");
+                if (lifetimeStr == null || !Enum.TryParse(lifetimeStr, out Lifetime lifetime))
                 {
-                    lifetime = Lifetime.LazySingleton;
+                    lifetime = DefaultLifetime;
                 }
 
                 settings.Types.Add(new MatchType(typePattern, lifetime));
@@ -152,7 +153,14 @@ namespace AutoDI.Fody
                 {
                     force = false;
                 }
-                settings.Maps.Add(new Map(from, to, force));
+                Lifetime? lifetime = null;
+                string lifetimeStr = mapNode.GetAttributeValue("Lifetime");
+                if (lifetimeStr != null && Enum.TryParse(lifetimeStr, out Lifetime parsedLifetime))
+                {
+                    lifetime = parsedLifetime;
+                }
+                
+                settings.Maps.Add(new Map(from, to, force, lifetime));
             }
 
             return settings;

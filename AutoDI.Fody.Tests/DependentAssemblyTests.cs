@@ -38,7 +38,7 @@ namespace AutoDI.Fody.Tests
             IContainer map = null;
             DI.Init(_mainAssembly, builder =>
             {
-                builder.ConfigureContinaer<IContainer>(container =>
+                builder.ConfigureContainer<IContainer>(container =>
                 {
                     map = container;
                 });

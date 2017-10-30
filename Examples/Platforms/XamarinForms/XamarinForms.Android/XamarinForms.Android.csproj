@@ -17,7 +17,7 @@
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
-    <TargetFrameworkVersion>v6.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v7.1</TargetFrameworkVersion>
     <AndroidStoreUncompressedFileExtensions />
     <MandroidI18n />
     <JavaMaximumHeapSize />
@@ -48,8 +48,8 @@
     <AndroidLinkMode>SdkOnly</AndroidLinkMode>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AutoDI, Version=3.0.20.0, Culture=neutral, PublicKeyToken=11e8ae7f3e8c05af, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\AutoDI.3.0.20\lib\netstandard1.0\AutoDI.dll</HintPath>
+    <Reference Include="AutoDI, Version=3.0.0.0, Culture=neutral, PublicKeyToken=11e8ae7f3e8c05af, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\AutoDI.3.0.0\lib\netstandard1.0\AutoDI.dll</HintPath>
     </Reference>
     <Reference Include="FormsViewGroup, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Xamarin.Forms.2.3.4.270\lib\MonoAndroid10\FormsViewGroup.dll</HintPath>
