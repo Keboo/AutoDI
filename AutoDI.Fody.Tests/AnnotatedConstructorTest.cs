@@ -1,9 +1,8 @@
-﻿using System;
-using System.Reflection;
-using System.Threading.Tasks;
-using AutoDI.AssemblyGenerator;
+﻿using AutoDI.AssemblyGenerator;
 using AutoDI.Fody.Tests.AnnotatedConstructorTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace AutoDI.Fody.Tests
 {
@@ -38,13 +37,6 @@ namespace AutoDI.Fody.Tests
             Assert.IsNotNull(service1);
             Assert.IsTrue((service1).Is<Service1>(GetType()));
             Assert.IsNull(service2);
-        }
-
-        [TestMethod]
-        public void CannotResolveMultipleAnnotatedConstructor()
-        {
-            dynamic manager = _testAssembly.Resolve<MultipleDiAnnotatedManager>(GetType());
-            Assert.IsNull(manager);
         }
     }
 
@@ -85,23 +77,6 @@ namespace AutoDI.Fody.Tests
             {
                 Service1 = service1;
                 Service2 = service2;
-            }
-        }
-
-        public class MultipleDiAnnotatedManager
-        {
-            public IService1 Service1 { get; }
-
-
-            [DiConstructor]
-            public MultipleDiAnnotatedManager()
-            {
-            }
-
-            [DiConstructor]
-            public MultipleDiAnnotatedManager(IService1 service1)
-            {
-                Service1 = service1;
             }
         }
     }

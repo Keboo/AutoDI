@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
@@ -68,20 +69,20 @@ namespace AutoDI.AssemblyGenerator
             dynamic dynamicWeaver = this;
             var module = ModuleDefinition.ReadModule(assemblyStream);
             dynamicWeaver.ModuleDefinition = module;
-            var errors = new StringBuilder();
+            var errors = new List<string>();
             dynamicWeaver.LogError = new Action<string>(s =>
             {
                 Debug.WriteLine($" Error: {s}");
-                errors.AppendLine(s);
+                errors.Add(s);
             });
             dynamicWeaver.LogWarning = new Action<string>(s => Debug.WriteLine($" Warning: {s}"));
             dynamicWeaver.LogInfo = new Action<string>(s => Debug.WriteLine($" Info: {s}"));
             dynamicWeaver.LogDebug = new Action<string>(s => Debug.WriteLine($" Debug: {s}"));
             dynamicWeaver.AssemblyResolver = new DefaultAssemblyResolver();
             dynamicWeaver.Execute();
-            if (errors.Length > 0)
+            if (errors.Any())
             {
-                throw new Exception($"Weaver Errors {errors}");
+                throw new WeaverErrorException(errors);
             }
             assemblyStream.Position = 0;
             module.Write(assemblyStream);

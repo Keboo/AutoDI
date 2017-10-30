@@ -108,6 +108,10 @@ partial class ModuleWeaver
                         processor.Emit(OpCodes.Pop);
                     }
                 }
+                catch (MultipleConstructorAutoDIException e)
+                {
+                    LogError($"Failed to create map for {map}\r\n{e}");
+                }
                 catch (Exception e)
                 {
                     LogWarning($"Failed to create map for {map}\r\n{e}");
@@ -133,7 +137,7 @@ partial class ModuleWeaver
         {
             if (annotatedConstructors.Length > 1)
             {
-                throw new AutoDIException($"More then one DiConstructor found for type - {targetType.Name}");
+                throw new MultipleConstructorAutoDIException($"More then one constructor on '{targetType.Name}' annotated with {nameof(DiConstructorAttribute)}");
             }
             targetTypeCtor = annotatedConstructors[0];
         }
