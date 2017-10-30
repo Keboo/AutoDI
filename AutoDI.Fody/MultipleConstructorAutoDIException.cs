@@ -4,7 +4,7 @@ namespace AutoDI.Fody
 {
     public class MultipleConstructorAutoDIException : AutoDIException
     {
-        public MultipleConstructorAutoDIException() : base()
+        public MultipleConstructorAutoDIException()
         {
         }
 

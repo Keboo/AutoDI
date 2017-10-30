@@ -137,7 +137,7 @@ partial class ModuleWeaver
         {
             if (annotatedConstructors.Length > 1)
             {
-                throw new MultipleConstructorAutoDIException($"More then one DiConstructor found for type - {targetType.Name}");
+                throw new MultipleConstructorAutoDIException($"More then one constructor on '{targetType.Name}' annotated with {nameof(DiConstructorAttribute)}");
             }
             targetTypeCtor = annotatedConstructors[0];
         }
