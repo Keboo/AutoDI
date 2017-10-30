@@ -93,7 +93,7 @@ namespace SetupMethodPublicTests
         [SetupMethod]
         public static void Setup(IApplicationBuilder builder)
         {
-            builder.ConfigureContinaer<IContainer>(map =>
+            builder.ConfigureContainer<IContainer>(map =>
             {
                 InitMap = map;
             });
@@ -122,7 +122,7 @@ namespace SetupMethodInternalTests
         [SetupMethod]
         internal static void Setup(IApplicationBuilder builder)
         {
-            builder.ConfigureContinaer<IContainer>(map =>
+            builder.ConfigureContainer<IContainer>(map =>
             {
                 InitMap = map;
             });
@@ -146,7 +146,7 @@ namespace SetupMethodManualInjectionTests
         [SetupMethod]
         internal static void InitializeContainer(IApplicationBuilder builder)
         {
-            builder.ConfigureContinaer<IContainer>(map =>
+            builder.ConfigureContainer<IContainer>(map =>
             {
                 InitMap = map;
             });
