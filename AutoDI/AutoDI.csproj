@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard1.0;net45</TargetFrameworks>
-    <SignAssembly>True</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\AutoDI.snk</AssemblyOriginatorKeyFile>
     <ApplicationIcon>..\needle.ico</ApplicationIcon>
     <DebugType>full</DebugType>
     <DebugSymbols>True</DebugSymbols>
