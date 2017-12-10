@@ -6,18 +6,18 @@ namespace AutoDI
     {
         public Type SourceType { get; }
         public Type TargetType { get; }
-        public Lifetime LifetimeMode { get; }
+        public Lifetime Lifetime { get; }
 
         internal Map(Type sourceType, Type targetType, Lifetime lifetimeMode)
         {
             SourceType = sourceType;
             TargetType = targetType;
-            LifetimeMode = lifetimeMode;
+            Lifetime = lifetimeMode;
         }
 
         public override string ToString()
         {
-            return $"{SourceType.FullName} -> {TargetType.FullName} ({LifetimeMode})";
+            return $"{SourceType.FullName} -> {TargetType.FullName} ({Lifetime})";
         }
     }
 }

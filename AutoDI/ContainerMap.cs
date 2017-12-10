@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -128,13 +129,10 @@ namespace AutoDI
             return rv;
         }
 
-        public IEnumerable<Map> GetMappings()
-        {
-            foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors.OrderBy(kvp => kvp.Key.FullName))
-            {
-                yield return new Map(kvp.Key, kvp.Value.TargetType, kvp.Value.Lifetime);
-            }
-        }
+        public IEnumerator<Map> GetEnumerator() => _accessors.OrderBy(kvp => kvp.Key.FullName)
+            .Select(kvp => new Map(kvp.Key, kvp.Value.TargetType, kvp.Value.Lifetime)).GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <summary>
         /// This method is used by AutoDI and not expected to be invoked directly.
@@ -153,7 +151,7 @@ namespace AutoDI
 
         private Func<T> MakeFunc<T>(IServiceProvider provider) => () => Get<T>(provider);
 
-        private class DelegateContainer
+        private class DelegateContainer 
         {
             private readonly Func<IServiceProvider, object> _creationFactory;
             private readonly Func<IServiceProvider, object> _factoryWithLifetime;
