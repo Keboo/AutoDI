@@ -109,5 +109,146 @@ namespace AutoDI.Fody.Tests
 
             Assert.IsFalse(settings.GenerateRegistrations);
         }
+
+        [TestMethod]
+        public void ErrorWhenRootElementContainsInvalidAttribute()
+        {
+            var xml = XElement.Parse(@"<AutoDI InvalidAttribute=""True"" />");
+
+            TextExpectedParseException(xml, "'InvalidAttribute' is not a valid attribute for AutoDI");
+        }
+
+        [TestMethod]
+        public void ErrorWhenBehaviorIsEmpty()
+        {
+            var xml = XElement.Parse(@"<AutoDI Behavior="""" />");
+
+            TextExpectedParseException(xml, "'' is not a valid value for 'Behavior'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenBehaviorContainsAnInvalidValue()
+        {
+            var xml = XElement.Parse(@"<AutoDI Behavior=""InvalidValue"" />");
+
+            TextExpectedParseException(xml, "'InvalidValue' is not a valid value for 'Behavior'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenAutoInitContainsAnInvalidValue()
+        {
+            var xml = XElement.Parse(@"<AutoDI AutoInit=""Foo"" />");
+
+            TextExpectedParseException(xml, "'Foo' is not a valid value for 'AutoInit'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenGenerateRegistrationsContainsAnInvalidValue()
+        {
+            var xml = XElement.Parse(@"<AutoDI GenerateRegistrations=""Foo"" />");
+
+            TextExpectedParseException(xml, "'Foo' is not a valid value for 'GenerateRegistrations'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenDebugLogLevelContainsAnInvalidValue()
+        {
+            var xml = XElement.Parse(@"<AutoDI DebugLogLevel=""Foo"" />");
+
+            TextExpectedParseException(xml, "'Foo' is not a valid value for 'DebugLogLevel'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenChildNodeIsUnknown()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Unknown /></AutoDI>");
+
+            TextExpectedParseException(xml, "'Unknown' is not a valid child node of AutoDI");
+        }
+
+        [TestMethod]
+        public void ErrorWhenAssemblyNodeDoesNotHaveName()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Assembly /></AutoDI>");
+
+            TextExpectedParseException(xml, "'Assembly' requires a value for 'Name'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenAssemblyNodeContainsInvalidAttribute()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Assembly InvalidAttribute=""True""/></AutoDI>");
+
+            TextExpectedParseException(xml, "'InvalidAttribute' is not a valid attribute for Assembly");
+        }
+
+        [TestMethod]
+        public void ErrorWhenTypeNodeDoesNotHaveName()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Type Lifetime=""Singleton"" /></AutoDI>");
+
+            TextExpectedParseException(xml, "'Type' requires a value for 'Name'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenTypeNodeDoesNotHaveLifetime()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Type Name=""MyClass"" /></AutoDI>");
+
+            TextExpectedParseException(xml, "'Type' requires a value for 'Lifetime'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenTypeNodeDoesNotHaveValidLifetime()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Type Name=""MyClass"" Lifetime=""Foo"" /></AutoDI>");
+
+            TextExpectedParseException(xml, "'Foo' is not a valid value for 'Lifetime'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenTypeNodeContainsInvalidAttribute()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Type Name=""MyClass"" Lifetime=""Singleton"" InvalidAttribute=""True""/></AutoDI>");
+
+            TextExpectedParseException(xml, "'InvalidAttribute' is not a valid attribute for Type");
+        }
+
+        [TestMethod]
+        public void ErrorWhenMapNodeDoesNotHaveFrom()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Map To=""MyClass"" /></AutoDI>");
+
+            TextExpectedParseException(xml, "'Map' requires a value for 'From'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenMapNodeDoesNotHaveTo()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Map From=""MyClass"" /></AutoDI>");
+
+            TextExpectedParseException(xml, "'Map' requires a value for 'To'");
+        }
+
+        [TestMethod]
+        public void ErrorWhenMapNodeContainsInvalidAttribute()
+        {
+            var xml = XElement.Parse(@"<AutoDI><Map From=""IClass"" To=""MyClass"" InvalidAttribute=""True""/></AutoDI>");
+
+            TextExpectedParseException(xml, "'InvalidAttribute' is not a valid attribute for Map");
+        }
+
+        private static void TextExpectedParseException(XElement xml, string expectedMessage)
+        {
+            try
+            {
+                Settings.Parse(new Settings(), xml);
+            }
+            catch (SettingsParseException e) when (e.Message == expectedMessage)
+            {
+                return;
+            }
+            Assert.Fail("Failed to get expected exception");
+        }
     }
 }

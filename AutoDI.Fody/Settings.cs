@@ -89,82 +89,153 @@ namespace AutoDI.Fody
         {
             if (rootElement == null) return settings;
 
-            string behaviorAttribute = rootElement.GetAttributeValue(nameof(Behavior));
-            if (behaviorAttribute != null)
-            {
-                Behaviors behavior = Behaviors.None;
-                foreach (string value in behaviorAttribute.Split(','))
+            ParseAttributes(rootElement, Attrib.OptionalBool(nameof(AutoInit), x => settings.AutoInit = x),
+                Attrib.OptionalBool(nameof(GenerateRegistrations), x => settings.GenerateRegistrations = x),
+                Attrib.OptionalEnum<DebugLogLevel>(nameof(DebugLogLevel), x => settings.DebugLogLevel = x),
+                Attrib.Create(nameof(Behavior), x => settings.Behavior = x, (string x, out Behaviors behavior) =>
                 {
-                    if (Enum.TryParse(value, out Behaviors @enum))
-                        behavior |= @enum;
-                }
-                settings.Behavior = behavior;
-            }
+                    behavior = Behaviors.None;
 
-            if (bool.TryParse(rootElement.GetAttributeValue(nameof(AutoInit)) ?? bool.TrueString,
-                out bool autoInit))
+                    if (string.IsNullOrWhiteSpace(x))
+                        return false;
+
+                    foreach (string value in x.Split(','))
+                    {
+                        if (Enum.TryParse(value, out Behaviors @enum))
+                            behavior |= @enum;
+                        else
+                            return false;
+                    }
+                    return true;
+                }, false));
+
+            foreach (XElement element in rootElement.DescendantNodes().OfType<XElement>())
             {
-                settings.AutoInit = autoInit;
-            }
-
-            if (bool.TryParse(rootElement.GetAttributeValue(nameof(GenerateRegistrations)) ?? bool.TrueString,
-                out bool generateRegistrations))
-            {
-                settings.GenerateRegistrations = generateRegistrations;
-            }
-
-            if (Enum.TryParse(rootElement.GetAttributeValue(nameof(DebugLogLevel)) ?? nameof(DebugLogLevel.Default),
-                out DebugLogLevel debugLogLevel))
-            {
-                settings.DebugLogLevel = debugLogLevel;
-            }
-
-            foreach (XElement assemblyNode in rootElement.DescendantNodes().OfType<XElement>()
-                .Where(x => string.Equals(x.Name.LocalName, "Assembly", StringComparison.OrdinalIgnoreCase)))
-            {
-                string assemblyName = assemblyNode.GetAttributeValue("Name");
-                if (string.IsNullOrWhiteSpace(assemblyName)) continue;
-
-                settings.Assemblies.Add(new MatchAssembly(assemblyName));
-            }
-
-            foreach (XElement typeNode in rootElement.DescendantNodes().OfType<XElement>()
-                .Where(x => string.Equals(x.Name.LocalName, "Type", StringComparison.OrdinalIgnoreCase)))
-            {
-                string typePattern = typeNode.GetAttributeValue("Name");
-                if (string.IsNullOrWhiteSpace(typePattern)) continue;
-                string lifetimeStr = typeNode.GetAttributeValue("Lifetime");
-                if (lifetimeStr == null || !Enum.TryParse(lifetimeStr, out Lifetime lifetime))
+                if (element.Name.LocalName.Equals("Assembly", StringComparison.OrdinalIgnoreCase))
                 {
-                    lifetime = DefaultLifetime;
+                    string assemblyName = "";
+                    ParseAttributes(element, Attrib.RequiredString("Name", x => assemblyName = x));
+                    settings.Assemblies.Add(new MatchAssembly(assemblyName));
                 }
-
-                settings.Types.Add(new MatchType(typePattern, lifetime));
-            }
-
-            foreach (XElement mapNode in rootElement.DescendantNodes().OfType<XElement>()
-                .Where(x => string.Equals(x.Name.LocalName, "Map", StringComparison.OrdinalIgnoreCase)))
-            {
-                string from = mapNode.GetAttributeValue("From");
-                if (string.IsNullOrWhiteSpace(from)) continue;
-                string to = mapNode.GetAttributeValue("To");
-                if (string.IsNullOrWhiteSpace(to)) continue;
-                if (!bool.TryParse(mapNode.GetAttributeValue("Force") ?? bool.FalseString, out bool force))
+                else if (element.Name.LocalName.Equals("Type", StringComparison.OrdinalIgnoreCase))
                 {
-                    force = false;
+                    string typePattern = "";
+                    Lifetime lifetime = DefaultLifetime;
+                    ParseAttributes(element, Attrib.RequiredString("Name", x => typePattern = x),
+                        Attrib.RequiredEnum<Lifetime>("Lifetime", x => lifetime = x));
+                    settings.Types.Add(new MatchType(typePattern, lifetime));
                 }
-                Lifetime? lifetime = null;
-                string lifetimeStr = mapNode.GetAttributeValue("Lifetime");
-                if (lifetimeStr != null && Enum.TryParse(lifetimeStr, out Lifetime parsedLifetime))
+                else if (element.Name.LocalName.Equals("Map", StringComparison.OrdinalIgnoreCase))
                 {
-                    lifetime = parsedLifetime;
+                    string from = "";//GetRequiredString(element, "From");
+                    string to = "";//GetRequiredString(element, "To");
+                    bool force = false;
+                    Lifetime? lifetime = null;
+                    ParseAttributes(element, Attrib.RequiredString("From", x => from = x),
+                        Attrib.RequiredString("To", x => to = x),
+                        Attrib.OptionalBool("Force", x => force = x),
+                        Attrib.OptionalEnum<Lifetime>("Lifetime", x => lifetime = x));
+
+                    settings.Maps.Add(new Map(from, to, force, lifetime));
                 }
-                
-                settings.Maps.Add(new Map(from, to, force, lifetime));
+                else
+                {
+                    throw new SettingsParseException($"'{element.Name.LocalName}' is not a valid child node of AutoDI");
+                }
             }
 
             return settings;
+
+            void ParseAttributes(XElement element, params IAttribute[] attributes)
+            {
+                Dictionary<string, IAttribute> attributesByName = 
+                    attributes.ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
+
+                foreach (XAttribute attribute in element.Attributes())
+                {
+                    if (attributesByName.TryGetValue(attribute.Name.LocalName, out IAttribute attrib))
+                    {
+                        attrib.Set(attribute.Value);
+                        attributesByName.Remove(attribute.Name.LocalName);
+                    }
+                    else
+                    {
+                        throw new SettingsParseException($"'{attribute.Name.LocalName}' is not a valid attribute for {element.Name.LocalName}");
+                    }
+                }
+
+                foreach (IAttribute attribute in attributesByName.Values.Where(x => x.IsRequired))
+                {
+                    throw new SettingsParseException($"'{element.Name.LocalName}' requires a value for '{attribute.Name}'");
+                }
+            }
         }
 
+        private interface IAttribute
+        {
+            string Name { get; }
+
+            bool IsRequired { get; }
+
+            void Set(string value);
+        }
+
+        private class Attrib : IAttribute
+        {
+            private readonly Action<string> _setter;
+
+            public string Name { get; }
+
+            public bool IsRequired { get; }
+
+            public void Set(string value) => _setter(value);
+
+            private Attrib(string name, Action<string> setter, bool required)
+            {
+                Name = name;
+                IsRequired = required;
+                _setter = setter;
+            }
+
+            public static IAttribute RequiredEnum<TEnum>(string name, Action<TEnum> setter) where TEnum : struct
+            {
+                return Create(name, setter, Enum.TryParse, true);
+            }
+
+            public static IAttribute RequiredString(string name, Action<string> setter)
+            {
+                return Create(name, setter, (string x, out string value) => {
+                    value = x;
+                    return true;
+                }, true);
+            }
+
+            public static IAttribute OptionalEnum<TEnum>(string name, Action<TEnum> setter) where TEnum : struct
+            {
+                return Create(name, setter, Enum.TryParse, false);
+            }
+
+            public static IAttribute OptionalBool(string name, Action<bool> setter)
+            {
+                return Create(name, setter, bool.TryParse, false);
+            }
+            
+            public static IAttribute Create<T>(string name, Action<T> setter, TryParseDelegate<T> parseDelegate, bool required)
+            {
+                return new Attrib(name, x =>
+                {
+                    if (parseDelegate(x, out T value))
+                    {
+                        setter(value);
+                    }
+                    else
+                    {
+                        throw new SettingsParseException($"'{x}' is not a valid value for '{name}'");
+                    }
+                }, required);
+            }
+        }
+
+        private delegate bool TryParseDelegate<T>(string input, out T value);
     }
 }

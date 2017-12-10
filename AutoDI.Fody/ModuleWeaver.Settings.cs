@@ -1,4 +1,4 @@
-﻿
+﻿using System;
 using AutoDI;
 using AutoDI.Fody;
 using Mono.Cecil;
@@ -38,7 +38,15 @@ public partial class ModuleWeaver
             }
         }
 
-        settings = Settings.Parse(settings, Config);
+        try
+        {
+            settings = Settings.Parse(settings, Config);
+        }
+        catch (SettingsParseException e)
+        {
+            LogError($"Failed to parse AutoDI settings from FodyWeavers.xml{Environment.NewLine}{e.Message}");
+            return null;
+        }
         InternalLogDebug = (s, l) =>
         {
             if (l <= settings.DebugLogLevel)
