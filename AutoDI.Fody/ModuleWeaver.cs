@@ -115,7 +115,7 @@ public partial class ModuleWeaver
 
                 InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
 
-                ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, out MethodDefinition initMethod));
+                ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, out MethodDefinition initMethod));
 
                 if (settings.AutoInit)
                 {

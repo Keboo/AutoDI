@@ -1,18 +1,18 @@
 ﻿
-using System;
-using System.Linq;
 using AutoDI;
 using AutoDI.Fody;
 using Microsoft.Extensions.DependencyInjection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using System;
+using System.Linq;
 
 // ReSharper disable once CheckNamespace
 partial class ModuleWeaver
 {
     //TODO: out parameters... yuck
-    private TypeDefinition GenerateAutoDIClass(Mapping mapping,
+    private TypeDefinition GenerateAutoDIClass(Mapping mapping, Settings settings,
         out MethodDefinition initMethod)
     {
         var containerType = new TypeDefinition(DI.Namespace, DI.TypeName,
@@ -26,7 +26,7 @@ partial class ModuleWeaver
             ModuleDefinition.CreateStaticReadonlyField(DI.GlobalServiceProviderName, false, Import.IServiceProvider);
         containerType.Fields.Add(globalServiceProvider);
 
-        MethodDefinition configureMethod = GenerateConfigureMethod(mapping, containerType);
+        MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType);
         containerType.Methods.Add(configureMethod);
 
         initMethod = GenerateInitMethod(configureMethod, globalServiceProvider);
@@ -38,7 +38,7 @@ partial class ModuleWeaver
         return containerType;
     }
 
-    private MethodDefinition GenerateConfigureMethod(Mapping mapping, TypeDefinition containerType)
+    private MethodDefinition GenerateAddServicesMethod(Mapping mapping, Settings settings, TypeDefinition containerType)
     {
         var method = new MethodDefinition(nameof(DI.AddServices),
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
@@ -49,6 +49,26 @@ partial class ModuleWeaver
 
         ILProcessor processor = method.Body.GetILProcessor();
 
+        VariableDefinition exceptionList = null;
+        VariableDefinition exception = null;
+        TypeDefinition listType = null;
+        if (settings.DebugExceptions)
+        {
+            var genericType = Import.List_Type.MakeGenericInstanceType(Import.System_Exception);
+            listType = genericType.Resolve();
+            exceptionList = new VariableDefinition(genericType);
+            exception = new VariableDefinition(Import.System_Exception);
+
+            method.Body.Variables.Add(exceptionList);
+            method.Body.Variables.Add(exception);
+
+            var listCtor = ModuleDefinition.ImportReference(listType.GetConstructors().Single(c => c.IsPublic && c.Parameters.Count == 0));
+            listCtor = listCtor.MakeGenericTypeConstructor(Import.System_Exception);
+
+            processor.Emit(OpCodes.Newobj, listCtor);
+            processor.Emit(OpCodes.Stloc, exceptionList);
+        }
+        
         MethodDefinition funcCtor = ModuleDefinition.ResolveCoreConstructor(typeof(Func<,>));
 
         if (mapping != null)
@@ -72,7 +92,8 @@ partial class ModuleWeaver
 
                     foreach (TypeLifetime typeLifetime in map.Lifetimes)
                     {
-                        processor.Emit(OpCodes.Ldarg_0); //collection parameter
+                        var tryStart = Instruction.Create(OpCodes.Ldarg_0); //collection parameter
+                        processor.Append(tryStart); 
 
                         processor.Emit(OpCodes.Ldnull);
                         processor.Emit(OpCodes.Ldftn, factoryMethod);
@@ -85,7 +106,6 @@ partial class ModuleWeaver
                         processor.Emit(OpCodes.Newarr, Import.System_Type);
 
                         int arrayIndex = 0;
-
                         foreach (TypeDefinition key in typeLifetime.Keys)
                         {
                             TypeReference importedKey = ModuleDefinition.ImportReference(key);
@@ -106,6 +126,43 @@ partial class ModuleWeaver
                         genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
                         processor.Emit(OpCodes.Call, genericAddMethod);
                         processor.Emit(OpCodes.Pop);
+
+                        if (settings.DebugExceptions)
+                        {
+                            Instruction afterCatch = Instruction.Create(OpCodes.Nop);
+                            processor.Emit(OpCodes.Leave_S, afterCatch);
+
+                            Instruction handlerStart = Instruction.Create(OpCodes.Stloc, exception);
+                            processor.Append(handlerStart);
+                            processor.Emit(OpCodes.Ldloc, exceptionList);
+                            processor.Emit(OpCodes.Ldstr, $"Error adding type '{map.TargetType.FullName}' with key(s) '{string.Join(",", typeLifetime.Keys.Select(x => x.FullName))}'");
+                            processor.Emit(OpCodes.Ldloc, exception);
+                            
+                            processor.Emit(OpCodes.Newobj, Import.AutoDIException_Ctor);
+                            var listAdd = ModuleDefinition.ImportReference(listType.GetMethods().Single(m => m.Name == "Add" && m.IsPublic && m.Parameters.Count == 1));
+                            processor.Emit(OpCodes.Callvirt, new GenericInstanceMethod(listAdd)
+                            {
+                                GenericArguments = { Import.System_Exception }
+                            });
+
+                            Instruction handlerEnd = Instruction.Create(OpCodes.Leave_S, afterCatch);
+                            processor.Append(handlerEnd);
+
+                            var exceptionHandler =
+                                new ExceptionHandler(ExceptionHandlerType.Catch)
+                                {
+                                    CatchType = Import.System_Exception,
+                                    TryStart = tryStart,
+                                    TryEnd = handlerStart,
+                                    HandlerStart = handlerStart,
+                                    HandlerEnd = afterCatch,
+                                    
+                                };
+
+                            method.Body.ExceptionHandlers.Add(exceptionHandler);
+
+                            processor.Append(afterCatch);
+                        }
                     }
                 }
                 catch (MultipleConstructorAutoDIException e)
@@ -119,7 +176,29 @@ partial class ModuleWeaver
             }
         }
 
-        processor.Emit(OpCodes.Ret);
+        Instruction @return = Instruction.Create(OpCodes.Ret);
+        if (settings.DebugExceptions)
+        {
+            Instruction loadList = Instruction.Create(OpCodes.Ldloc, exceptionList);
+            processor.Append(loadList);
+
+            var listCount = ModuleDefinition.ImportReference(listType.GetMethods().Single(m => m.IsPublic && m.Name == "get_Count"));
+            processor.Emit(OpCodes.Callvirt, new GenericInstanceMethod(listCount)
+            {
+                GenericArguments = { Import.System_Exception }
+            });
+            processor.Emit(OpCodes.Ldc_I4_0);
+            processor.Emit(OpCodes.Cgt);
+            processor.Emit(OpCodes.Brfalse_S, @return);
+
+            processor.Emit(OpCodes.Ldstr, $"Error in {DI.TypeName}.{nameof(DI.AddServices)}() generated method");
+            processor.Emit(OpCodes.Ldloc, exceptionList);
+            
+            processor.Emit(OpCodes.Newobj, Import.System_AggregateException_Ctor);
+            processor.Emit(OpCodes.Throw);
+        }
+
+        processor.Append(@return);
 
         return method;
     }
