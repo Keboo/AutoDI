@@ -34,7 +34,7 @@ public partial class ModuleWeaver
             
             System_Exception = moduleDefinition.ImportReference(moduleDefinition.ResolveCoreType(typeof(Exception)));
 
-            List_Type = moduleDefinition.ImportReference(moduleDefinition.ResolveCoreType(typeof(List<>)));
+            List_Type = moduleDefinition.ResolveCoreType(typeof(List<>));
 
             var aggregateExceptionType = moduleDefinition.ResolveCoreType(typeof(AggregateException)).Resolve();
             var enumerableExceptionType = moduleDefinition.ImportReference(typeof(IEnumerable<Exception>));
@@ -107,7 +107,7 @@ public partial class ModuleWeaver
         public TypeReference System_Exception { get; }
         public MethodReference System_AggregateException_Ctor { get; }
 
-        public TypeReference List_Type { get; }
+        public TypeDefinition List_Type { get; }
 
         public MethodReference AutoDIException_Ctor { get; }
     }

@@ -54,7 +54,7 @@ partial class ModuleWeaver
         TypeDefinition listType = null;
         if (settings.DebugExceptions)
         {
-            var genericType = Import.List_Type.MakeGenericInstanceType(Import.System_Exception);
+            var genericType = ModuleDefinition.ImportReference(Import.List_Type.MakeGenericInstanceType(Import.System_Exception));
             listType = genericType.Resolve();
             exceptionList = new VariableDefinition(genericType);
             exception = new VariableDefinition(Import.System_Exception);
@@ -62,13 +62,13 @@ partial class ModuleWeaver
             method.Body.Variables.Add(exceptionList);
             method.Body.Variables.Add(exception);
 
-            var listCtor = ModuleDefinition.ImportReference(listType.GetConstructors().Single(c => c.IsPublic && c.Parameters.Count == 0));
-            listCtor = listCtor.MakeGenericTypeConstructor(Import.System_Exception);
+            MethodReference listCtor = ModuleDefinition.ImportReference(Import.List_Type.GetConstructors().Single(c => c.IsPublic && c.Parameters.Count == 0));
+            listCtor = listCtor.MakeGenericDeclaringType(Import.System_Exception);
 
             processor.Emit(OpCodes.Newobj, listCtor);
             processor.Emit(OpCodes.Stloc, exceptionList);
         }
-        
+
         MethodDefinition funcCtor = ModuleDefinition.ResolveCoreConstructor(typeof(Func<,>));
 
         if (mapping != null)
@@ -93,13 +93,13 @@ partial class ModuleWeaver
                     foreach (TypeLifetime typeLifetime in map.Lifetimes)
                     {
                         var tryStart = Instruction.Create(OpCodes.Ldarg_0); //collection parameter
-                        processor.Append(tryStart); 
+                        processor.Append(tryStart);
 
                         processor.Emit(OpCodes.Ldnull);
                         processor.Emit(OpCodes.Ldftn, factoryMethod);
                         processor.Emit(OpCodes.Newobj,
                             ModuleDefinition.ImportReference(
-                                funcCtor.MakeGenericTypeConstructor(Import.IServiceProvider,
+                                funcCtor.MakeGenericDeclaringType(Import.IServiceProvider,
                                     map.TargetType)));
 
                         processor.Emit(OpCodes.Ldc_I4, typeLifetime.Keys.Count);
@@ -137,13 +137,12 @@ partial class ModuleWeaver
                             processor.Emit(OpCodes.Ldloc, exceptionList);
                             processor.Emit(OpCodes.Ldstr, $"Error adding type '{map.TargetType.FullName}' with key(s) '{string.Join(",", typeLifetime.Keys.Select(x => x.FullName))}'");
                             processor.Emit(OpCodes.Ldloc, exception);
-                            
+
                             processor.Emit(OpCodes.Newobj, Import.AutoDIException_Ctor);
-                            var listAdd = ModuleDefinition.ImportReference(listType.GetMethods().Single(m => m.Name == "Add" && m.IsPublic && m.Parameters.Count == 1));
-                            processor.Emit(OpCodes.Callvirt, new GenericInstanceMethod(listAdd)
-                            {
-                                GenericArguments = { Import.System_Exception }
-                            });
+                            var listAdd = ModuleDefinition.ImportReference(Import.List_Type.GetMethods().Single(m => m.Name == "Add" && m.IsPublic && m.Parameters.Count == 1));
+                            listAdd = listAdd.MakeGenericDeclaringType(Import.System_Exception);
+
+                            processor.Emit(OpCodes.Callvirt, listAdd);
 
                             Instruction handlerEnd = Instruction.Create(OpCodes.Leave_S, afterCatch);
                             processor.Append(handlerEnd);
@@ -156,7 +155,7 @@ partial class ModuleWeaver
                                     TryEnd = handlerStart,
                                     HandlerStart = handlerStart,
                                     HandlerEnd = afterCatch,
-                                    
+
                                 };
 
                             method.Body.ExceptionHandlers.Add(exceptionHandler);
@@ -183,17 +182,15 @@ partial class ModuleWeaver
             processor.Append(loadList);
 
             var listCount = ModuleDefinition.ImportReference(listType.GetMethods().Single(m => m.IsPublic && m.Name == "get_Count"));
-            processor.Emit(OpCodes.Callvirt, new GenericInstanceMethod(listCount)
-            {
-                GenericArguments = { Import.System_Exception }
-            });
+            listCount = listCount.MakeGenericDeclaringType(Import.System_Exception);
+            processor.Emit(OpCodes.Callvirt, listCount);
             processor.Emit(OpCodes.Ldc_I4_0);
             processor.Emit(OpCodes.Cgt);
             processor.Emit(OpCodes.Brfalse_S, @return);
 
             processor.Emit(OpCodes.Ldstr, $"Error in {DI.TypeName}.{nameof(DI.AddServices)}() generated method");
             processor.Emit(OpCodes.Ldloc, exceptionList);
-            
+
             processor.Emit(OpCodes.Newobj, Import.System_AggregateException_Ctor);
             processor.Emit(OpCodes.Throw);
         }
