@@ -18,7 +18,7 @@ See the [Framework Design Guidelines](https://msdn.microsoft.com/en-us/library/m
 
 ### Dependencies
 
-Additional dependencies should only be added in the the [Examples](/Examples). 
+Additional dependencies should only be added after a discussion. If you believe a new dependnecy is required please ask in an issue, before submitting a PR. 
 
 ### Unit tests
 
