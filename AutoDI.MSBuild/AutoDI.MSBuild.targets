@@ -3,10 +3,12 @@
 
   <PropertyGroup>
     <RunAutoDI Condition="'$(RunAutoDI)' == '' Or $(RunAutoDI) == '*Undefined*'">True</RunAutoDI>
+    <AutoDIOutputPath Condition="'$(AutoDIOutputPath)' == '' Or $(AutoDIOutputPath) == '*Undefined*'">$(ProjectDir)$(IntermediateOutputPath)AutoDI.Generated\</AutoDIOutputPath>
+    <AutoDIGeneratedFileName>AutoDI.cs</AutoDIGeneratedFileName>
   </PropertyGroup>
   
   <ItemGroup Condition="$(RunAutoDI) == 'False'">
-    <Compile Include="$(ProjectDir)$(IntermediateOutputPath)AutoDITest.cs" Condition="Exists('$(ProjectDir)$(IntermediateOutputPath)AutoDITest.cs')"/>
+    <Compile Include="$(AutoDIOutputPath)$(AutoDIGeneratedFileName)" Condition="Exists('$(AutoDIOutputPath)$(AutoDIGeneratedFileName)')"/>
   </ItemGroup>
 
   <UsingTask TaskName="AutoDI.MSBuild.GeneratorTask"
@@ -16,12 +18,11 @@
     <GeneratorTask
       ProjectPath="$(ProjectPath)"
       OutputPath="@(IntermediateAssembly)"
-      IntermediateOutputPath="$(ProjectDir)$(IntermediateOutputPath)">
+      GeneratedFilePath="$(AutoDIOutputPath)$(AutoDIGeneratedFileName)">
       
       <Output ItemName="Compile" TaskParameter="GeneratedCodeFiles" />
     </GeneratorTask>
-    
-    <Message Text="Re-running build" />
+
     <MSBuild Projects="$(MSBuildProjectFile)" Properties="RunAutoDI=False" UseResultsCache="False" />
   </Target>
 </Project>

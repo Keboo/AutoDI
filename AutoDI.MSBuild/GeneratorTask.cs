@@ -1,16 +1,13 @@
 ﻿
+using AutoDI.Fody;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.Hosting;
 using System.Xml.Linq;
-using AutoDI.Fody;
-using Mono.Cecil;
-using Mono.CompilerServices.SymbolWriter;
 
 namespace AutoDI.MSBuild
 {
@@ -23,7 +20,7 @@ namespace AutoDI.MSBuild
         public string OutputPath { get; set; }
 
         [Required]
-        public string IntermediateOutputPath { get; set; }
+        public string GeneratedFilePath { get; set; }
 
         private ITaskItem[] _generatedCodeFiles;
         /// <summary>Gets or sets the list of generated managed code files.</summary>
@@ -56,11 +53,11 @@ namespace AutoDI.MSBuild
                     typeResolver.GetAllTypes(settings, out AssemblyDefinition autoDIAssembly);
                 Mapping mapping = Mapping.GetMapping(settings, allTypes, Logger);
 
-                string filePath = Path.Combine(IntermediateOutputPath, "AutoDITest.cs");
-                using (var file = File.Open(filePath, FileMode.Create))
+                Directory.CreateDirectory(Path.GetDirectoryName(GeneratedFilePath));
+                using (var file = File.Open(GeneratedFilePath, FileMode.Create))
                 {
                     WriteClass(mapping, file);
-                    GeneratedCodeFiles = new ITaskItem[] { new TaskItem(filePath) };
+                    GeneratedCodeFiles = new ITaskItem[] { new TaskItem(GeneratedFilePath) };
                 }
             }
             return true;
@@ -71,7 +68,7 @@ namespace AutoDI.MSBuild
             }
         }
 
-        private XElement GetConfigElement(string projectPath)
+        private static XElement GetConfigElement(string projectPath)
         {
             var projectDir = Path.GetDirectoryName(projectPath);
             if (projectDir == null) return null;
@@ -114,21 +111,26 @@ namespace AutoDI.MSBuild
                     sw.WriteLine("        }");
                 }
 
-                //sw.WriteLine("        public static void AddServices(IServiceCollection colllection)");
-                //sw.WriteLine("        {");
-                //
-                //sw.WriteLine("        }");
+                sw.WriteLine("        public static void AddServices(IServiceCollection collection)");
+                sw.WriteLine("        {");
+                index = 0;
+                foreach (TypeMap typeMap in mapping)
+                {
+                    if (!typeMap.TargetType.CanMapType() || typeMap.TargetType.GetMappingConstructor() == null) continue;
+                    foreach (TypeLifetime lifetime in typeMap.Lifetimes)
+                    {
+                        sw.WriteLine($"            collection.AddAutoDIService<{typeMap.TargetType.FullNameCSharp()}>(generated_{index}, new System.Type[{lifetime.Keys.Count}]");
+                        sw.WriteLine("            {");
+                        sw.Write("                ");
+                        sw.WriteLine(string.Join(", ", lifetime.Keys.Select(t => $"typeof({t.FullNameCSharp()})")));
+                        sw.WriteLine($"            }}, Lifetime.{lifetime.Lifetime});");
+                    }
+                    index++;
+                }
+                sw.WriteLine("        }");
 
                 sw.WriteLine("    }");
                 sw.WriteLine("}");
-                //        sw.WriteLine(@"
-                //public static void AddServices(IServiceCollection collection)
-                //{
-                //    collection.AddAutoDIService<object>(new Func<IServiceProvider, object>(generated_0), new Type[]
-                //    {
-                //        typeof(object)
-                //    }, Lifetime.Singleton);
-                //}");
             }
 
             IEnumerable<string> GetAllNamespaces()
