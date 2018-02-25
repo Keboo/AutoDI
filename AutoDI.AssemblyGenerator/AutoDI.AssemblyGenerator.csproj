@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FodyCecil" Version="2.2.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis" Version="2.3.2" />
+    <PackageReference Include="FodyCecil" Version="2.3.22" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="2.6.1" />
     <PackageReference Include="System.Collections.Immutable" Version="1.4.0" />
   </ItemGroup>
 

@@ -7,40 +7,12 @@ using System.Linq;
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver
 {
-    private Settings LoadSettings()
+    private Settings LoadSettings(TypeResolver typeResolver)
     {
-        var settings = new Settings();
-        foreach (CustomAttribute attribute in GetAllModules().SelectMany(m => m.Assembly.CustomAttributes))
-        {
-            if (attribute.AttributeType.IsType<SettingsAttribute>())
-            {
-                foreach (CustomAttributeNamedArgument property in attribute.Properties)
-                {
-                    if (property.Argument.Value != null)
-                    {
-                        switch (property.Name)
-                        {
-                            case nameof(SettingsAttribute.AutoInit):
-                                settings.AutoInit = (bool)property.Argument.Value;
-                                break;
-                            case nameof(SettingsAttribute.Behavior):
-                                settings.Behavior = (Behaviors)property.Argument.Value;
-                                break;
-                            case nameof(SettingsAttribute.DebugLogLevel):
-                                settings.DebugLogLevel = (DebugLogLevel)property.Argument.Value;
-                                break;
-                            case nameof(SettingsAttribute.GenerateRegistrations):
-                                settings.GenerateRegistrations = (bool)property.Argument.Value;
-                                break;
-                        }
-                    }
-                }
-            }
-        }
-
+        Settings settings;
         try
         {
-            settings = Settings.Parse(settings, Config);
+            settings = Settings.Load(typeResolver, Config);
         }
         catch (SettingsParseException e)
         {

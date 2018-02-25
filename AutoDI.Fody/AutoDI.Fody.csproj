@@ -17,7 +17,7 @@
     <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
   </ItemGroup>
 
-  <Target Name="CopyOutput" AfterTargets="AfterBuild">
+  <Target Name="CopyOutput" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Release'">
     <ItemGroup>
       <CopyItems Include="$(TargetDir)AutoDI*.dll" />
       <CopyItems Include="$(TargetDir)AutoDI*.pdb" />

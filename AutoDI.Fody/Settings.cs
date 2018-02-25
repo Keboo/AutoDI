@@ -3,11 +3,46 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using Mono.Cecil;
 
 namespace AutoDI.Fody
 {
     internal class Settings
     {
+        public static Settings Load(TypeResolver typeResolver, XElement config)
+        {
+            var settings = new Settings();
+            foreach (CustomAttribute attribute in typeResolver.GetAllModules().SelectMany(m => m.Assembly.CustomAttributes))
+            {
+                if (attribute.AttributeType.IsType<SettingsAttribute>())
+                {
+                    foreach (CustomAttributeNamedArgument property in attribute.Properties)
+                    {
+                        if (property.Argument.Value != null)
+                        {
+                            switch (property.Name)
+                            {
+                                case nameof(SettingsAttribute.AutoInit):
+                                    settings.AutoInit = (bool)property.Argument.Value;
+                                    break;
+                                case nameof(SettingsAttribute.Behavior):
+                                    settings.Behavior = (Behaviors)property.Argument.Value;
+                                    break;
+                                case nameof(SettingsAttribute.DebugLogLevel):
+                                    settings.DebugLogLevel = (DebugLogLevel)property.Argument.Value;
+                                    break;
+                                case nameof(SettingsAttribute.GenerateRegistrations):
+                                    settings.GenerateRegistrations = (bool)property.Argument.Value;
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Parse(settings, config);
+        }
+
         internal const Lifetime DefaultLifetime = Lifetime.LazySingleton;
 
         public Behaviors Behavior { get; set; } = Behaviors.Default;
@@ -43,8 +78,8 @@ namespace AutoDI.Fody
             if (Assemblies.Any())
             {
                 sb.AppendLine();
-                 foreach (MatchAssembly assembly in Assemblies)
-               {
+                foreach (MatchAssembly assembly in Assemblies)
+                {
                     sb.AppendLine($"    {assembly}");
                 }
             }
@@ -148,7 +183,7 @@ namespace AutoDI.Fody
 
             void ParseAttributes(XElement element, params IAttribute[] attributes)
             {
-                Dictionary<string, IAttribute> attributesByName = 
+                Dictionary<string, IAttribute> attributesByName =
                     attributes.ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
 
                 foreach (XAttribute attribute in element.Attributes())
@@ -204,7 +239,8 @@ namespace AutoDI.Fody
 
             public static IAttribute RequiredString(string name, Action<string> setter)
             {
-                return Create(name, setter, (string x, out string value) => {
+                return Create(name, setter, (string x, out string value) =>
+                {
                     value = x;
                     return true;
                 }, true);
@@ -219,7 +255,7 @@ namespace AutoDI.Fody
             {
                 return Create(name, setter, bool.TryParse, false);
             }
-            
+
             public static IAttribute Create<T>(string name, Action<T> setter, TryParseDelegate<T> parseDelegate, bool required)
             {
                 return new Attrib(name, x =>

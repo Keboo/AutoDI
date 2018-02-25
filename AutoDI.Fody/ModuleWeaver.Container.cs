@@ -108,7 +108,7 @@ partial class ModuleWeaver
                         processor.Emit(OpCodes.Pop);
                     }
                 }
-                catch (MultipleConstructorAutoDIException e)
+                catch (MultipleConstructorException e)
                 {
                     LogError($"Failed to create map for {map}\r\n{e}");
                 }
@@ -126,27 +126,9 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
     {
-        if (!CanMapType(targetType)) return null;
-
-        var targetTypeCtors = targetType.GetConstructors();
-        var annotatedConstructors = targetTypeCtors
-            .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.IsType<DiConstructorAttribute>())).ToArray();
-        MethodDefinition targetTypeCtor;
-
-        if (annotatedConstructors.Length > 0)
-        {
-            if (annotatedConstructors.Length > 1)
-            {
-                throw new MultipleConstructorAutoDIException($"More then one constructor on '{targetType.Name}' annotated with {nameof(DiConstructorAttribute)}");
-            }
-            targetTypeCtor = annotatedConstructors[0];
-        }
-        else
-        {
-            targetTypeCtor = targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count)
-                .FirstOrDefault();
-        }
-
+        if (!targetType.CanMapType()) return null;
+        
+        MethodDefinition targetTypeCtor = targetType.GetMappingConstructor();
         if (targetTypeCtor == null) return null;
 
         var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
@@ -295,16 +277,5 @@ partial class ModuleWeaver
             return method;
         }
         return null;
-    }
-
-    //Issue 75
-    private static bool CanMapType(TypeDefinition type)
-    {
-        if (!type.IsNested) return true;
-
-        //public, protected internal, and internal
-        if (!type.IsNestedPublic && !type.IsNestedFamilyOrAssembly && !type.IsNestedAssembly) return false;
-
-        return CanMapType(type.DeclaringType);
     }
 }

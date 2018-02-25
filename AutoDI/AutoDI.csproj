@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="1.1.1" />
   </ItemGroup>
 
-  <Target Name="CopyOutput" AfterTargets="AfterBuild">
+  <Target Name="CopyOutput" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Release'">
     <ItemGroup>
       <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
       <CopyItems Include="$(TargetDir)..\**\$(TargetName).pdb" />

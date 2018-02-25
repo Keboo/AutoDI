@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <RunAutoDI Condition="'$(RunAutoDI)' == '' Or $(RunAutoDI) == '*Undefined*'">True</RunAutoDI>
+  </PropertyGroup>
+  
+  <ItemGroup Condition="$(RunAutoDI) == 'False'">
+    <Compile Include="$(ProjectDir)$(IntermediateOutputPath)AutoDITest.cs" Condition="Exists('$(ProjectDir)$(IntermediateOutputPath)AutoDITest.cs')"/>
+  </ItemGroup>
+
+  <UsingTask TaskName="AutoDI.MSBuild.GeneratorTask"
+             AssemblyFile="C:\Dev\AutoDI\AutoDI.MSBuild\bin\Debug\net461\AutoDI.MSBuild.dll"/>
+
+  <Target Name="AutoDITask" AfterTargets="AfterCompile" Condition="$(RunAutoDI) == 'True'">
+    <GeneratorTask
+      ProjectPath="$(ProjectPath)"
+      OutputPath="@(IntermediateAssembly)"
+      IntermediateOutputPath="$(ProjectDir)$(IntermediateOutputPath)">
+      
+      <Output ItemName="Compile" TaskParameter="GeneratedCodeFiles" />
+    </GeneratorTask>
+    
+    <Message Text="Re-running build" />
+    <MSBuild Projects="$(MSBuildProjectFile)" Properties="RunAutoDI=False" UseResultsCache="False" />
+  </Target>
+</Project>
