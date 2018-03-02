@@ -129,6 +129,36 @@ namespace AutoDI.MSBuild
                 }
                 sw.WriteLine("        }");
 
+                sw.WriteLine("        public static void Init(Action<IApplicationBuilder> configure)");
+                sw.WriteLine("        {");
+                sw.WriteLine("            if (_globalServiceProvider != null)");
+                sw.WriteLine("            {");
+                sw.WriteLine("                throw new AlreadyInitializedException();");
+                sw.WriteLine("            }");
+                sw.WriteLine("            IApplicationBuilder applicationBuilder = new ApplicationBuilder();");
+                sw.WriteLine("            applicationBuilder.ConfigureServices(AddServices);");
+                sw.WriteLine("            if (configure != null)");
+                sw.WriteLine("            {");
+                sw.WriteLine("                configure(applicationBuilder);");
+                sw.WriteLine("            }");
+                sw.WriteLine("            _globalServiceProvider = applicationBuilder.Build();");
+                sw.WriteLine("            GlobalDI.Register(_globalServiceProvider);");
+                sw.WriteLine("        }");
+                
+                sw.WriteLine("        public static void Dispose()");
+                sw.WriteLine("        {");
+                sw.WriteLine("            IDisposable disposable;");
+                sw.WriteLine("            if ((disposable = (_globalServiceProvider as IDisposable)) != null)");
+                sw.WriteLine("            {");
+                sw.WriteLine("                disposable.Dispose();");
+                sw.WriteLine("            }");
+                sw.WriteLine("            GlobalDI.Unregister(_globalServiceProvider);");
+                sw.WriteLine("            _globalServiceProvider = null;");
+                sw.WriteLine("        }");
+
+
+                sw.WriteLine("        private static IServiceProvider _globalServiceProvider;");
+                
                 sw.WriteLine("    }");
                 sw.WriteLine("}");
             }
@@ -136,51 +166,10 @@ namespace AutoDI.MSBuild
             IEnumerable<string> GetAllNamespaces()
             {
                 yield return "System";
+                yield return "AutoDI";
                 yield return "Microsoft.Extensions.DependencyInjection";
             }
         }
-
-        //public override bool Execute()
-        //{
-        //    string myLocation = @"C:\Dev\AutoDI\AutoDI.MSBuild.CSharp\bin\Debug\net461\AutoDI.MSBuild.CSharp.dll";
-        //    string path = Path.GetDirectoryName(myLocation);
-        //    var appDomainSetup = new AppDomainSetup
-        //    {
-        //        ApplicationName = Guid.NewGuid().ToString("N"),
-        //        ApplicationBase = path,
-        //        ConfigurationFile = $"{myLocation}.config"
-        //    };
-        //    var appDomain = AppDomain.CreateDomain("MyTestDomain", null, appDomainSetup);
-        //    //appDomain.AssemblyResolve += (sender, args) =>
-        //    //{
-        //    //    return null;
-        //    //    //var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-        //    //    //var rv = assemblies.FirstOrDefault(x => string.Equals(x.FullName, args.Name, StringComparison.OrdinalIgnoreCase));
-        //    //    //return rv;
-        //    //};
-        //
-        //    Assembly OnCurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
-        //    {
-        //        var rv = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => string.Equals(x.FullName, args.Name, StringComparison.OrdinalIgnoreCase));
-        //
-        //        return rv;
-        //    }
-        //
-        //    var assembly = Assembly.LoadFile(myLocation);
-        //    var builderTypes = assembly.GetExportedTypes().ToList();
-        //
-        //
-        //    AppDomain.CurrentDomain.AssemblyResolve += OnCurrentDomainOnAssemblyResolve;
-        //    foreach (Type builderType in builderTypes)
-        //    {
-        //        var executeMethod = builderType.GetMethods().FirstOrDefault(m => m.Name == "Execute");
-        //        var builder = appDomain.CreateInstanceFromAndUnwrap(myLocation, builderType.FullName);
-        //        //object builder = appDomain.CreateInstanceAndUnwrap("AutoDI.MSBuild.CSharp", builderType.FullName);
-        //        executeMethod.Invoke(builder, new object[] {ProjectPath});
-        //    }
-        //    
-        //    return true;
-        //}
 
         public void Cancel()
         {
