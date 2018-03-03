@@ -3,13 +3,24 @@ using AutoDI;
 
 namespace AssemblyToProcess
 {
-    public class ClassWithNullParam
+    public partial class ClassWithNullParam
     {
         public IService Service { get; }
 
+        partial void Resolve<T>(ref T service);
+
         public ClassWithNullParam( [Dependency( (object)null )] IService service = null )
         {
+            Resolve(ref service);
             Service = service ?? throw new ArgumentNullException( nameof( service ) );
+        }
+    }
+
+    public partial class ClassWithNullParam
+    {
+        partial void Resolve<T>(ref T service)
+        {
+            if (service == null) GlobalDI.GetService<T>();
         }
     }
 

@@ -56,7 +56,8 @@ namespace AutoDI.MSBuild
                 Directory.CreateDirectory(Path.GetDirectoryName(GeneratedFilePath));
                 using (var file = File.Open(GeneratedFilePath, FileMode.Create))
                 {
-                    WriteClass(mapping, file);
+                    //TODO: Logging
+                    WriteClass(mapping, SetupMethod.Find(compiledAssembly.MainModule, null), file);
                     GeneratedCodeFiles = new ITaskItem[] { new TaskItem(GeneratedFilePath) };
                 }
             }
@@ -81,7 +82,7 @@ namespace AutoDI.MSBuild
             return null;
         }
 
-        private static void WriteClass(Mapping mapping, Stream output)
+        private static void WriteClass(Mapping mapping, MethodDefinition setupMethod, Stream output)
         {
             using (var sw = new StreamWriter(output))
             {
@@ -91,7 +92,7 @@ namespace AutoDI.MSBuild
                 }
                 sw.WriteLine("namespace AutoDI.Generated");
                 sw.WriteLine("{");
-                sw.WriteLine("    public static class AutoDI");
+                sw.WriteLine("    public static partial class AutoDI");
                 sw.WriteLine("    {");
 
                 int index = 0;
@@ -111,7 +112,7 @@ namespace AutoDI.MSBuild
                     sw.WriteLine("        }");
                 }
 
-                sw.WriteLine("        public static void AddServices(IServiceCollection collection)");
+                sw.WriteLine("        private static void AddServices(IServiceCollection collection)");
                 sw.WriteLine("        {");
                 index = 0;
                 foreach (TypeMap typeMap in mapping)
@@ -129,7 +130,7 @@ namespace AutoDI.MSBuild
                 }
                 sw.WriteLine("        }");
 
-                sw.WriteLine("        public static void Init(Action<IApplicationBuilder> configure)");
+                sw.WriteLine("        static partial void DoInit(Action<IApplicationBuilder> configure)");
                 sw.WriteLine("        {");
                 sw.WriteLine("            if (_globalServiceProvider != null)");
                 sw.WriteLine("            {");
@@ -137,6 +138,10 @@ namespace AutoDI.MSBuild
                 sw.WriteLine("            }");
                 sw.WriteLine("            IApplicationBuilder applicationBuilder = new ApplicationBuilder();");
                 sw.WriteLine("            applicationBuilder.ConfigureServices(AddServices);");
+                if (setupMethod != null)
+                {
+                    sw.WriteLine($"            {setupMethod.DeclaringType.FullNameCSharp()}.{setupMethod.Name}(applicationBuilder);");
+                }
                 sw.WriteLine("            if (configure != null)");
                 sw.WriteLine("            {");
                 sw.WriteLine("                configure(applicationBuilder);");
@@ -144,8 +149,8 @@ namespace AutoDI.MSBuild
                 sw.WriteLine("            _globalServiceProvider = applicationBuilder.Build();");
                 sw.WriteLine("            GlobalDI.Register(_globalServiceProvider);");
                 sw.WriteLine("        }");
-                
-                sw.WriteLine("        public static void Dispose()");
+
+                sw.WriteLine("        static partial void DoDispose()");
                 sw.WriteLine("        {");
                 sw.WriteLine("            IDisposable disposable;");
                 sw.WriteLine("            if ((disposable = (_globalServiceProvider as IDisposable)) != null)");
@@ -158,7 +163,7 @@ namespace AutoDI.MSBuild
 
 
                 sw.WriteLine("        private static IServiceProvider _globalServiceProvider;");
-                
+
                 sw.WriteLine("    }");
                 sw.WriteLine("}");
             }
@@ -173,7 +178,7 @@ namespace AutoDI.MSBuild
 
         public void Cancel()
         {
-            throw new NotImplementedException();
+
         }
     }
 }

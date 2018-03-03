@@ -81,6 +81,7 @@ public partial class ModuleWeaver
 
     public void Execute()
     {
+        Logger = new WeaverLogger(this);
         try
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;

@@ -1,12 +1,10 @@
 ﻿
-using System;
-using System.Linq;
 using AutoDI;
 using AutoDI.Fody;
 using Microsoft.Extensions.DependencyInjection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
+using System;
 
 // ReSharper disable once CheckNamespace
 partial class ModuleWeaver
@@ -184,7 +182,7 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.ConfigureServices)));
         initProcessor.Emit(OpCodes.Pop);
 
-        MethodDefinition setupMethod = FindSetupMethod();
+        MethodDefinition setupMethod = SetupMethod.Find(ModuleDefinition, Logger);
         if (setupMethod != null)
         {
             InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
@@ -254,28 +252,5 @@ partial class ModuleWeaver
         return disposeMethod;
     }
 
-    private MethodDefinition FindSetupMethod()
-    {
-        foreach (var method in ModuleDefinition.GetAllTypes().SelectMany(t => t.GetMethods())
-            .Where(m => m.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>())))
-        {
-            if (!method.IsStatic)
-            {
-                LogWarning($"Setup method '{method.FullName}' must be static");
-                return null;
-            }
-            if (!method.IsPublic && !method.IsAssembly)
-            {
-                LogWarning($"Setup method '{method.FullName}' must be public or internal");
-                return null;
-            }
-            if (method.Parameters.Count != 1 || !method.Parameters[0].ParameterType.IsType<IApplicationBuilder>())
-            {
-                LogWarning($"Setup method '{method.FullName}' must take a single parameter of type '{typeof(IApplicationBuilder).FullName}'");
-                return null;
-            }
-            return method;
-        }
-        return null;
-    }
+    
 }

@@ -1,20 +1,21 @@
 ﻿using System;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AutoDI.Generated
 {
-    public static class AutoDI
+    public static partial class AutoDI
     {
-        private static object generated_0(IServiceProvider serviceProvider)
+        static partial void DoInit(Action<IApplicationBuilder> configure);
+
+        static partial void DoDispose();
+
+        public static void Init(Action<IApplicationBuilder> configure)
         {
-            return null;
+            DoInit(configure);
         }
-        public static void AddServices(IServiceCollection collection)
+
+        public static void Dispose()
         {
-            collection.AddAutoDIService<object>(new Func<IServiceProvider, object>(generated_0), new Type[]
-            {
-                typeof(object)
-            }, Lifetime.Singleton);
+            DoDispose();
         }
     }
 }
