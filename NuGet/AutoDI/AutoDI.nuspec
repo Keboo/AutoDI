@@ -15,7 +15,7 @@ AutoDI classes. These are expected to be used with the AutoDI.Fody extension.
 
 Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     </description>
-    <copyright>Copyright 2017</copyright>
+    <copyright>Copyright 2018</copyright>
     <tags>AutoDI</tags>
     <dependencies>
       <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="[1.1.1,3)" />

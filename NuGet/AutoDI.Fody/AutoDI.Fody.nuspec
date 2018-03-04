@@ -15,7 +15,7 @@ Fody extension for simplifying the creation of objects from your favorite DI con
 
 Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     </description>
-    <copyright>Copyright 2017</copyright>
+    <copyright>Copyright 2018</copyright>
     <tags>AutoDI, Fody</tags>
     <dependencies>
       <dependency id="Fody" version="2.1.*" />

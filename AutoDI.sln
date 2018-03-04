@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2026
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}"
 EndProject
@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524
 	ProjectSection(SolutionItems) = preProject
 		NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec = NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec
 		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
+		NuGet\AutoDI.MSBuild\AutoDI.MSBuild.nuspec = NuGet\AutoDI.MSBuild\AutoDI.MSBuild.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
 	EndProjectSection
 EndProject
@@ -44,7 +45,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.MSBuild", "AutoDI.MS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.MSBuild.Tests", "AutoDI.MSBuild.Tests\AutoDI.MSBuild.Tests.csproj", "{702F33F3-8846-4F72-A3C6-C5F20184ED6E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.MSBuild.CSharp", "AutoDI.MSBuild.CSharp\AutoDI.MSBuild.CSharp.csproj", "{73321A3B-0B0F-475F-B4E7-A6023124EF3E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.MSBuild.CSharp", "AutoDI.MSBuild.CSharp\AutoDI.MSBuild.CSharp.csproj", "{73321A3B-0B0F-475F-B4E7-A6023124EF3E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

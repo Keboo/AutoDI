@@ -15,10 +15,14 @@
     <ProjectReference Include="..\AutoDI.Fody\AutoDI.Fody.csproj" />
   </ItemGroup>
 
-  <!--<ItemGroup>
-    <Reference Include="Microsoft.CodeAnalysis.Workspaces.Desktop">
-      <HintPath>..\..\..\Users\kitok\.nuget\packages\microsoft.codeanalysis.workspaces.common\2.6.1\lib\net46\Microsoft.CodeAnalysis.Workspaces.Desktop.dll</HintPath>
-    </Reference>
-  </ItemGroup>-->
+  <Target Name="CopyOutput" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
+      <CopyItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
+      <ContentItems Include="$(ProjectDir)\AutoDI.cs" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
+    <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\content\" />
+  </Target>
 
 </Project>

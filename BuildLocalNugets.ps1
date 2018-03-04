@@ -10,8 +10,9 @@ if (!(Test-Path "nuget.exe")) {
     Invoke-WebRequest -Uri https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile "nuget.exe"
 }
 
-.\nuget pack Nuget\AutoDI\AutoDI.nuspec -Version $Version
-.\nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version $Version
+.\nuget pack NuGet\AutoDI\AutoDI.nuspec -Version $Version
+.\nuget pack NuGet\AutoDI.Fody\AutoDI.Fody.nuspec -Version $Version
+.\nuget pack NuGet\AutoDI.MSBuild\AutoDI.MSBuild.nuspec -Version $Version
 
 if ($TargetDir){
     Move-Item "AutoDI.*.nupkg" $TargetDir -Force

@@ -86,10 +86,9 @@ namespace AutoDI.MSBuild
         {
             using (var sw = new StreamWriter(output))
             {
-                foreach (string @namespace in GetAllNamespaces().Distinct().OrderBy(x => x))
-                {
-                    sw.WriteLine($"using {@namespace};");
-                }
+                sw.WriteLine("System");
+                sw.WriteLine("AutoDI");
+                sw.WriteLine("Microsoft.Extensions.DependencyInjection");
                 sw.WriteLine("namespace AutoDI.Generated");
                 sw.WriteLine("{");
                 sw.WriteLine("    public static partial class AutoDI");
@@ -166,13 +165,6 @@ namespace AutoDI.MSBuild
 
                 sw.WriteLine("    }");
                 sw.WriteLine("}");
-            }
-
-            IEnumerable<string> GetAllNamespaces()
-            {
-                yield return "System";
-                yield return "AutoDI";
-                yield return "Microsoft.Extensions.DependencyInjection";
             }
         }
 
