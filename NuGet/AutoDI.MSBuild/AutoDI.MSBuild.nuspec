@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <metadata>
-    <id>AutoDI.Fody</id>
+    <id>AutoDI.MSBuild</id>
     <version>0.0.0</version>
     <title>AutoDI.Fody</title>
     <authors>Keboo</authors>
@@ -11,14 +11,13 @@
     <iconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>
-Fody extension for simplifying the creation of objects from your favorite DI container
+AutoDI extension using MSBuild to auto generate C# code to generate code for AutoDI.
 
 Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     </description>
     <copyright>Copyright 2018</copyright>
-    <tags>AutoDI, Fody</tags>
+    <tags>AutoDI, MSBuild</tags>
     <dependencies>
-      <dependency id="Fody" version="2.1.*" />
       <dependency id="AutoDI" version="[0.0.0,0.1.0)" />
       <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="[1.1.1,3)" />
     </dependencies>

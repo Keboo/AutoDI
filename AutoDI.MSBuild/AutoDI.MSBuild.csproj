@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFramework>net46</TargetFramework>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
@@ -17,12 +17,15 @@
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
     <ItemGroup>
-      <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
-      <CopyItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
-      <ContentItems Include="$(ProjectDir)\AutoDI.cs" />
+      <CopyItems Include="$(TargetDir)..\**\AutoDI*.dll" />
+      <CopyItems Include="$(TargetDir)..\**\AutoDI*.pdb" />
+      <CopyItems Include="$(TargetDir)..\**\Mono.Cecil*" />
+      <ContentItems Include="$(ProjectDir)AutoDI.cs" />
+      <BuildItems Include="$(ProjectDir)AutoDI.MSBuild.targets" />
     </ItemGroup>
     <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\content\" />
+    <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\" />
   </Target>
 
 </Project>
