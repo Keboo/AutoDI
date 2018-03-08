@@ -8,7 +8,8 @@ namespace Console.Framework
     {
         static void Main(string[] args)
         {
-            var quoteBoard = new QuoteBoard();
+            AutoDI.Generated.AutoDI.Init();
+            var quoteBoard = GlobalDI.GetService<QuoteBoard>();
             quoteBoard.ShowQuotes();
             System.Console.ReadLine();
         }
@@ -20,8 +21,7 @@ namespace Console.Framework
 
         public QuoteBoard([Dependency]IQuoteService service = null)
         {
-            _service = service;
-            if (service == null) throw new ArgumentNullException(nameof(service));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
         }
 
         public void ShowQuotes()
