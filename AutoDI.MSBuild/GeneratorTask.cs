@@ -85,9 +85,9 @@ namespace AutoDI.MSBuild
         {
             using (var sw = new StreamWriter(output))
             {
-                sw.WriteLine("System");
-                sw.WriteLine("AutoDI");
-                sw.WriteLine("Microsoft.Extensions.DependencyInjection");
+                sw.WriteLine("using System;");
+                sw.WriteLine("using AutoDI;");
+                sw.WriteLine("using Microsoft.Extensions.DependencyInjection;");
                 sw.WriteLine("namespace AutoDI.Generated");
                 sw.WriteLine("{");
                 sw.WriteLine("    public static partial class AutoDI");
@@ -100,11 +100,11 @@ namespace AutoDI.MSBuild
                     MethodDefinition ctor = typeMap.TargetType.GetMappingConstructor();
                     if (ctor == null) continue;
 
-                    sw.WriteLine($"        private static {typeMap.TargetType.FullNameCSharp()} generated_{index++}(IServiceProvider serviceProvider)");
+                    sw.WriteLine($"        private static global::{typeMap.TargetType.FullNameCSharp()} generated_{index++}(IServiceProvider serviceProvider)");
                     sw.WriteLine("        {");
-                    sw.Write($"            return new {typeMap.TargetType.FullNameCSharp()}(");
+                    sw.Write($"            return new global::{typeMap.TargetType.FullNameCSharp()}(");
 
-                    sw.Write(string.Join(", ", ctor.Parameters.Select(p => $"serviceProvider.GetService<{p.ParameterType.FullNameCSharp()}>()")));
+                    sw.Write(string.Join(", ", ctor.Parameters.Select(p => $"serviceProvider.GetService<global::{p.ParameterType.FullNameCSharp()}>()")));
 
                     sw.WriteLine(");");
                     sw.WriteLine("        }");
@@ -118,10 +118,10 @@ namespace AutoDI.MSBuild
                     if (!typeMap.TargetType.CanMapType() || typeMap.TargetType.GetMappingConstructor() == null) continue;
                     foreach (TypeLifetime lifetime in typeMap.Lifetimes)
                     {
-                        sw.WriteLine($"            collection.AddAutoDIService<{typeMap.TargetType.FullNameCSharp()}>(generated_{index}, new System.Type[{lifetime.Keys.Count}]");
+                        sw.WriteLine($"            collection.AddAutoDIService<global::{typeMap.TargetType.FullNameCSharp()}>(generated_{index}, new System.Type[{lifetime.Keys.Count}]");
                         sw.WriteLine("            {");
                         sw.Write("                ");
-                        sw.WriteLine(string.Join(", ", lifetime.Keys.Select(t => $"typeof({t.FullNameCSharp()})")));
+                        sw.WriteLine(string.Join(", ", lifetime.Keys.Select(t => $"typeof(global::{t.FullNameCSharp()})")));
                         sw.WriteLine($"            }}, Lifetime.{lifetime.Lifetime});");
                     }
                     index++;
@@ -138,7 +138,7 @@ namespace AutoDI.MSBuild
                 sw.WriteLine("            applicationBuilder.ConfigureServices(AddServices);");
                 if (setupMethod != null)
                 {
-                    sw.WriteLine($"            {setupMethod.DeclaringType.FullNameCSharp()}.{setupMethod.Name}(applicationBuilder);");
+                    sw.WriteLine($"            global::{setupMethod.DeclaringType.FullNameCSharp()}.{setupMethod.Name}(applicationBuilder);");
                 }
                 sw.WriteLine("            if (configure != null)");
                 sw.WriteLine("            {");

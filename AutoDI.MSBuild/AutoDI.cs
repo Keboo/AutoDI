@@ -8,7 +8,7 @@ namespace AutoDI.Generated
 
         static partial void DoDispose();
 
-        public static void Init(Action<IApplicationBuilder> configure)
+        public static void Init(Action<IApplicationBuilder> configure = null)
         {
             DoInit(configure);
         }

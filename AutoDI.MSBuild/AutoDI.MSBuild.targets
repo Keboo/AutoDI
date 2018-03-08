@@ -4,6 +4,7 @@
   <PropertyGroup>
     <RunAutoDI Condition="'$(RunAutoDI)' == '' Or $(RunAutoDI) == '*Undefined*'">True</RunAutoDI>
     <AutoDIOutputPath Condition="'$(AutoDIOutputPath)' == '' Or $(AutoDIOutputPath) == '*Undefined*'">$(ProjectDir)$(IntermediateOutputPath)AutoDI.Generated\</AutoDIOutputPath>
+    <AutoDIMSBuildAssembly Condition="'$(AutoDIMSBuildAssembly)' == '' Or $(AutoDIMSBuildAssembly) == '*Undefined*'">$(MSBuildThisFileDirectory)..\lib\net46\AutoDI.MSBuild.dll</AutoDIMSBuildAssembly>
     <AutoDIGeneratedFileName>AutoDI.cs</AutoDIGeneratedFileName>
   </PropertyGroup>
   
@@ -12,7 +13,7 @@
   </ItemGroup>
 
   <UsingTask TaskName="AutoDI.MSBuild.GeneratorTask"
-             AssemblyFile="C:\Dev\AutoDI\AutoDI.MSBuild\bin\Debug\net461\AutoDI.MSBuild.dll"/>
+             AssemblyFile="$(AutoDIMSBuildAssembly)"/>
 
   <Target Name="AutoDITask" AfterTargets="AfterCompile" Condition="$(RunAutoDI) == 'True'">
     <GeneratorTask
