@@ -57,6 +57,8 @@ namespace AutoDI.Fody
         /// </summary>
         public bool GenerateRegistrations { get; set; } = true;
 
+        public bool DebugExceptions { get; set; }
+
         public DebugLogLevel DebugLogLevel { get; set; } = DebugLogLevel.Default;
 
         public IList<MatchType> Types { get; } = new List<MatchType>();
@@ -127,6 +129,7 @@ namespace AutoDI.Fody
             ParseAttributes(rootElement, Attrib.OptionalBool(nameof(AutoInit), x => settings.AutoInit = x),
                 Attrib.OptionalBool(nameof(GenerateRegistrations), x => settings.GenerateRegistrations = x),
                 Attrib.OptionalEnum<DebugLogLevel>(nameof(DebugLogLevel), x => settings.DebugLogLevel = x),
+                Attrib.OptionalBool(nameof(DebugExceptions), x => settings.DebugExceptions = x),
                 Attrib.Create(nameof(Behavior), x => settings.Behavior = x, (string x, out Behaviors behavior) =>
                 {
                     behavior = Behaviors.None;

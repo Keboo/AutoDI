@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using AutoDI;
 using AutoDI.Fody;
@@ -29,8 +30,18 @@ public partial class ModuleWeaver
 
             var coreType = moduleDefinition.ResolveCoreType(typeof(Type));
             System_Type = moduleDefinition.ImportReference(coreType);
-            
             Type_GetTypeFromHandle = moduleDefinition.ImportReference(coreType.GetMethods().Single(m => m.Name == nameof(Type.GetTypeFromHandle)));
+            
+            System_Exception = moduleDefinition.ImportReference(moduleDefinition.ResolveCoreType(typeof(Exception)));
+
+            List_Type = moduleDefinition.ResolveCoreType(typeof(List<>));
+
+            var aggregateExceptionType = moduleDefinition.ResolveCoreType(typeof(AggregateException)).Resolve();
+            var enumerableExceptionType = moduleDefinition.ImportReference(typeof(IEnumerable<Exception>));
+            System_AggregateException_Ctor = moduleDefinition.ImportReference(aggregateExceptionType
+                .GetConstructors().Single(c =>
+                    c.Parameters.Count == 2 && c.Parameters[0].ParameterType.IsType<string>() &&
+                    c.Parameters[1].ParameterType.IsType(enumerableExceptionType)));
 
             ServiceCollectionMixins_AddAutoDIService = moduleDefinition.ImportReference(
                 UpdateMethod(autoDIAssembly.MainModule.GetType(typeof(ServiceCollectionMixins).FullName)
@@ -44,7 +55,13 @@ public partial class ModuleWeaver
             GlobalDI_Unregister = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
                 .Single(m => m.Name == nameof(GlobalDI.Unregister))));
             GlobalDI_GetService = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
-                .Single(m => m.Name == nameof(GlobalDI.GetService) && m.HasGenericParameters == true && m.Parameters.Count == 1)));
+                .Single(m => m.Name == nameof(GlobalDI.GetService) && m.HasGenericParameters && m.Parameters.Count == 1)));
+
+            var autoDIExceptionType = moduleDefinition
+                .ImportReference(autoDIAssembly.MainModule.GetType(typeof(AutoDIException).FullName)).Resolve();
+            AutoDIException_Ctor = moduleDefinition.ImportReference(autoDIExceptionType.GetConstructors().Single(c =>
+                c.Parameters.Count == 2 && c.Parameters[0].ParameterType.IsType<string>() &&
+                c.Parameters[1].ParameterType.IsType<Exception>()));
 
             MethodReference UpdateMethod(MethodReference method)
             {
@@ -86,5 +103,12 @@ public partial class ModuleWeaver
         public TypeReference IServiceProvider { get; }
 
         public TypeReference System_Type { get; }
+
+        public TypeReference System_Exception { get; }
+        public MethodReference System_AggregateException_Ctor { get; }
+
+        public TypeDefinition List_Type { get; }
+
+        public MethodReference AutoDIException_Ctor { get; }
     }
 }

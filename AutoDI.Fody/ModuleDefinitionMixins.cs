@@ -88,12 +88,17 @@ namespace AutoDI.Fody
 
         public static MethodReference GetDefaultConstructor<T>(this ModuleDefinition moduleDefinition)
         {
+            return moduleDefinition.GetDefaultConstructor(typeof(T));
+        }
+
+        public static MethodReference GetDefaultConstructor(this ModuleDefinition moduleDefinition, Type targetType)
+        {
             if (moduleDefinition == null) throw new ArgumentNullException(nameof(moduleDefinition));
 
-            var defualtCtor = typeof(T).GetConstructor(new Type[0]);
+            var defualtCtor = targetType.GetConstructor(new Type[0]);
             if (defualtCtor == null)
             {
-                throw new InvalidOperationException($"Could not find default constructor for '{typeof(T).FullName}'");
+                throw new InvalidOperationException($"Could not find default constructor for '{targetType.FullName}'");
             }
             return moduleDefinition.ImportReference(defualtCtor);
         }

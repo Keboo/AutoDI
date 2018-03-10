@@ -42,6 +42,6 @@ Take a look in the [Examples](https://github.com/Keboo/AutoDI/tree/master/Exampl
 *Don't see your favorite listed? I accept PRs.*
 
 ### Icon
-![needle](https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png)
+<img src="https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png" width="64">
 
 [Needle](https://materialdesignicons.com/icon/needle) designed by [Austin Andrews](https://thenounproject.com/prosymbols/) from [Material Design Icons](https://materialdesignicons.com/)
