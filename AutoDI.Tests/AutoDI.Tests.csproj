@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AssemblyToProcess\AssemblyToProcess.csproj" />
+    <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

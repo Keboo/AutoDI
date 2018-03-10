@@ -21,7 +21,7 @@
       <CopyItems Include="$(TargetDir)..\**\AutoDI*.pdb" />
       <CopyItems Include="$(TargetDir)..\**\Mono.Cecil*" />
       <ContentItems Include="$(ProjectDir)AutoDI.cs" />
-      <BuildItems Include="$(ProjectDir)AutoDI.MSBuild.targets" />
+      <BuildItems Include="$(ProjectDir)AutoDI.Generator.targets" />
     </ItemGroup>
     <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\content\" />

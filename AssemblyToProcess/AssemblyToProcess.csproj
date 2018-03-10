@@ -41,9 +41,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\AutoDI.MSBuild\AutoDI.cs">
-      <Link>AutoDI.cs</Link>
-    </Compile>
     <Compile Include="ClassesWithDependencyParams.cs" />
     <Compile Include="ClassWithExplicitBaseDependency.cs" />
     <Compile Include="ClassWithDependencies.cs" />

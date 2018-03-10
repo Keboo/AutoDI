@@ -16,8 +16,7 @@ using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 [assembly: InternalsVisibleTo("AutoDI.Fody.Tests")]
-[assembly: InternalsVisibleTo("AutoDI.MSBuild.CSharp")]
-[assembly: InternalsVisibleTo("AutoDI.MSBuild")]
+[assembly: InternalsVisibleTo("AutoDI.Generator")]
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver
 {

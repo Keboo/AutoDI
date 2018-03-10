@@ -1,14 +1,13 @@
-﻿
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
 using AutoDI.Fody;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Xml.Linq;
 
-namespace AutoDI.MSBuild
+namespace AutoDI.Generator
 {
     public class GeneratorTask : Task, ICancelableTask
     {

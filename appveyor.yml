@@ -38,7 +38,7 @@
     
       nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
-      nuget pack Nuget\AutoDI.MSBuild\AutoDI.MSBuild.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
+      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
   artifacts:
   - path: '*.nupkg'
     name: NuGets
@@ -83,7 +83,7 @@
     
       nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$env:autodi_version"  -Symbols
     
-      nuget pack Nuget\AutoDI.MSBuild\AutoDI.MSBuild.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
+      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
   artifacts:
   - path: '*.nupkg'
     name: NuGets

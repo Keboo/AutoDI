@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
+# Visual Studio 1515
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}"
@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524
 	ProjectSection(SolutionItems) = preProject
 		NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec = NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec
 		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
-		NuGet\AutoDI.MSBuild\AutoDI.MSBuild.nuspec = NuGet\AutoDI.MSBuild\AutoDI.MSBuild.nuspec
+		NuGet\AutoDI.Generator\AutoDI.Generator.nuspec = NuGet\AutoDI.Generator\AutoDI.Generator.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
 	EndProjectSection
 EndProject
@@ -44,9 +44,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Tests", "AutoDI.Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AspNetCore", "AutoDI.AspNetCore\AutoDI.AspNetCore.csproj", "{EC8FEB67-0EC6-430E-892B-20EFFC47B423}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.MSBuild", "AutoDI.MSBuild\AutoDI.MSBuild.csproj", "{931F999C-07DD-4CB7-9DCB-657D795857F8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.MSBuild.Tests", "AutoDI.MSBuild.Tests\AutoDI.MSBuild.Tests.csproj", "{702F33F3-8846-4F72-A3C6-C5F20184ED6E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Generator", "AutoDI.Generator\AutoDI.Generator.csproj", "{931F999C-07DD-4CB7-9DCB-657D795857F8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,10 +84,6 @@ Global
 		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{702F33F3-8846-4F72-A3C6-C5F20184ED6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{702F33F3-8846-4F72-A3C6-C5F20184ED6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{702F33F3-8846-4F72-A3C6-C5F20184ED6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{702F33F3-8846-4F72-A3C6-C5F20184ED6E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

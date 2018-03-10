@@ -13,7 +13,7 @@ if (!(Test-Path "nuget.exe")) {
 
 .\nuget pack NuGet\AutoDI\AutoDI.nuspec -Version $Version -Symbols
 .\nuget pack NuGet\AutoDI.Fody\AutoDI.Fody.nuspec -Version $Version -Symbols
-.\nuget pack NuGet\AutoDI.MSBuild\AutoDI.MSBuild.nuspec -Version $Version -Symbols
+.\nuget pack NuGet\AutoDI.Generator\AutoDI.Generator.nuspec -Version $Version -Symbols
 
 if ($TargetDir){
     Move-Item "AutoDI.*.nupkg" $TargetDir -Force
