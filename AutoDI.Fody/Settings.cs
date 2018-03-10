@@ -76,6 +76,7 @@ namespace AutoDI.Fody
             sb.AppendLine($"  AutoInit: {AutoInit}");
             sb.AppendLine($"  GenerateRegistrations: {GenerateRegistrations}");
             sb.AppendLine($"  DebugLogLevel: {DebugLogLevel}");
+            sb.AppendLine($"  DebugExceptions: {DebugExceptions}");
             sb.Append("  Included Assemblies: ");
             if (Assemblies.Any())
             {
