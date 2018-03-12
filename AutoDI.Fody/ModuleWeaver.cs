@@ -76,25 +76,26 @@ public partial class ModuleWeaver
 
     //public string AssemblyToProcess { get; set; }
 
-    private Action<string, DebugLogLevel> InternalLogDebug { get; set; } = (s, l) => { };
+    private Action<string, DebugLogLevel> InternalLogDebug { get; set; }
 
     public void Execute()
     {
+        InternalLogDebug = (s, l) => LogDebug(s);
         Logger = new WeaverLogger(this);
         try
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
 
-            LogDebug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}");
+            Logger.Debug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}", DebugLogLevel.Default);
 
-            var typeResolver = new TypeResolver(ModuleDefinition, AssemblyResolver, InternalLogDebug);
+            var typeResolver = new TypeResolver(ModuleDefinition, AssemblyResolver, Logger);
 
             Settings settings = LoadSettings(typeResolver);
             if (settings == null) return;
 
             ICollection<TypeDefinition> allTypes = typeResolver.GetAllTypes(settings, out AssemblyDefinition autoDIAssembly);
 
-            InternalLogDebug($"Found types:\r\n{string.Join("\r\n", allTypes.Select(x => x.FullName))}", DebugLogLevel.Verbose);
+            Logger.Debug($"Found types:\r\n{string.Join("\r\n", allTypes.Select(x => x.FullName))}", DebugLogLevel.Verbose);
 
             if (autoDIAssembly == null)
             {
@@ -102,12 +103,12 @@ public partial class ModuleWeaver
                 autoDIAssembly = AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
                 if (autoDIAssembly == null)
                 {
-                    LogError("Could not find AutoDI assembly");
+                    Logger.Warning("Could not find AutoDI assembly");
                     return;
                 }
                 else
                 {
-                    LogWarning($"Failed to find AutoDI assembly. Manually injecting '{autoDIAssembly.MainModule.FileName}'");
+                    Logger.Warning($"Failed to find AutoDI assembly. Manually injecting '{autoDIAssembly.MainModule.FileName}'");
                 }
             }
 
@@ -115,9 +116,9 @@ public partial class ModuleWeaver
 
             if (settings.GenerateRegistrations)
             {
-                Mapping mapping = Mapping.GetMapping(settings, allTypes, InternalLogDebug);
+                Mapping mapping = Mapping.GetMapping(settings, allTypes, Logger);
 
-                InternalLogDebug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
+                Logger.Debug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
 
                 ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, out MethodDefinition initMethod));
 
@@ -128,7 +129,7 @@ public partial class ModuleWeaver
             }
             else
             {
-                InternalLogDebug("Skipping registration", DebugLogLevel.Verbose);
+                Logger.Debug("Skipping registration", DebugLogLevel.Verbose);
             }
 
             //We only update types in our module
@@ -142,7 +143,7 @@ public partial class ModuleWeaver
             var sb = new StringBuilder();
             for (Exception e = ex; e != null; e = e.InnerException)
                 sb.AppendLine(e.ToString());
-            LogError(sb.ToString());
+            Logger.Error(sb.ToString());
         }
         finally
         {
@@ -156,10 +157,10 @@ public partial class ModuleWeaver
         var assembly = AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
         if (assembly == null)
         {
-            LogWarning($"Failed to resolve assembly '{assemblyName.FullName}'");
+            Logger.Warning($"Failed to resolve assembly '{assemblyName.FullName}'");
             return null;
         }
-        InternalLogDebug($"Resolved assembly '{assembly.FullName}'", DebugLogLevel.Verbose);
+        Logger.Debug($"Resolved assembly '{assembly.FullName}'", DebugLogLevel.Verbose);
         using (var memoryStream = new MemoryStream())
         {
             assembly.Write(memoryStream);
@@ -172,7 +173,7 @@ public partial class ModuleWeaver
     {
         foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
         {
-            InternalLogDebug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
+            Logger.Debug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
             ProcessConstructor(type, ctor);
         }
     }
@@ -195,12 +196,12 @@ public partial class ModuleWeaver
             {
                 if (!parameter.IsOptional)
                 {
-                    LogInfo(
+                    Logger.Info(
                         $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {nameof(DependencyAttribute)} but is not an optional parameter. In {type.FullName}.");
                 }
                 if (parameter.Constant != null)
                 {
-                    LogWarning(
+                    Logger.Warning(
                         $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
                 }
 
@@ -220,7 +221,7 @@ public partial class ModuleWeaver
                     backingField = property.DeclaringType.Fields.FirstOrDefault(f => f.Name == $"<{property.Name}>k__BackingField");
                     if (backingField == null)
                     {
-                        LogWarning(
+                        Logger.Warning(
                             $"{property.FullName} is marked with {nameof(DependencyAttribute)} but cannot be set. Dependency properties must either be auto properties or have a setter");
                         continue;
                     }
@@ -368,7 +369,7 @@ public partial class ModuleWeaver
         {
             injector.Insert(Instruction.Create(OpCodes.Box, boxType));
         }
-        LogWarning($"Unknown constant type {constant.GetType().FullName}");
+        Logger.Warning($"Unknown constant type {constant.GetType().FullName}");
     }
 
     // Will be called when a request to cancel the build occurs. OPTIONAL

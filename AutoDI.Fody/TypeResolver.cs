@@ -10,10 +10,10 @@ namespace AutoDI.Fody
     {
         private readonly ModuleDefinition _module;
         private readonly IAssemblyResolver _assemblyResolver;
-        private readonly Action<string, DebugLogLevel> _logger;
+        private readonly ILogger _logger;
 
         public TypeResolver(ModuleDefinition module, IAssemblyResolver assemblyResolver,
-            Action<string, DebugLogLevel> logger)
+            ILogger logger)
         {
             _module = module ?? throw new ArgumentNullException(nameof(module));
             _assemblyResolver = assemblyResolver ?? throw new ArgumentNullException(nameof(assemblyResolver));
@@ -47,7 +47,7 @@ namespace AutoDI.Fody
                     {
                         continue;
                     }
-                    _logger($"Including types from '{module.Assembly.FullName}'", DebugLogLevel.Default);
+                    _logger.Debug($"Including types from '{module.Assembly.FullName}'", DebugLogLevel.Default);
                     //Either references AutoDI, or was a config assembly match, include the types.
                     foreach (TypeDefinition type in FilterTypes(module.GetAllTypes()))
                     {

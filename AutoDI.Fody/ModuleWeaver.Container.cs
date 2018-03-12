@@ -78,12 +78,12 @@ partial class ModuleWeaver
             {
                 try
                 {
-                    InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
+                    Logger.Debug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
 
                     MethodDefinition factoryMethod = GenerateFactoryMethod(map.TargetType, factoryIndex);
                     if (factoryMethod == null)
                     {
-                        InternalLogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
+                        Logger.Debug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
                             DebugLogLevel.Verbose);
                         continue;
                     }
@@ -109,7 +109,7 @@ partial class ModuleWeaver
                         foreach (TypeDefinition key in typeLifetime.Keys)
                         {
                             TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                            InternalLogDebug(
+                            Logger.Debug(
                                 $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({typeLifetime.Lifetime})",
                                 DebugLogLevel.Default);
                             processor.Emit(OpCodes.Dup);
@@ -166,11 +166,11 @@ partial class ModuleWeaver
                 }
                 catch (MultipleConstructorException e)
                 {
-                    LogError($"Failed to create map for {map}\r\n{e}");
+                    Logger.Error($"Failed to create map for {map}\r\n{e}");
                 }
                 catch (Exception e)
                 {
-                    LogWarning($"Failed to create map for {map}\r\n{e}");
+                    Logger.Warning($"Failed to create map for {map}\r\n{e}");
                 }
             }
         }
@@ -263,14 +263,14 @@ partial class ModuleWeaver
         MethodDefinition setupMethod = SetupMethod.Find(ModuleDefinition, Logger);
         if (setupMethod != null)
         {
-            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
+            Logger.Debug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
             initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
             initProcessor.Emit(OpCodes.Call, setupMethod);
             initProcessor.Emit(OpCodes.Nop);
         }
         else
         {
-            InternalLogDebug("No setup method found", DebugLogLevel.Default);
+            Logger.Debug("No setup method found", DebugLogLevel.Default);
         }
 
         Instruction loadForBuild = Instruction.Create(OpCodes.Ldloc_0);

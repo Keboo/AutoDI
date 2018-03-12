@@ -9,10 +9,10 @@ namespace AutoDI.Fody
 {
     internal class Mapping : IEnumerable<TypeMap>
     {
-        private readonly Action<string, DebugLogLevel> _logger;
+        private readonly ILogger _logger;
         private readonly Dictionary<string, TypeMap> _maps = new Dictionary<string, TypeMap>();
 
-        public static Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes, Action<string, DebugLogLevel> logger)
+        public static Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes, ILogger logger)
         {
             var rv = new Mapping(logger);
 
@@ -34,7 +34,7 @@ namespace AutoDI.Fody
             return rv;
         }
 
-        private Mapping(Action<string, DebugLogLevel> logger)
+        private Mapping(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -47,7 +47,7 @@ namespace AutoDI.Fody
             //Issue 59 - don't allow compile-time mapping to open generics
             if (targetType.HasGenericParameters || key.HasGenericParameters)
             {
-                _logger($"Ignoring map from '{key.FullName}' => '{targetType.FullName}' because it contains an open generic", DebugLogLevel.Verbose);
+                _logger.Debug($"Ignoring map from '{key.FullName}' => '{targetType.FullName}' because it contains an open generic", DebugLogLevel.Verbose);
                 return;
             }
 
@@ -60,7 +60,7 @@ namespace AutoDI.Fody
 
             if (duplicateKey && behavior == DuplicateKeyBehavior.RemoveAll)
             {
-                _logger($"Removing duplicate maps with service key '{key.FullName}'", DebugLogLevel.Verbose);
+                _logger.Debug($"Removing duplicate maps with service key '{key.FullName}'", DebugLogLevel.Verbose);
                 return;
             }
 
@@ -183,12 +183,12 @@ namespace AutoDI.Fody
                             }
                             else
                             {
-                                _logger($"Found map '{typeName}' => '{mappedType}', but {mappedType} cannot be cast to '{typeName}'. Ignoring.", DebugLogLevel.Verbose);
+                                _logger.Debug($"Found map '{typeName}' => '{mappedType}', but {mappedType} cannot be cast to '{typeName}'. Ignoring.", DebugLogLevel.Verbose);
                             }
                         }
                         else
                         {
-                            _logger($"Found map '{typeName}' => '{mappedType}', but {mappedType} does not exist. Ignoring.", DebugLogLevel.Verbose);
+                            _logger.Debug($"Found map '{typeName}' => '{mappedType}', but {mappedType} does not exist. Ignoring.", DebugLogLevel.Verbose);
                         }
                     }
                 }
@@ -208,7 +208,7 @@ namespace AutoDI.Fody
                     return true;
                 }
             }
-            _logger($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring", DebugLogLevel.Verbose);
+            _logger.Debug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring", DebugLogLevel.Verbose);
             return false;
         }
     }

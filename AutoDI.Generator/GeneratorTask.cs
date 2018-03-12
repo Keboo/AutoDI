@@ -6,6 +6,7 @@ using AutoDI.Fody;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
+using ILogger = AutoDI.Fody.ILogger;
 
 namespace AutoDI.Generator
 {
@@ -30,41 +31,30 @@ namespace AutoDI.Generator
             set => _generatedCodeFiles = value;
         }
 
-        //[Output]
-        //public ITaskItem[] RemoveItems { get; set; }
-        //
-        //[Output]
-        //public ITaskItem[] NewItems { get; set; }
-
         public override bool Execute()
         {
             XElement configElement = GetConfigElement(ProjectPath);
             var settings = Settings.Parse(new Settings(), configElement);
+            var logger = new TaskLogger(BuildEngine, settings.DebugLogLevel);
             if (settings.GenerateRegistrations)
             {
                 var assemblyResolver = new DefaultAssemblyResolver();
                 assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(OutputPath));
 
                 var compiledAssembly = AssemblyDefinition.ReadAssembly(OutputPath);
-                var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, Logger);
+                var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, logger);
                 ICollection<TypeDefinition> allTypes =
-                    typeResolver.GetAllTypes(settings, out AssemblyDefinition autoDIAssembly);
-                Mapping mapping = Mapping.GetMapping(settings, allTypes, Logger);
+                    typeResolver.GetAllTypes(settings, out AssemblyDefinition _);
+                Mapping mapping = Mapping.GetMapping(settings, allTypes, logger);
 
                 Directory.CreateDirectory(Path.GetDirectoryName(GeneratedFilePath));
                 using (var file = File.Open(GeneratedFilePath, FileMode.Create))
                 {
-                    //TODO: Logging
-                    WriteClass(mapping, SetupMethod.Find(compiledAssembly.MainModule, null), file);
+                    WriteClass(mapping, SetupMethod.Find(compiledAssembly.MainModule, logger), file);
                     GeneratedCodeFiles = new ITaskItem[] { new TaskItem(GeneratedFilePath) };
                 }
             }
             return true;
-
-            void Logger(string message, DebugLogLevel level)
-            {
-                //TODO: Actually log...
-            }
         }
 
         private static XElement GetConfigElement(string projectPath)
@@ -166,9 +156,47 @@ namespace AutoDI.Generator
             }
         }
 
+
+
         public void Cancel()
         {
 
+        }
+
+        private class TaskLogger : ILogger
+        {
+            private const string Sender = "AutoDI";
+            private readonly IBuildEngine _BuildEngine;
+            private readonly DebugLogLevel _DebugLogLevel;
+
+            public TaskLogger(IBuildEngine buildEngine, DebugLogLevel debugLogLevel)
+            {
+                _BuildEngine = buildEngine;
+                _DebugLogLevel = debugLogLevel;
+            }
+
+            public void Debug(string message, DebugLogLevel debugLevel)
+            {
+                if (debugLevel <= _DebugLogLevel)
+                {
+                    _BuildEngine.LogMessageEvent(new BuildMessageEventArgs(message, "", "AutoDI", MessageImportance.Normal));
+                }
+            }
+
+            public void Info(string message)
+            {
+                _BuildEngine.LogMessageEvent(new BuildMessageEventArgs(message, "", "AutoDI", MessageImportance.High));
+            }
+
+            public void Warning(string message)
+            {
+                _BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, message, "", Sender));
+            }
+
+            public void Error(string message)
+            {
+                _BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, message, "", Sender));
+            }
         }
     }
 }

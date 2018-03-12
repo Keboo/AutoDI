@@ -1,8 +1,6 @@
-﻿using System;
-using AutoDI;
+﻿using AutoDI;
 using AutoDI.Fody;
-using Mono.Cecil;
-using System.Linq;
+using System;
 
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver
@@ -16,7 +14,7 @@ public partial class ModuleWeaver
         }
         catch (SettingsParseException e)
         {
-            LogError($"Failed to parse AutoDI settings from FodyWeavers.xml{Environment.NewLine}{e.Message}");
+            Logger.Error($"Failed to parse AutoDI settings from FodyWeavers.xml{Environment.NewLine}{e.Message}");
             return null;
         }
         InternalLogDebug = (s, l) =>
@@ -26,7 +24,7 @@ public partial class ModuleWeaver
                 LogDebug(s);
             }
         };
-        InternalLogDebug($"Loaded settings\r\n{settings}", DebugLogLevel.Default);
+        Logger.Debug($"Loaded settings\r\n{settings}", DebugLogLevel.Default);
 
         return settings;
     }
