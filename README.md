@@ -37,7 +37,7 @@ AutoDI.Container aims to take this one step further: rather than needing to rely
 
 ## Does it work with <my favorite DI container / framework>?
 Probably. 
-Take a look in the [Examples](https://github.com/Keboo/AutoDI/tree/master/Examples) code for sample usages. There are examples of adding support for other DI containers as well as simple examples for most frameworks.
+Take a look at the [AutoDI.Examples](https://github.com/Keboo/AutoDI.Examples) repository for samples. There are examples of adding support for other DI containers as well as simple examples for most frameworks.
 
 *Don't see your favorite listed? I accept PRs.*
 
