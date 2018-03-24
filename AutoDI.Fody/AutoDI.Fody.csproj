@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net45</TargetFramework>
+    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <ApplicationIcon>..\needle.ico</ApplicationIcon>
     <DebugType>full</DebugType>
     <DebugSymbols>True</DebugSymbols>
@@ -18,12 +18,15 @@
   </ItemGroup>
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Release'">
-    <ItemGroup>
-      <CopyItems Include="$(TargetDir)AutoDI*.dll" />
-      <CopyItems Include="$(TargetDir)AutoDI*.pdb" />
+    <ItemGroup Condition="">
+      <NetClassicFilesToInclude Include="$(ProjectDir)bin\$(Configuration)\net4*\AutoDI*.dll" />
+      <NetClassicFilesToInclude Include="$(ProjectDir)bin\$(Configuration)\net4*\AutoDI*.pdb" />
+      <NetStandardFilesToInclude Include="$(ProjectDir)bin\$(Configuration)\netstandard2*\AutoDI*.dll" />
+      <NetStandardFilesToInclude Include="$(ProjectDir)bin\$(Configuration)\netstandard2*\AutoDI*.pdb" />
     </ItemGroup>
-    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)" />
+    <Copy SourceFiles="@(NetClassicFilesToInclude)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\netclassicweaver" />
+    <Copy SourceFiles="@(NetStandardFilesToInclude)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\netstandardweaver" />
     <!--Needed by AssemblyToProcess so Fody can find the weaver-->
-    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)packages\$(ProjectName).1.0.0" />
+    <Copy SourceFiles="@(NetClassicFilesToInclude)" DestinationFolder="$(SolutionDir)packages\$(ProjectName).1.0.0" />
   </Target>
 </Project>
