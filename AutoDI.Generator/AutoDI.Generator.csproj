@@ -25,6 +25,7 @@
     </ItemGroup>
     <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\content\" />
+    <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\contentFiles\cs\any\" />
     <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\" />
   </Target>
 
