@@ -1,9 +1,8 @@
-﻿using System;
+﻿using Mono.Cecil;
+using Mono.Cecil.Cil;
+using System;
 using System.Linq;
 using System.Reflection;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 
@@ -14,11 +13,6 @@ namespace AutoDI.Fody
         public static TypeReference Get<T>(this ModuleDefinition module)
         {
             return module.ImportReference(typeof(T));
-        }
-
-        public static TypeDefinition Resolve<T>(this ModuleDefinition module)
-        {
-            return module.Get<T>().Resolve();
         }
 
         public static MethodDefinition CreateDefaultConstructor(this ModuleDefinition module, Type baseType = null)
@@ -148,22 +142,6 @@ namespace AutoDI.Fody
             if (method == null) throw new InvalidOperationException($"Could not find method '{methodName}' on '{containingType.FullName}'");
 
             return moduleDefinition.ImportReference(method);
-        }
-
-        public static MethodDefinition ResolveCoreConstructor(this ModuleDefinition moduleDefinition, Type targetType)
-        {
-            return ResolveCoreType(moduleDefinition, targetType)?.GetConstructors().Single();
-        }
-
-        public static TypeDefinition ResolveCoreType(this ModuleDefinition moduleDefinition, Type targetType)
-        {
-            TypeReference coreType = moduleDefinition.ImportReference(targetType);
-            //NB: This null fall back is due to an issue with Mono.Cecil 0.10.0
-            //From GitHub issues it looks like it make be resolved in some of the beta builds, however this would require modifying Fody.
-            //For now we will just manually resolve this way and assume the type lives in the core library.
-            return coreType.Resolve() ?? moduleDefinition.AssemblyResolver
-                       .Resolve((AssemblyNameReference) moduleDefinition.TypeSystem.CoreLibrary)
-                       .MainModule.GetType(targetType.FullName);
         }
     }
 }
