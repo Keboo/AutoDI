@@ -24,14 +24,27 @@ public partial class ModuleWeaver
         public Imports(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
         {
             TypeDefinition appBuilderType = findType(typeof(ApplicationBuilder).FullName);
-            MethodDefinition buildMethod = appBuilderType.GetMethods().Single(m => m.Name == nameof(ApplicationBuilder.Build));
+            MethodDefinition buildMethod =
+                appBuilderType.GetMethods().Single(m => m.Name == nameof(ApplicationBuilder.Build));
+
+            var iapplicationBuilder = findType(typeof(IApplicationBuilder).FullName);
+            IApplicationBuilder_ConfigureServices = moduleDefinition.ImportReference(
+                iapplicationBuilder
+                .GetMethods()
+                .Single(x => x.Name == nameof(IApplicationBuilder.ConfigureServices)));
+
             IServiceProvider = moduleDefinition.ImportReference(buildMethod.ReturnType);
+
+            IServiceCollection = moduleDefinition.ImportReference(findType("Microsoft.Extensions.DependencyInjection.IServiceCollection"));
 
             var coreType = findType("System.Type");
             System_Type = moduleDefinition.ImportReference(coreType);
-            Type_GetTypeFromHandle = moduleDefinition.ImportReference(coreType.GetMethods().Single(m => m.Name == "GetTypeFromHandle"));
-            System_Func_Ctor =
+            Type_GetTypeFromHandle =
+                moduleDefinition.ImportReference(coreType.GetMethods().Single(m => m.Name == "GetTypeFromHandle"));
+            System_Func2_Ctor =
                 moduleDefinition.ImportReference(findType("System.Func`2")).Resolve().GetConstructors().Single();
+            System_Action_Ctor = moduleDefinition.ImportReference(findType("System.Action`1")).Resolve()
+                .GetConstructors().Single();
 
             System_Exception = moduleDefinition.ImportReference(findType("System.Exception"));
 
@@ -43,13 +56,16 @@ public partial class ModuleWeaver
 
             System_AggregateException_Ctor = moduleDefinition.ImportReference(aggregateExceptionType
                 .GetConstructors().Single(c =>
-                    c.Parameters.Count == 2 && 
+                    c.Parameters.Count == 2 &&
                     c.Parameters[0].ParameterType.IsType<string>() &&
                     c.Parameters[1].ParameterType.IsType(enumerableException)));
 
             ServiceCollectionMixins_AddAutoDIService = moduleDefinition.ImportReference(
                 UpdateMethod(findType(typeof(ServiceCollectionMixins).FullName)
                     .GetMethods().Single(m => m.Name == nameof(ServiceCollectionMixins.AddAutoDIService))));
+            
+            var serviceProviderExtensions = moduleDefinition.ImportReference(findType("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions")).Resolve();
+            ServiceProviderServiceExtensions_GetService = moduleDefinition.ImportReference(serviceProviderExtensions.Methods.Single(x => x.Name == "GetService"));
 
             var globalDiType = findType(typeof(GlobalDI).FullName);
             if (globalDiType == null)
@@ -60,7 +76,8 @@ public partial class ModuleWeaver
             GlobalDI_Unregister = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
                 .Single(m => m.Name == nameof(GlobalDI.Unregister))));
             GlobalDI_GetService = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
-                .Single(m => m.Name == nameof(GlobalDI.GetService) && m.HasGenericParameters && m.Parameters.Count == 1)));
+                .Single(m =>
+                    m.Name == nameof(GlobalDI.GetService) && m.HasGenericParameters && m.Parameters.Count == 1)));
 
             var autoDIExceptionType = moduleDefinition
                 .ImportReference(findType(typeof(AutoDIException).FullName)).Resolve();
@@ -75,6 +92,7 @@ public partial class ModuleWeaver
                 {
                     parameter.ParameterType = UpdateType(parameter.ParameterType);
                 }
+
                 return method;
             }
 
@@ -84,15 +102,18 @@ public partial class ModuleWeaver
                 {
                     return IServiceProvider;
                 }
+
                 if (TypeComparer.FullName.Equals(type, System_Type))
                 {
                     return System_Type;
                 }
+
                 if (type.IsArray)
                 {
                     var arrayType = UpdateType(type.GetElementType());
                     return new ArrayType(arrayType);
                 }
+
                 return type;
             }
         }
@@ -100,10 +121,16 @@ public partial class ModuleWeaver
         public MethodReference GlobalDI_Register { get; }
         public MethodReference GlobalDI_Unregister { get; }
         public MethodReference GlobalDI_GetService { get; }
-        
+
+        public MethodReference IApplicationBuilder_ConfigureServices { get; }
+
         public MethodReference Type_GetTypeFromHandle { get; }
 
         public MethodReference ServiceCollectionMixins_AddAutoDIService { get; }
+
+        public MethodReference ServiceProviderServiceExtensions_GetService { get; }
+
+        public TypeReference IServiceCollection { get; }
 
         public TypeReference IServiceProvider { get; }
 
@@ -111,7 +138,8 @@ public partial class ModuleWeaver
 
         public TypeReference System_Exception { get; }
         public MethodReference System_AggregateException_Ctor { get; }
-        public MethodReference System_Func_Ctor { get; }
+        public MethodReference System_Func2_Ctor { get; }
+        public MethodReference System_Action_Ctor { get; }
 
         public TypeDefinition List_Type { get; }
 

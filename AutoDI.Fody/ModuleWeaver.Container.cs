@@ -1,7 +1,6 @@
 ﻿
 using AutoDI;
 using AutoDI.Fody;
-using Microsoft.Extensions.DependencyInjection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -44,7 +43,7 @@ partial class ModuleWeaver
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 
-        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, ModuleDefinition.Get<IServiceCollection>());
+        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.IServiceCollection);
         method.Parameters.Add(serviceCollection);
 
         ILProcessor processor = method.Body.GetILProcessor();
@@ -69,7 +68,7 @@ partial class ModuleWeaver
             processor.Emit(OpCodes.Stloc, exceptionList);
         }
 
-        MethodReference funcCtor = Import.System_Func_Ctor;
+        MethodReference funcCtor = Import.System_Func2_Ctor;
 
         if (mapping != null)
         {
@@ -214,8 +213,7 @@ partial class ModuleWeaver
 
         ILProcessor factoryProcessor = factory.Body.GetILProcessor();
 
-        MethodReference getServiceMethod = ModuleDefinition.GetMethod(typeof(ServiceProviderServiceExtensions),
-            nameof(ServiceProviderServiceExtensions.GetService));
+        MethodReference getServiceMethod = Import.ServiceProviderServiceExtensions_GetService;
 
         foreach (ParameterDefinition parameter in targetTypeCtor.Parameters)
         {
@@ -256,8 +254,8 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
         initProcessor.Emit(OpCodes.Ldnull);
         initProcessor.Emit(OpCodes.Ldftn, configureMethod);
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<Action<IServiceCollection>>());
-        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.ConfigureServices)));
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System_Action_Ctor.MakeGenericDeclaringType(Import.IServiceCollection)));
+        initProcessor.Emit(OpCodes.Callvirt, Import.IApplicationBuilder_ConfigureServices);
         initProcessor.Emit(OpCodes.Pop);
 
         MethodDefinition setupMethod = SetupMethod.Find(ModuleDefinition, Logger);

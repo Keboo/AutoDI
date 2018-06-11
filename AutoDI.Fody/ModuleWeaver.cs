@@ -20,19 +20,13 @@ using OpCodes = Mono.Cecil.Cil.OpCodes;
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver : BaseModuleWeaver
 {
-
-    // Will log an error message to MSBuild at a specific point in the code. OPTIONAL
-    //public Action<string, SequencePoint> LogErrorPoint { get; set; } = (s, p) => { };
-
-    // An instance of Mono.Cecil.IAssemblyResolver for resolving assembly references. OPTIONAL
-    public IAssemblyResolver AssemblyResolver { get; set; }
-
     private Action<string, DebugLogLevel> InternalLogDebug { get; set; }
 
     public override void Execute()
     {
         InternalLogDebug = (s, l) => LogDebug(s);
         Logger = new WeaverLogger(this);
+        
         try
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
@@ -104,11 +98,10 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
     private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
     {
-        var assemblyName = new AssemblyName(args.Name);
-        var assembly = AssemblyResolver?.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
+        var assembly = ResolveAssembly(args.Name);
         if (assembly == null)
         {
-            Logger.Warning($"Failed to resolve assembly '{assemblyName.FullName}'");
+            Logger.Warning($"Failed to resolve assembly '{args.Name}'");
             return null;
         }
         Logger.Debug($"Resolved assembly '{assembly.FullName}'", DebugLogLevel.Verbose);
