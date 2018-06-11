@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
     <ApplicationIcon>..\needle.ico</ApplicationIcon>
     <DebugType>full</DebugType>
     <DebugSymbols>True</DebugSymbols>
@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FodyCecil" Version="2.2.0" />
+    <PackageReference Include="FodyHelpers" Version="3.0.3" />
     <PackageReference Include="gitlink" Version="3.1.0" />
   </ItemGroup>
 

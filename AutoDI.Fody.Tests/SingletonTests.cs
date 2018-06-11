@@ -23,8 +23,7 @@ namespace AutoDI.Fody.Tests
                     <AutoDI>
                         <type name="".*"" lifetime=""Singleton"" />
                     </AutoDI>");
-                dynamic weaver = args.Weaver;
-                weaver.Config = xml;
+                args.Weaver.Instance.Config = xml;
             };
 
             var testAssemblies = await gen.Execute();

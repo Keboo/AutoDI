@@ -1,4 +1,6 @@
-﻿using AutoDI.Fody;
+﻿using AutoDI;
+using AutoDI.Fody;
+using Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -9,8 +11,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Xml.Linq;
-using AutoDI;
 using DependencyAttribute = AutoDI.DependencyAttribute;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
@@ -18,78 +18,23 @@ using OpCodes = Mono.Cecil.Cil.OpCodes;
 [assembly: InternalsVisibleTo("AutoDI.Fody.Tests")]
 [assembly: InternalsVisibleTo("AutoDI.Generator")]
 // ReSharper disable once CheckNamespace
-public partial class ModuleWeaver
+public partial class ModuleWeaver : BaseModuleWeaver
 {
-    // Will contain the full element XML from FodyWeavers.xml. OPTIONAL
-    public XElement Config { get; set; }
-
-    // Will log an MessageImportance.Normal message to MSBuild. OPTIONAL
-    public Action<string> LogDebug { get; set; } = s => { };
-
-    // Will log an MessageImportance.High message to MSBuild. OPTIONAL
-    public Action<string> LogInfo { get; set; } = s => { };
-
-    // Will log an warning message to MSBuild. OPTIONAL
-    public Action<string> LogWarning { get; set; } = s => { };
-
-    // Will log an warning message to MSBuild at a specific point in the code. OPTIONAL
-    //public Action<string, SequencePoint> LogWarningPoint { get; set; } = (s, p) => { };
-
-    // Will log an error message to MSBuild. OPTIONAL
-    public Action<string> LogError { get; set; } = s => { };
-
-    // Will log an error message to MSBuild at a specific point in the code. OPTIONAL
-    //public Action<string, SequencePoint> LogErrorPoint { get; set; } = (s, p) => { };
-
-    // An instance of Mono.Cecil.IAssemblyResolver for resolving assembly references. OPTIONAL
-    public IAssemblyResolver AssemblyResolver { get; set; }
-
-    // An instance of Mono.Cecil.ModuleDefinition for processing. REQUIRED
-    public ModuleDefinition ModuleDefinition { get; set; }
-
-    // Will contain the full path of the target assembly. OPTIONAL
-    //public string AssemblyFilePath { get; set; }
-
-    // Will contain the full directory path of the target project. 
-    // A copy of $(ProjectDir). OPTIONAL
-    //public string ProjectDirectoryPath { get; set; }
-
-    // Will contain the full directory path of the current weaver. OPTIONAL
-    //public string AddinDirectoryPath { get; set; }
-
-    // Will contain the full directory path of the current solution.
-    // A copy of `$(SolutionDir)` or, if it does not exist, a copy of `$(MSBuildProjectDirectory)..\..\..\`. OPTIONAL
-    //public string SolutionDirectoryPath { get; set; }
-
-    // Will contain a semicomma delimetered string that contains 
-    // all the references for the target project. 
-    // A copy of the contents of the @(ReferencePath). OPTIONAL
-    //public string References { get; set; }
-
-    // Will a list of all the references marked as copy-local. 
-    // A copy of the contents of the @(ReferenceCopyLocalPaths). OPTIONAL
-    //public List<string> ReferenceCopyLocalPaths { get; set; }
-
-    // Will a list of all the msbuild constants. 
-    // A copy of the contents of the $(DefineConstants). OPTIONAL
-    //public List<string> DefineConstants { get; set; }
-
-    //public string AssemblyToProcess { get; set; }
-
     private Action<string, DebugLogLevel> InternalLogDebug { get; set; }
 
-    public void Execute()
+    public override void Execute()
     {
         InternalLogDebug = (s, l) => LogDebug(s);
         Logger = new WeaverLogger(this);
+        
         try
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
 
             Logger.Debug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}", DebugLogLevel.Default);
 
-            var typeResolver = new TypeResolver(ModuleDefinition, AssemblyResolver, Logger);
-
+            var typeResolver = new TypeResolver(ModuleDefinition, ModuleDefinition.AssemblyResolver, Logger);
+            
             Settings settings = LoadSettings(typeResolver);
             if (settings == null) return;
 
@@ -100,7 +45,7 @@ public partial class ModuleWeaver
             if (autoDIAssembly == null)
             {
                 var assemblyName = typeof(DependencyAttribute).Assembly.GetName();
-                autoDIAssembly = AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
+                autoDIAssembly = ResolveAssembly(assemblyName.Name);
                 if (autoDIAssembly == null)
                 {
                     Logger.Warning("Could not find AutoDI assembly");
@@ -112,7 +57,7 @@ public partial class ModuleWeaver
                 }
             }
 
-            LoadRequiredData(autoDIAssembly);
+            LoadRequiredData();
 
             if (settings.GenerateRegistrations)
             {
@@ -153,11 +98,10 @@ public partial class ModuleWeaver
 
     private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
     {
-        var assemblyName = new AssemblyName(args.Name);
-        var assembly = AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName.Name, assemblyName.Version));
+        var assembly = ResolveAssembly(args.Name);
         if (assembly == null)
         {
-            Logger.Warning($"Failed to resolve assembly '{assemblyName.FullName}'");
+            Logger.Warning($"Failed to resolve assembly '{args.Name}'");
             return null;
         }
         Logger.Debug($"Resolved assembly '{assembly.FullName}'", DebugLogLevel.Verbose);
@@ -372,14 +316,18 @@ public partial class ModuleWeaver
         Logger.Warning($"Unknown constant type {constant.GetType().FullName}");
     }
 
-    // Will be called when a request to cancel the build occurs. OPTIONAL
-    public void Cancel()
+    public override IEnumerable<string> GetAssembliesForScanning()
     {
-    }
-
-    // Will be called after all weaving has occurred and the module has been saved. OPTIONAL
-    public void AfterWeaving()
-    {
+        yield return "mscorlib";
+        yield return "System";
+        yield return "System.Runtime";
+        yield return "System.Core";
+        yield return "netstandard";
+        yield return "AutoDI";
+        yield return "Microsoft.Extensions.DependencyInjection.Abstractions";
+        yield return "System.Collections";
+        yield return "System.ObjectModel";
+        yield return "System.Threading";
     }
 }
 

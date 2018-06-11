@@ -19,8 +19,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
+                    args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
                 }
             };
 

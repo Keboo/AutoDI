@@ -141,7 +141,6 @@ namespace AutoDI.AssemblyGenerator
                         {
                             file.Position = 0;
                             weaver.ApplyToAssembly(file);
-                            
                         }
                     }
                     else

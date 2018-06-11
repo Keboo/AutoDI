@@ -22,8 +22,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse(@"
+                    args.Weaver.Instance.Config = XElement.Parse(@"
     <AutoDI>
         <map from=""Service+IService1"" to=""Service+MyService2"" />
     </AutoDI>");
