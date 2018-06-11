@@ -69,7 +69,7 @@ partial class ModuleWeaver
             processor.Emit(OpCodes.Stloc, exceptionList);
         }
 
-        MethodDefinition funcCtor = ModuleDefinition.ResolveCoreConstructor(typeof(Func<,>));
+        MethodReference funcCtor = Import.System_Func_Ctor;
 
         if (mapping != null)
         {
