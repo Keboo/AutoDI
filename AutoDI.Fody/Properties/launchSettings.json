@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "AutoDI.Fody": {
+      "commandName": "Executable"
+    }
+  }
+}

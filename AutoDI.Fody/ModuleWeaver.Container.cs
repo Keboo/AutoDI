@@ -1,5 +1,4 @@
 ﻿
-using AutoDI;
 using AutoDI.Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -14,7 +13,7 @@ partial class ModuleWeaver
     private TypeDefinition GenerateAutoDIClass(Mapping mapping, Settings settings,
         out MethodDefinition initMethod)
     {
-        var containerType = new TypeDefinition(DI.Namespace, DI.TypeName,
+        var containerType = new TypeDefinition(AutoDI.Constants.Namespace, AutoDI.Constants.TypeName,
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
             | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit)
         {
@@ -22,7 +21,7 @@ partial class ModuleWeaver
         };
 
         FieldDefinition globalServiceProvider =
-            ModuleDefinition.CreateStaticReadonlyField(DI.GlobalServiceProviderName, false, Import.IServiceProvider);
+            ModuleDefinition.CreateStaticReadonlyField(AutoDI.Constants.GlobalServiceProviderName, false, Import.IServiceProvider);
         containerType.Fields.Add(globalServiceProvider);
 
         MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType);
@@ -39,7 +38,7 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateAddServicesMethod(Mapping mapping, Settings settings, TypeDefinition containerType)
     {
-        var method = new MethodDefinition(nameof(DI.AddServices),
+        var method = new MethodDefinition("AddServices",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 
@@ -77,13 +76,13 @@ partial class ModuleWeaver
             {
                 try
                 {
-                    Logger.Debug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
+                    Logger.Debug($"Processing map for {map.TargetType.FullName}", AutoDI.DebugLogLevel.Verbose);
 
                     MethodDefinition factoryMethod = GenerateFactoryMethod(map.TargetType, factoryIndex);
                     if (factoryMethod == null)
                     {
                         Logger.Debug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
-                            DebugLogLevel.Verbose);
+                            AutoDI.DebugLogLevel.Verbose);
                         continue;
                     }
                     containerType.Methods.Add(factoryMethod);
@@ -110,7 +109,7 @@ partial class ModuleWeaver
                             TypeReference importedKey = ModuleDefinition.ImportReference(key);
                             Logger.Debug(
                                 $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({typeLifetime.Lifetime})",
-                                DebugLogLevel.Default);
+                                AutoDI.DebugLogLevel.Default);
                             processor.Emit(OpCodes.Dup);
                             processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
                             processor.Emit(OpCodes.Ldtoken, importedKey);
@@ -187,7 +186,7 @@ partial class ModuleWeaver
             processor.Emit(OpCodes.Cgt);
             processor.Emit(OpCodes.Brfalse_S, @return);
 
-            processor.Emit(OpCodes.Ldstr, $"Error in {DI.TypeName}.{nameof(DI.AddServices)}() generated method");
+            processor.Emit(OpCodes.Ldstr, $"Error in {AutoDI.Constants.TypeName}.AddServices() generated method");
             processor.Emit(OpCodes.Ldloc, exceptionList);
 
             processor.Emit(OpCodes.Newobj, Import.System_AggregateException_Ctor);
@@ -230,22 +229,22 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateInitMethod(MethodDefinition configureMethod, FieldDefinition globalServiceProvider)
     {
-        var initMethod = new MethodDefinition(nameof(DI.Init),
+        var initMethod = new MethodDefinition(AutoDI.Constants.InitMethodName,
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
-        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, ModuleDefinition.Get<Action<IApplicationBuilder>>());
+        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, Import.System.Action.Type.MakeGenericInstanceType(Import.IApplicationBuilder.Type));
         initMethod.Parameters.Add(configureAction);
 
-        var applicationBuilder = new VariableDefinition(ModuleDefinition.Get<IApplicationBuilder>());
+        var applicationBuilder = new VariableDefinition(Import.IApplicationBuilder.Type);
         initMethod.Body.Variables.Add(applicationBuilder);
         ILProcessor initProcessor = initMethod.Body.GetILProcessor();
 
-        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, ModuleDefinition.GetDefaultConstructor<ApplicationBuilder>());
+        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, Import.ApplicationBuilder.Ctor);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
         //Compare
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AlreadyInitializedException>());
+        initProcessor.Emit(OpCodes.Newobj, Import.AutoDIExceptions.AlreadyInitializedException_Ctor);
         initProcessor.Emit(OpCodes.Throw);
 
         initProcessor.Append(createApplicationbuilder);
@@ -254,21 +253,21 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
         initProcessor.Emit(OpCodes.Ldnull);
         initProcessor.Emit(OpCodes.Ldftn, configureMethod);
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System_Action_Ctor.MakeGenericDeclaringType(Import.IServiceCollection)));
-        initProcessor.Emit(OpCodes.Callvirt, Import.IApplicationBuilder_ConfigureServices);
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System.Action.Ctor.MakeGenericDeclaringType(Import.IServiceCollection)));
+        initProcessor.Emit(OpCodes.Callvirt, Import.IApplicationBuilder.ConfigureServices);
         initProcessor.Emit(OpCodes.Pop);
 
         MethodDefinition setupMethod = SetupMethod.Find(ModuleDefinition, Logger);
         if (setupMethod != null)
         {
-            Logger.Debug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
+            Logger.Debug($"Found setup method '{setupMethod.FullName}'", AutoDI.DebugLogLevel.Default);
             initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
             initProcessor.Emit(OpCodes.Call, setupMethod);
             initProcessor.Emit(OpCodes.Nop);
         }
         else
         {
-            Logger.Debug("No setup method found", DebugLogLevel.Default);
+            Logger.Debug("No setup method found", AutoDI.DebugLogLevel.Default);
         }
 
         Instruction loadForBuild = Instruction.Create(OpCodes.Ldloc_0);
@@ -277,13 +276,11 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Brfalse_S, loadForBuild);
         initProcessor.Emit(OpCodes.Ldarg_0);
         initProcessor.Emit(OpCodes.Ldloc_0);
-        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<Action<IApplicationBuilder>>(nameof(Action<IApplicationBuilder>.Invoke)));
+        initProcessor.Emit(OpCodes.Callvirt, Import.System.Action.Invoke.MakeGenericDeclaringType(Import.IApplicationBuilder.Type));
 
 
         initProcessor.Append(loadForBuild);
-        var buildMethod = ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.Build));
-        buildMethod.ReturnType = Import.IServiceProvider; //Must update the return type to handle .net core apps
-        initProcessor.Emit(OpCodes.Callvirt, buildMethod);
+        initProcessor.Emit(OpCodes.Callvirt, Import.IApplicationBuilder.Build);
         initProcessor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
@@ -297,7 +294,7 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateDisposeMethod(FieldDefinition globalServiceProvider)
     {
-        var disposeMethod = new MethodDefinition(nameof(DI.Dispose),
+        var disposeMethod = new MethodDefinition("Dispose",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 

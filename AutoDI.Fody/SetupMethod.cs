@@ -9,7 +9,7 @@ namespace AutoDI.Fody
         public static MethodDefinition Find(ModuleDefinition module, ILogger logger)
         {
             foreach (var method in module.GetAllTypes().SelectMany(t => t.GetMethods())
-                .Where(m => m.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>())))
+                .Where(m => m.CustomAttributes.Any(a => a.AttributeType.FullName == "AutoDI.SetupMethodAttribute")))
             {
                 if (!method.IsStatic)
                 {
@@ -21,9 +21,9 @@ namespace AutoDI.Fody
                     logger?.Warning($"Setup method '{method.FullName}' must be public or internal");
                     return null;
                 }
-                if (method.Parameters.Count != 1 || !method.Parameters[0].ParameterType.IsType<IApplicationBuilder>())
+                if (method.Parameters.Count != 1 || method.Parameters[0].ParameterType.FullName != ModuleWeaver.Imports.IApplicationBuilderImport.TypeName)
                 {
-                    logger?.Warning($"Setup method '{method.FullName}' must take a single parameter of type '{typeof(IApplicationBuilder).FullName}'");
+                    logger?.Warning($"Setup method '{method.FullName}' must take a single parameter of type '{ModuleWeaver.Imports.IApplicationBuilderImport.TypeName}'");
                     return null;
                 }
                 return method;

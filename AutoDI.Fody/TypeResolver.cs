@@ -27,7 +27,7 @@ namespace AutoDI.Fody
             IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) =>
                 types.Where(t => !t.IsCompilerGenerated() && !allTypes.Remove(t));
 
-            string autoDIFullName = typeof(DependencyAttribute).Assembly.FullName;
+            const string autoDIFullName = "AutoDI";
             foreach (ModuleDefinition module in GetAllModules())
             {
                 if (module.Assembly.FullName == autoDIFullName)

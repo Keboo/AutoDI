@@ -1,5 +1,4 @@
-﻿using AutoDI;
-using AutoDI.Fody;
+﻿using AutoDI.Fody;
 using Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -11,7 +10,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using DependencyAttribute = AutoDI.DependencyAttribute;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
@@ -20,7 +18,7 @@ using OpCodes = Mono.Cecil.Cil.OpCodes;
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver : BaseModuleWeaver
 {
-    private Action<string, DebugLogLevel> InternalLogDebug { get; set; }
+    private Action<string, AutoDI.DebugLogLevel> InternalLogDebug { get; set; }
 
     public override void Execute()
     {
@@ -31,7 +29,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
 
-            Logger.Debug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}", DebugLogLevel.Default);
+            Logger.Debug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}", AutoDI.DebugLogLevel.Default);
 
             var typeResolver = new TypeResolver(ModuleDefinition, ModuleDefinition.AssemblyResolver, Logger);
             
@@ -40,7 +38,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
             ICollection<TypeDefinition> allTypes = typeResolver.GetAllTypes(settings, out AssemblyDefinition autoDIAssembly);
 
-            Logger.Debug($"Found types:\r\n{string.Join("\r\n", allTypes.Select(x => x.FullName))}", DebugLogLevel.Verbose);
+            Logger.Debug($"Found types:\r\n{string.Join("\r\n", allTypes.Select(x => x.FullName))}", AutoDI.DebugLogLevel.Verbose);
 
             if (autoDIAssembly == null)
             {
@@ -63,7 +61,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
             {
                 Mapping mapping = Mapping.GetMapping(settings, allTypes, Logger);
 
-                Logger.Debug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
+                Logger.Debug($"Found potential map:\r\n{mapping}", AutoDI.DebugLogLevel.Verbose);
 
                 ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, out MethodDefinition initMethod));
 
@@ -74,7 +72,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
             }
             else
             {
-                Logger.Debug("Skipping registration", DebugLogLevel.Verbose);
+                Logger.Debug("Skipping registration", AutoDI.DebugLogLevel.Verbose);
             }
 
             //We only update types in our module
@@ -104,7 +102,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
             Logger.Warning($"Failed to resolve assembly '{args.Name}'");
             return null;
         }
-        Logger.Debug($"Resolved assembly '{assembly.FullName}'", DebugLogLevel.Verbose);
+        Logger.Debug($"Resolved assembly '{assembly.FullName}'", AutoDI.DebugLogLevel.Verbose);
         using (var memoryStream = new MemoryStream())
         {
             assembly.Write(memoryStream);
@@ -117,7 +115,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
     {
         foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
         {
-            Logger.Debug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
+            Logger.Debug($"Processing constructor for '{ctor.DeclaringType.FullName}'", AutoDI.DebugLogLevel.Verbose);
             ProcessConstructor(type, ctor);
         }
     }
