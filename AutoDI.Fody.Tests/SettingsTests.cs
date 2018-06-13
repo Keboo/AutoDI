@@ -20,7 +20,7 @@ namespace AutoDI.Fody.Tests
 
             var settings = Settings.Parse(new Settings(), xml);
 
-            Assert.AreEqual(Behaviors.Default, settings.Behavior);
+            Assert.AreEqual((int)Behaviors.Default, (int)settings.Behavior);
         }
 
         [TestMethod]
@@ -30,7 +30,7 @@ namespace AutoDI.Fody.Tests
 
             var settings = Settings.Parse(new Settings(), xml);
 
-            Assert.AreEqual(Behaviors.SingleInterfaceImplementation, settings.Behavior);
+            Assert.AreEqual((int)Behaviors.SingleInterfaceImplementation, (int)settings.Behavior);
         }
 
         [TestMethod]
@@ -40,7 +40,7 @@ namespace AutoDI.Fody.Tests
 
             var settings = Settings.Parse(new Settings(), xml);
 
-            Assert.AreEqual(Behaviors.SingleInterfaceImplementation | Behaviors.IncludeClasses, settings.Behavior);
+            Assert.AreEqual((int)(Behaviors.SingleInterfaceImplementation | Behaviors.IncludeClasses), (int)settings.Behavior);
         }
 
         [TestMethod]
@@ -55,7 +55,7 @@ namespace AutoDI.Fody.Tests
 
             Assert.AreEqual(1, settings.Types.Count);
             Assert.IsTrue(settings.Types[0].Matches("NS.MyType2"));
-            Assert.AreEqual(Lifetime.Transient, settings.Types[0].Lifetime);
+            Assert.AreEqual((int)Lifetime.Transient, (int)settings.Types[0].Lifetime);
         }
 
         [TestMethod]

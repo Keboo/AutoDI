@@ -25,7 +25,7 @@ public partial class ModuleWeaver
             System = new SystemImport(findType, moduleDefinition);
             IApplicationBuilder = new IApplicationBuilderImport(findType, moduleDefinition);
             ApplicationBuilder = new ApplicationBuilderImport(findType, moduleDefinition);
-            AutoDIExceptions = new AutoDIExceptionsImport(findType, moduleDefinition);
+            AutoDI = new AutoDIImport(findType, moduleDefinition);
 
             IServiceProvider = moduleDefinition.ImportReference(findType("System.IServiceProvider"));
 
@@ -120,7 +120,7 @@ public partial class ModuleWeaver
 
         public SystemImport System { get; }
 
-        public AutoDIExceptionsImport AutoDIExceptions { get; }
+        public AutoDIImport AutoDI { get; }
 
         public class IApplicationBuilderImport
         {
@@ -128,14 +128,16 @@ public partial class ModuleWeaver
 
             public IApplicationBuilderImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
             {
-                Type = moduleDefinition.ImportReference(findType(TypeName)).Resolve();
-                ConfigureServices = moduleDefinition.ImportReference(Type
+                Type = moduleDefinition.ImportReference(findType(TypeName));
+
+                TypeDefinition resolved = Type.Resolve();
+                ConfigureServices = moduleDefinition.ImportReference(resolved
                         .GetMethods()
                         .Single(x => x.Name == "ConfigureServices"));
-                Build = moduleDefinition.ImportReference(Type.GetMethods().Single(x => x.Name == "Build"));
+                Build = moduleDefinition.ImportReference(resolved.GetMethods().Single(x => x.Name == "Build"));
             }
 
-            public TypeDefinition Type { get; }
+            public TypeReference Type { get; }
 
             public MethodReference ConfigureServices { get; }
 
@@ -167,7 +169,7 @@ public partial class ModuleWeaver
 
             public class ActionImport
             {
-                public TypeDefinition Type { get; }
+                public TypeReference Type { get; }
 
                 public MethodReference Ctor { get; }
 
@@ -175,26 +177,40 @@ public partial class ModuleWeaver
 
                 public ActionImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
                 {
-                    Type = moduleDefinition.ImportReference(findType("System.Action`1")).Resolve();
+                    Type = moduleDefinition.ImportReference(findType("System.Action`1"));
+
+                    var resolved = Type.Resolve();
+
+                    Invoke = moduleDefinition.ImportReference(resolved.GetMethods().Single(x => x.Name == "Invoke"));
                     
-                    Invoke = Type.GetMethods().Single(x => x.Name == "Invoke");
-                    
-                    Ctor = Type.GetConstructors().Single();
+                    Ctor = moduleDefinition.ImportReference(resolved.GetConstructors().Single());
                 }
             }
         }
 
-        public class AutoDIExceptionsImport
+        public class AutoDIImport
         {
-            public AutoDIExceptionsImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+            public AutoDIExceptionsImport Exceptions { get; }
+
+            public TypeReference DependencyAttributeType { get; }
+
+            public AutoDIImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
             {
-                TypeDefinition alreadyInitialized = findType("AutoDI.AlreadyInitializedException");
-                AlreadyInitializedException_Ctor = alreadyInitialized.GetConstructors().Single(x => !x.HasParameters);
+                Exceptions = new AutoDIExceptionsImport(findType, moduleDefinition);
 
-
+                DependencyAttributeType = moduleDefinition.ImportReference(findType("AutoDI.DependencyAttribute"));
             }
 
-            public MethodReference AlreadyInitializedException_Ctor { get; }
+            public class AutoDIExceptionsImport
+            {
+                public AutoDIExceptionsImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                {
+                    TypeDefinition alreadyInitialized = findType("AutoDI.AlreadyInitializedException");
+                    AlreadyInitializedException_Ctor = moduleDefinition.ImportReference(alreadyInitialized.GetConstructors().Single(x => !x.HasParameters));
+                }
+
+                public MethodReference AlreadyInitializedException_Ctor { get; }
+            }
         }
 
         public MethodReference Type_GetTypeFromHandle { get; }

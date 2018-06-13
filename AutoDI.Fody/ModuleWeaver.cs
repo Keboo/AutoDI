@@ -42,8 +42,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
             if (autoDIAssembly == null)
             {
-                var assemblyName = typeof(DependencyAttribute).Assembly.GetName();
-                autoDIAssembly = ResolveAssembly(assemblyName.Name);
+                autoDIAssembly = ResolveAssembly("AutoDI");
                 if (autoDIAssembly == null)
                 {
                     Logger.Warning("Could not find AutoDI assembly");
@@ -123,10 +122,10 @@ public partial class ModuleWeaver : BaseModuleWeaver
     private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor)
     {
         List<ParameterDefinition> dependencyParameters = constructor.Parameters.Where(
-                        p => p.CustomAttributes.Any(a => a.AttributeType.IsType<DependencyAttribute>())).ToList();
+                        p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList();
 
         List<PropertyDefinition> dependencyProperties = type.Properties.Where(
-            p => p.CustomAttributes.Any(a => a.AttributeType.IsType<DependencyAttribute>())).ToList();
+            p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList();
 
         if (dependencyParameters.Any() || dependencyProperties.Any())
         {
@@ -139,7 +138,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 if (!parameter.IsOptional)
                 {
                     Logger.Info(
-                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {nameof(DependencyAttribute)} but is not an optional parameter. In {type.FullName}.");
+                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {Import.AutoDI.DependencyAttributeType.FullName} but is not an optional parameter. In {type.FullName}.");
                 }
                 if (parameter.Constant != null)
                 {
@@ -164,7 +163,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
                     if (backingField == null)
                     {
                         Logger.Warning(
-                            $"{property.FullName} is marked with {nameof(DependencyAttribute)} but cannot be set. Dependency properties must either be auto properties or have a setter");
+                            $"{property.FullName} is marked with {Import.AutoDI.DependencyAttributeType.FullName} but cannot be set. Dependency properties must either be auto properties or have a setter");
                         continue;
                     }
                 }
@@ -207,7 +206,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 }
 
                 //Create parameters array
-                var dependencyAttribute = source.CustomAttributes.First(x => x.AttributeType.IsType<DependencyAttribute>());
+                var dependencyAttribute = source.CustomAttributes.First(x => x.AttributeType.IsType(Import.AutoDI.DependencyAttributeType));
                 var values =
                     (dependencyAttribute.ConstructorArguments?.FirstOrDefault().Value as CustomAttributeArgument[])
                     ?.Select(x => x.Value)

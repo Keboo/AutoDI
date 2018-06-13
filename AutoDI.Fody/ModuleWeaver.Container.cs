@@ -244,7 +244,7 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
         //Compare
-        initProcessor.Emit(OpCodes.Newobj, Import.AutoDIExceptions.AlreadyInitializedException_Ctor);
+        initProcessor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AlreadyInitializedException_Ctor);
         initProcessor.Emit(OpCodes.Throw);
 
         initProcessor.Append(createApplicationbuilder);
@@ -276,7 +276,7 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Brfalse_S, loadForBuild);
         initProcessor.Emit(OpCodes.Ldarg_0);
         initProcessor.Emit(OpCodes.Ldloc_0);
-        initProcessor.Emit(OpCodes.Callvirt, Import.System.Action.Invoke.MakeGenericDeclaringType(Import.IApplicationBuilder.Type));
+        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.ImportReference(Import.System.Action.Invoke.MakeGenericDeclaringType(Import.IApplicationBuilder.Type)));
 
 
         initProcessor.Append(loadForBuild);

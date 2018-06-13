@@ -30,7 +30,7 @@ namespace AutoDI.Fody
             const string autoDIFullName = "AutoDI";
             foreach (ModuleDefinition module in GetAllModules())
             {
-                if (module.Assembly.FullName == autoDIFullName)
+                if (module.Assembly.Name.Name == autoDIFullName)
                 {
                     autoDIAssembly = _assemblyResolver.Resolve(module.Assembly.Name);
                     continue;
@@ -43,7 +43,7 @@ namespace AutoDI.Fody
                     //Check if it references AutoDI. If it doesn't we will skip
                     //We also always process the main module since the weaver was directly added to it
                     if (!isMainModule && !matchesAssembly &&
-                        module.AssemblyReferences.All(a => a.FullName != autoDIFullName))
+                        module.AssemblyReferences.All(a => a.Name != autoDIFullName))
                     {
                         continue;
                     }
