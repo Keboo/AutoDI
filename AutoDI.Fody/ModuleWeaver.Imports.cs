@@ -23,8 +23,6 @@ public partial class ModuleWeaver
         public Imports(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
         {
             System = new SystemImport(findType, moduleDefinition);
-            IApplicationBuilder = new IApplicationBuilderImport(findType, moduleDefinition);
-            ApplicationBuilder = new ApplicationBuilderImport(findType, moduleDefinition);
             AutoDI = new AutoDIImport(findType, moduleDefinition);
 
             IServiceProvider = moduleDefinition.ImportReference(findType("System.IServiceProvider"));
@@ -114,50 +112,13 @@ public partial class ModuleWeaver
         public MethodReference GlobalDI_Unregister { get; }
         public MethodReference GlobalDI_GetService { get; }
 
-        public IApplicationBuilderImport IApplicationBuilder { get; }
 
-        public ApplicationBuilderImport ApplicationBuilder { get; }
 
         public SystemImport System { get; }
 
         public AutoDIImport AutoDI { get; }
 
-        public class IApplicationBuilderImport
-        {
-            public const string TypeName = "AutoDI.IApplicationBuilder";
-
-            public IApplicationBuilderImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
-            {
-                Type = moduleDefinition.ImportReference(findType(TypeName));
-
-                TypeDefinition resolved = Type.Resolve();
-                ConfigureServices = moduleDefinition.ImportReference(resolved
-                        .GetMethods()
-                        .Single(x => x.Name == "ConfigureServices"));
-                Build = moduleDefinition.ImportReference(resolved.GetMethods().Single(x => x.Name == "Build"));
-            }
-
-            public TypeReference Type { get; }
-
-            public MethodReference ConfigureServices { get; }
-
-            public MethodReference Build { get; }
-        }
-
-        public class ApplicationBuilderImport
-        {
-            public ApplicationBuilderImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
-            {
-                Type = findType("AutoDI.ApplicationBuilder");
-
-                Ctor = moduleDefinition.ImportReference(Type.GetConstructors().Single(x => !x.HasParameters));
-            }
-
-            public TypeDefinition Type { get; }
-
-            public MethodReference Ctor { get; }
-        }
-
+        
         public class SystemImport
         {
             public SystemImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
@@ -192,11 +153,17 @@ public partial class ModuleWeaver
         {
             public AutoDIExceptionsImport Exceptions { get; }
 
+            public IApplicationBuilderImport IApplicationBuilder { get; }
+
+            public ApplicationBuilderImport ApplicationBuilder { get; }
+
             public TypeReference DependencyAttributeType { get; }
 
             public AutoDIImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
             {
                 Exceptions = new AutoDIExceptionsImport(findType, moduleDefinition);
+                IApplicationBuilder = new IApplicationBuilderImport(findType, moduleDefinition);
+                ApplicationBuilder = new ApplicationBuilderImport(findType, moduleDefinition);
 
                 DependencyAttributeType = moduleDefinition.ImportReference(findType("AutoDI.DependencyAttribute"));
             }
@@ -211,6 +178,43 @@ public partial class ModuleWeaver
 
                 public MethodReference AlreadyInitializedException_Ctor { get; }
             }
+
+            public class IApplicationBuilderImport
+            {
+                public const string TypeName = "AutoDI.IApplicationBuilder";
+
+                public IApplicationBuilderImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                {
+                    Type = moduleDefinition.ImportReference(findType(TypeName));
+
+                    TypeDefinition resolved = Type.Resolve();
+                    ConfigureServices = moduleDefinition.ImportReference(resolved
+                        .GetMethods()
+                        .Single(x => x.Name == "ConfigureServices"));
+                    Build = moduleDefinition.ImportReference(resolved.GetMethods().Single(x => x.Name == "Build"));
+                }
+
+                public TypeReference Type { get; }
+
+                public MethodReference ConfigureServices { get; }
+
+                public MethodReference Build { get; }
+            }
+
+            public class ApplicationBuilderImport
+            {
+                public ApplicationBuilderImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                {
+                    Type = findType("AutoDI.ApplicationBuilder");
+
+                    Ctor = moduleDefinition.ImportReference(Type.GetConstructors().Single(x => !x.HasParameters));
+                }
+
+                public TypeDefinition Type { get; }
+
+                public MethodReference Ctor { get; }
+            }
+
         }
 
         public MethodReference Type_GetTypeFromHandle { get; }

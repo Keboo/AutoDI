@@ -21,9 +21,9 @@ namespace AutoDI.Fody
                     logger?.Warning($"Setup method '{method.FullName}' must be public or internal");
                     return null;
                 }
-                if (method.Parameters.Count != 1 || method.Parameters[0].ParameterType.FullName != ModuleWeaver.Imports.IApplicationBuilderImport.TypeName)
+                if (method.Parameters.Count != 1 || method.Parameters[0].ParameterType.FullName != ModuleWeaver.Imports.AutoDIImport.IApplicationBuilderImport.TypeName)
                 {
-                    logger?.Warning($"Setup method '{method.FullName}' must take a single parameter of type '{ModuleWeaver.Imports.IApplicationBuilderImport.TypeName}'");
+                    logger?.Warning($"Setup method '{method.FullName}' must take a single parameter of type '{ModuleWeaver.Imports.AutoDIImport.IApplicationBuilderImport.TypeName}'");
                     return null;
                 }
                 return method;

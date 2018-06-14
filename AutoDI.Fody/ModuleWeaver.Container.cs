@@ -232,14 +232,14 @@ partial class ModuleWeaver
         var initMethod = new MethodDefinition(AutoDI.Constants.InitMethodName,
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
-        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, Import.System.Action.Type.MakeGenericInstanceType(Import.IApplicationBuilder.Type));
+        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, Import.System.Action.Type.MakeGenericInstanceType(Import.AutoDI.IApplicationBuilder.Type));
         initMethod.Parameters.Add(configureAction);
 
-        var applicationBuilder = new VariableDefinition(Import.IApplicationBuilder.Type);
+        var applicationBuilder = new VariableDefinition(Import.AutoDI.IApplicationBuilder.Type);
         initMethod.Body.Variables.Add(applicationBuilder);
         ILProcessor initProcessor = initMethod.Body.GetILProcessor();
 
-        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, Import.ApplicationBuilder.Ctor);
+        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, Import.AutoDI.ApplicationBuilder.Ctor);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
@@ -254,7 +254,7 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Ldnull);
         initProcessor.Emit(OpCodes.Ldftn, configureMethod);
         initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System.Action.Ctor.MakeGenericDeclaringType(Import.IServiceCollection)));
-        initProcessor.Emit(OpCodes.Callvirt, Import.IApplicationBuilder.ConfigureServices);
+        initProcessor.Emit(OpCodes.Callvirt, Import.AutoDI.IApplicationBuilder.ConfigureServices);
         initProcessor.Emit(OpCodes.Pop);
 
         MethodDefinition setupMethod = SetupMethod.Find(ModuleDefinition, Logger);
@@ -276,11 +276,11 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Brfalse_S, loadForBuild);
         initProcessor.Emit(OpCodes.Ldarg_0);
         initProcessor.Emit(OpCodes.Ldloc_0);
-        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.ImportReference(Import.System.Action.Invoke.MakeGenericDeclaringType(Import.IApplicationBuilder.Type)));
+        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.ImportReference(Import.System.Action.Invoke.MakeGenericDeclaringType(Import.AutoDI.IApplicationBuilder.Type)));
 
 
         initProcessor.Append(loadForBuild);
-        initProcessor.Emit(OpCodes.Callvirt, Import.IApplicationBuilder.Build);
+        initProcessor.Emit(OpCodes.Callvirt, Import.AutoDI.IApplicationBuilder.Build);
         initProcessor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
