@@ -26,9 +26,6 @@ public partial class ModuleWeaver
             AutoDI = new AutoDIImport(findType, moduleDefinition);
             DependencyInjection = new DependencyInjectionImport(findType, moduleDefinition);
 
-            IServiceProvider = moduleDefinition.ImportReference(findType("System.IServiceProvider"));
-
-
             System_Func2_Ctor =
                 moduleDefinition.ImportReference(findType("System.Func`2")).Resolve().GetConstructors().Single();
 
@@ -49,6 +46,7 @@ public partial class ModuleWeaver
            
         }
 
+
         public SystemImport System { get; }
 
         public AutoDIImport AutoDI { get; }
@@ -61,7 +59,11 @@ public partial class ModuleWeaver
             {
                 Action = new ActionImport(findType, moduleDefinition);
                 Type = new TypeImport(findType, moduleDefinition);
+
+                IServiceProvider = moduleDefinition.ImportReference(findType("System.IServiceProvider"));
             }
+
+            public TypeReference IServiceProvider { get; }
 
             public ActionImport Action { get; }
 
@@ -237,7 +239,6 @@ public partial class ModuleWeaver
 
 
 
-        public TypeReference IServiceProvider { get; }
 
         public TypeReference System_Exception { get; }
         public MethodReference System_AggregateException_Ctor { get; }

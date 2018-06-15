@@ -21,7 +21,7 @@ partial class ModuleWeaver
         };
 
         FieldDefinition globalServiceProvider =
-            ModuleDefinition.CreateStaticReadonlyField(AutoDI.Constants.GlobalServiceProviderName, false, Import.IServiceProvider);
+            ModuleDefinition.CreateStaticReadonlyField(AutoDI.Constants.GlobalServiceProviderName, false, Import.System.IServiceProvider);
         containerType.Fields.Add(globalServiceProvider);
 
         MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType);
@@ -97,7 +97,7 @@ partial class ModuleWeaver
                         processor.Emit(OpCodes.Ldftn, factoryMethod);
                         processor.Emit(OpCodes.Newobj,
                             ModuleDefinition.ImportReference(
-                                funcCtor.MakeGenericDeclaringType(Import.IServiceProvider,
+                                funcCtor.MakeGenericDeclaringType(Import.System.IServiceProvider,
                                     map.TargetType)));
 
                         processor.Emit(OpCodes.Ldc_I4, typeLifetime.Keys.Count);
@@ -208,7 +208,7 @@ partial class ModuleWeaver
         var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
             MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(targetType));
-        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.IServiceProvider));
+        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.System.IServiceProvider));
 
         ILProcessor factoryProcessor = factory.Body.GetILProcessor();
 
