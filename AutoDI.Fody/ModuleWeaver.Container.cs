@@ -42,7 +42,7 @@ partial class ModuleWeaver
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 
-        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.IServiceCollection);
+        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.DependencyInjection.IServiceCollection);
         method.Parameters.Add(serviceCollection);
 
         ILProcessor processor = method.Body.GetILProcessor();
@@ -212,7 +212,7 @@ partial class ModuleWeaver
 
         ILProcessor factoryProcessor = factory.Body.GetILProcessor();
 
-        MethodReference getServiceMethod = Import.ServiceProviderServiceExtensions_GetService;
+        MethodReference getServiceMethod = Import.DependencyInjection.ServiceProviderServiceExtensions_GetService;
 
         foreach (ParameterDefinition parameter in targetTypeCtor.Parameters)
         {
@@ -253,7 +253,7 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
         initProcessor.Emit(OpCodes.Ldnull);
         initProcessor.Emit(OpCodes.Ldftn, configureMethod);
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System.Action.Ctor.MakeGenericDeclaringType(Import.IServiceCollection)));
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System.Action.Ctor.MakeGenericDeclaringType(Import.DependencyInjection.IServiceCollection)));
         initProcessor.Emit(OpCodes.Callvirt, Import.AutoDI.IApplicationBuilder.ConfigureServices);
         initProcessor.Emit(OpCodes.Pop);
 

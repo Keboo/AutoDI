@@ -59,7 +59,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
             LoadRequiredData();
 
-            Logger.Debug($"Found IServiceCollection: {Import.IServiceCollection.DeclaringType.Module.Assembly.FullName}", AutoDI.DebugLogLevel.Default);
+            //Logger.Debug($"Found IServiceCollection: {Import.DependencyInjection.IServiceCollection.DeclaringType.Module.Assembly.FullName}", AutoDI.DebugLogLevel.Default);
 
             if (settings.GenerateRegistrations)
             {

@@ -24,10 +24,10 @@ public partial class ModuleWeaver
         {
             System = new SystemImport(findType, moduleDefinition);
             AutoDI = new AutoDIImport(findType, moduleDefinition);
+            DependencyInjection = new DependencyInjectionImport(findType, moduleDefinition);
 
             IServiceProvider = moduleDefinition.ImportReference(findType("System.IServiceProvider"));
 
-            IServiceCollection = moduleDefinition.ImportReference(findType("Microsoft.Extensions.DependencyInjection.IServiceCollection"));
 
             System_Func2_Ctor =
                 moduleDefinition.ImportReference(findType("System.Func`2")).Resolve().GetConstructors().Single();
@@ -46,13 +46,14 @@ public partial class ModuleWeaver
                     c.Parameters[0].ParameterType.IsType<string>() &&
                     c.Parameters[1].ParameterType.IsType(enumerableException)));
             
-            var serviceProviderExtensions = moduleDefinition.ImportReference(findType("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions")).Resolve();
-            ServiceProviderServiceExtensions_GetService = moduleDefinition.ImportReference(serviceProviderExtensions.Methods.Single(x => x.Name == "GetService"));
+           
         }
 
         public SystemImport System { get; }
 
         public AutoDIImport AutoDI { get; }
+
+        public DependencyInjectionImport DependencyInjection { get; }
         
         public class SystemImport
         {
@@ -218,10 +219,23 @@ public partial class ModuleWeaver
             }
         }
 
+        public class DependencyInjectionImport
+        {
+            public DependencyInjectionImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+            {
+                IServiceCollection = moduleDefinition.ImportReference(findType("Microsoft.Extensions.DependencyInjection.IServiceCollection"));
 
-        public MethodReference ServiceProviderServiceExtensions_GetService { get; }
+                var serviceProviderExtensions = findType("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
+                ServiceProviderServiceExtensions_GetService = moduleDefinition.ImportReference(serviceProviderExtensions.Methods.Single(x => x.Name == "GetService"));
+            }
 
-        public TypeReference IServiceCollection { get; }
+            public TypeReference IServiceCollection { get; }
+
+            public MethodReference ServiceProviderServiceExtensions_GetService { get; }
+
+        }
+
+
 
         public TypeReference IServiceProvider { get; }
 
