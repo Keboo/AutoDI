@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
-    <ItemGroup Condition="">
+    <ItemGroup>
       <NetClassicFilesToInclude Include="$(ProjectDir)bin\$(Configuration)\net4*\AutoDI*.dll" />
       <NetClassicFilesToInclude Include="$(ProjectDir)bin\$(Configuration)\net4*\AutoDI*.pdb" />
       <NetStandardFilesToInclude Include="$(ProjectDir)bin\$(Configuration)\netstandard2*\AutoDI*.dll" />

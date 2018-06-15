@@ -1,4 +1,5 @@
-﻿using AutoDI;
+﻿using System;
+using AutoDI;
 
 namespace AssemblyToProcess
 {
@@ -7,7 +8,10 @@ namespace AssemblyToProcess
         [SetupMethod]
         public static void DoSetup(IApplicationBuilder builder)
         {
-            
+            builder.ConfigureServices(c =>
+            {
+                c.AddAutoDIService<object>(p => new object(), new Type[] {typeof(object)}, Lifetime.Singleton);
+            });
         }
     }
 }

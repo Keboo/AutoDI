@@ -101,7 +101,7 @@ partial class ModuleWeaver
                                     map.TargetType)));
 
                         processor.Emit(OpCodes.Ldc_I4, typeLifetime.Keys.Count);
-                        processor.Emit(OpCodes.Newarr, Import.System_Type);
+                        processor.Emit(OpCodes.Newarr, Import.System.Type.Type);
 
                         int arrayIndex = 0;
                         foreach (TypeDefinition key in typeLifetime.Keys)
@@ -113,16 +113,16 @@ partial class ModuleWeaver
                             processor.Emit(OpCodes.Dup);
                             processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
                             processor.Emit(OpCodes.Ldtoken, importedKey);
-                            processor.Emit(OpCodes.Call, Import.Type_GetTypeFromHandle);
+                            processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
                             processor.Emit(OpCodes.Stelem_Ref);
                         }
 
                         processor.Emit(OpCodes.Ldc_I4, (int)typeLifetime.Lifetime);
 
                         var genericAddMethod =
-                            new GenericInstanceMethod(Import.ServiceCollectionMixins_AddAutoDIService);
+                            new GenericInstanceMethod(Import.AutoDI.ServiceCollectionMixins.AddAutoDIService);
                         genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
-                        processor.Emit(OpCodes.Call, genericAddMethod);
+                        processor.Emit(OpCodes.Call, ModuleDefinition.ImportReference(genericAddMethod));
                         processor.Emit(OpCodes.Pop);
 
                         if (settings.DebugExceptions)
@@ -136,7 +136,7 @@ partial class ModuleWeaver
                             processor.Emit(OpCodes.Ldstr, $"Error adding type '{map.TargetType.FullName}' with key(s) '{string.Join(",", typeLifetime.Keys.Select(x => x.FullName))}'");
                             processor.Emit(OpCodes.Ldloc, exception);
 
-                            processor.Emit(OpCodes.Newobj, Import.AutoDIException_Ctor);
+                            processor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AutoDIException_Ctor);
                             var listAdd = ModuleDefinition.ImportReference(Import.List_Type.GetMethods().Single(m => m.Name == "Add" && m.IsPublic && m.Parameters.Count == 1));
                             listAdd = listAdd.MakeGenericDeclaringType(Import.System_Exception);
 
@@ -284,7 +284,7 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
-        initProcessor.Emit(OpCodes.Call, Import.GlobalDI_Register);
+        initProcessor.Emit(OpCodes.Call, Import.AutoDI.GlobalDI.Register);
 
 
         initProcessor.Emit(OpCodes.Ret);
@@ -315,7 +315,7 @@ partial class ModuleWeaver
         processor.Append(afterDispose);
 
         processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
-        processor.Emit(OpCodes.Call, Import.GlobalDI_Unregister);
+        processor.Emit(OpCodes.Call, Import.AutoDI.GlobalDI.Unregister);
         processor.Emit(OpCodes.Pop);
 
         processor.Emit(OpCodes.Ldnull);

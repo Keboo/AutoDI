@@ -29,10 +29,6 @@ public partial class ModuleWeaver
 
             IServiceCollection = moduleDefinition.ImportReference(findType("Microsoft.Extensions.DependencyInjection.IServiceCollection"));
 
-            var coreType = findType("System.Type");
-            System_Type = moduleDefinition.ImportReference(coreType);
-            Type_GetTypeFromHandle =
-                moduleDefinition.ImportReference(coreType.GetMethods().Single(m => m.Name == "GetTypeFromHandle"));
             System_Func2_Ctor =
                 moduleDefinition.ImportReference(findType("System.Func`2")).Resolve().GetConstructors().Single();
 
@@ -40,7 +36,7 @@ public partial class ModuleWeaver
 
             List_Type = findType("System.Collections.Generic.List`1");
 
-            var aggregateExceptionType = findType("System.AggregateException").Resolve();
+            var aggregateExceptionType = findType("System.AggregateException");
             var enumerableType = findType("System.Collections.Generic.IEnumerable`1");
             var enumerableException = enumerableType.MakeGenericInstanceType(System_Exception);
 
@@ -49,84 +45,26 @@ public partial class ModuleWeaver
                     c.Parameters.Count == 2 &&
                     c.Parameters[0].ParameterType.IsType<string>() &&
                     c.Parameters[1].ParameterType.IsType(enumerableException)));
-
-            ServiceCollectionMixins_AddAutoDIService = moduleDefinition.ImportReference(
-                UpdateMethod(findType("AutoDI.ServiceCollectionMixins")
-                    .GetMethods().Single(m => m.Name == "AddAutoDIService")));
             
             var serviceProviderExtensions = moduleDefinition.ImportReference(findType("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions")).Resolve();
             ServiceProviderServiceExtensions_GetService = moduleDefinition.ImportReference(serviceProviderExtensions.Methods.Single(x => x.Name == "GetService"));
-
-            var globalDiType = findType("AutoDI.GlobalDI");
-            if (globalDiType == null)
-                throw new AutoDIBuildException("Could not find 'AutoDI.GlobalDI'");
-
-            GlobalDI_Register = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
-                .Single(m => m.Name == "Register")));
-            GlobalDI_Unregister = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
-                .Single(m => m.Name == "Unregister")));
-            GlobalDI_GetService = moduleDefinition.ImportReference(UpdateMethod(globalDiType.GetMethods()
-                .Single(m =>
-                    m.Name == "GetService" && m.HasGenericParameters && m.Parameters.Count == 1)));
-
-            var autoDIExceptionType = moduleDefinition
-                .ImportReference(findType("AutoDI.AutoDIException")).Resolve();
-            AutoDIException_Ctor = moduleDefinition.ImportReference(autoDIExceptionType.GetConstructors().Single(c =>
-                c.Parameters.Count == 2 && c.Parameters[0].ParameterType.IsType<string>() &&
-                c.Parameters[1].ParameterType.IsType<Exception>()));
-
-            MethodReference UpdateMethod(MethodReference method)
-            {
-                method.ReturnType = UpdateType(method.ReturnType);
-                foreach (ParameterDefinition parameter in method.Parameters)
-                {
-                    parameter.ParameterType = UpdateType(parameter.ParameterType);
-                }
-
-                return method;
-            }
-
-            TypeReference UpdateType(TypeReference type)
-            {
-                if (TypeComparer.FullName.Equals(type, IServiceProvider))
-                {
-                    return IServiceProvider;
-                }
-
-                if (TypeComparer.FullName.Equals(type, System_Type))
-                {
-                    return System_Type;
-                }
-
-                if (type.IsArray)
-                {
-                    var arrayType = UpdateType(type.GetElementType());
-                    return new ArrayType(arrayType);
-                }
-
-                return type;
-            }
         }
-
-        public MethodReference GlobalDI_Register { get; }
-        public MethodReference GlobalDI_Unregister { get; }
-        public MethodReference GlobalDI_GetService { get; }
-
-
 
         public SystemImport System { get; }
 
         public AutoDIImport AutoDI { get; }
-
         
         public class SystemImport
         {
             public SystemImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
             {
                 Action = new ActionImport(findType, moduleDefinition);
+                Type = new TypeImport(findType, moduleDefinition);
             }
 
             public ActionImport Action { get; }
+
+            public TypeImport Type { get; }
 
             public class ActionImport
             {
@@ -147,6 +85,23 @@ public partial class ModuleWeaver
                     Ctor = moduleDefinition.ImportReference(resolved.GetConstructors().Single());
                 }
             }
+
+            public class TypeImport
+            {
+                public TypeReference Type { get; }
+
+                public MethodReference GetTypeFromHandle { get; }
+
+
+                public TypeImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                {
+                    var type = findType("System.Type");
+                    Type = moduleDefinition.ImportReference(type);
+
+                    GetTypeFromHandle =
+                        moduleDefinition.ImportReference(type.GetMethods().Single(m => m.Name == "GetTypeFromHandle"));
+                }
+            }
         }
 
         public class AutoDIImport
@@ -157,6 +112,10 @@ public partial class ModuleWeaver
 
             public ApplicationBuilderImport ApplicationBuilder { get; }
 
+            public GlobalDIImport GlobalDI { get; }
+
+            public ServiceCollectionMixinsImport ServiceCollectionMixins { get; }
+
             public TypeReference DependencyAttributeType { get; }
 
             public AutoDIImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
@@ -164,6 +123,8 @@ public partial class ModuleWeaver
                 Exceptions = new AutoDIExceptionsImport(findType, moduleDefinition);
                 IApplicationBuilder = new IApplicationBuilderImport(findType, moduleDefinition);
                 ApplicationBuilder = new ApplicationBuilderImport(findType, moduleDefinition);
+                GlobalDI = new GlobalDIImport(findType, moduleDefinition);
+                ServiceCollectionMixins = new ServiceCollectionMixinsImport(findType, moduleDefinition);
 
                 DependencyAttributeType = moduleDefinition.ImportReference(findType("AutoDI.DependencyAttribute"));
             }
@@ -174,9 +135,16 @@ public partial class ModuleWeaver
                 {
                     TypeDefinition alreadyInitialized = findType("AutoDI.AlreadyInitializedException");
                     AlreadyInitializedException_Ctor = moduleDefinition.ImportReference(alreadyInitialized.GetConstructors().Single(x => !x.HasParameters));
+
+                    var autoDIExceptionType = findType("AutoDI.AutoDIException");
+                    AutoDIException_Ctor = moduleDefinition.ImportReference(autoDIExceptionType.GetConstructors().Single(c =>
+                        c.Parameters.Count == 2 && c.Parameters[0].ParameterType.IsType<string>() &&
+                        c.Parameters[1].ParameterType.IsType<Exception>()));
                 }
 
                 public MethodReference AlreadyInitializedException_Ctor { get; }
+
+                public MethodReference AutoDIException_Ctor { get; }
             }
 
             public class IApplicationBuilderImport
@@ -215,11 +183,41 @@ public partial class ModuleWeaver
                 public MethodReference Ctor { get; }
             }
 
+            public class GlobalDIImport
+            {
+                public GlobalDIImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                {
+                    TypeDefinition globalDiType = findType("AutoDI.GlobalDI");
+
+
+                    Register = moduleDefinition.ImportReference(globalDiType.GetMethods()
+                        .Single(m => m.Name == "Register"));
+                    Unregister = moduleDefinition.ImportReference(globalDiType.GetMethods()
+                        .Single(m => m.Name == "Unregister"));
+                    GetService = moduleDefinition.ImportReference(globalDiType.GetMethods()
+                        .Single(m =>
+                            m.Name == "GetService" && m.HasGenericParameters && m.Parameters.Count == 1));
+                }
+
+                public MethodReference Register { get; }
+                public MethodReference Unregister { get; }
+                public MethodReference GetService { get; }
+            }
+
+            public class ServiceCollectionMixinsImport
+            {
+                public MethodReference AddAutoDIService { get; }
+
+                public ServiceCollectionMixinsImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                {
+                    var type = findType("AutoDI.ServiceCollectionMixins");
+
+                    AddAutoDIService = moduleDefinition.ImportReference(
+                        type.GetMethods().Single(m => m.Name == "AddAutoDIService"));
+                }
+            }
         }
 
-        public MethodReference Type_GetTypeFromHandle { get; }
-
-        public MethodReference ServiceCollectionMixins_AddAutoDIService { get; }
 
         public MethodReference ServiceProviderServiceExtensions_GetService { get; }
 
@@ -227,14 +225,10 @@ public partial class ModuleWeaver
 
         public TypeReference IServiceProvider { get; }
 
-        public TypeReference System_Type { get; }
-
         public TypeReference System_Exception { get; }
         public MethodReference System_AggregateException_Ctor { get; }
         public MethodReference System_Func2_Ctor { get; }
 
         public TypeDefinition List_Type { get; }
-
-        public MethodReference AutoDIException_Ctor { get; }
     }
 }

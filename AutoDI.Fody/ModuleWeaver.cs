@@ -32,7 +32,10 @@ public partial class ModuleWeaver : BaseModuleWeaver
             Logger.Debug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}", AutoDI.DebugLogLevel.Default);
 
             var typeResolver = new TypeResolver(ModuleDefinition, ModuleDefinition.AssemblyResolver, Logger);
-            
+
+            var di = ResolveAssembly("Microsoft.Extensions.DependencyInjection.Abstractions");
+            Logger.Debug($"Found DI: {di?.FullName}", AutoDI.DebugLogLevel.Default);
+
             Settings settings = LoadSettings(typeResolver);
             if (settings == null) return;
 
@@ -55,6 +58,8 @@ public partial class ModuleWeaver : BaseModuleWeaver
             }
 
             LoadRequiredData();
+
+            Logger.Debug($"Found IServiceCollection: {Import.IServiceCollection.DeclaringType.Module.Assembly.FullName}", AutoDI.DebugLogLevel.Default);
 
             if (settings.GenerateRegistrations)
             {
@@ -230,7 +235,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 }
 
                 //Call the resolve method
-                var getServiceMethod = new GenericInstanceMethod(Import.GlobalDI_GetService)
+                var getServiceMethod = new GenericInstanceMethod(Import.AutoDI.GlobalDI.GetService)
                 {
                     GenericArguments = { ModuleDefinition.ImportReference(dependencyType) }
                 };
