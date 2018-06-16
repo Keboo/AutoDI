@@ -25,49 +25,51 @@ public partial class ModuleWeaver
             System = new SystemImport(findType, moduleDefinition);
             AutoDI = new AutoDIImport(findType, moduleDefinition);
             DependencyInjection = new DependencyInjectionImport(findType, moduleDefinition);
-
-            System_Func2_Ctor =
-                moduleDefinition.ImportReference(findType("System.Func`2")).Resolve().GetConstructors().Single();
-
-            System_Exception = moduleDefinition.ImportReference(findType("System.Exception"));
-
-            List_Type = findType("System.Collections.Generic.List`1");
-
-            var aggregateExceptionType = findType("System.AggregateException");
-            var enumerableType = findType("System.Collections.Generic.IEnumerable`1");
-            var enumerableException = enumerableType.MakeGenericInstanceType(System_Exception);
-
-            System_AggregateException_Ctor = moduleDefinition.ImportReference(aggregateExceptionType
-                .GetConstructors().Single(c =>
-                    c.Parameters.Count == 2 &&
-                    c.Parameters[0].ParameterType.IsType<string>() &&
-                    c.Parameters[1].ParameterType.IsType(enumerableException)));
-            
-           
         }
-
 
         public SystemImport System { get; }
 
         public AutoDIImport AutoDI { get; }
 
         public DependencyInjectionImport DependencyInjection { get; }
-        
+
         public class SystemImport
         {
             public SystemImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
             {
                 Action = new ActionImport(findType, moduleDefinition);
                 Type = new TypeImport(findType, moduleDefinition);
+                Collections = new CollectionsImport(findType, moduleDefinition);
 
                 IServiceProvider = moduleDefinition.ImportReference(findType("System.IServiceProvider"));
+                Exception = moduleDefinition.ImportReference(findType("System.Exception"));
+
+                var aggregateExceptionType = findType("System.AggregateException");
+                var enumerableException = Collections.Enumerable.MakeGenericInstanceType(Exception);
+
+                AggregateException_Ctor = moduleDefinition.ImportReference(aggregateExceptionType
+                    .GetConstructors().Single(c =>
+                        c.Parameters.Count == 2 &&
+                        c.Parameters[0].ParameterType.IsType<string>() &&
+                        c.Parameters[1].ParameterType.IsType(enumerableException)));
+
+                Func2_Ctor =
+                    moduleDefinition.ImportReference(findType("System.Func`2")).Resolve().GetConstructors().Single();
             }
+
+            public TypeReference Exception { get; }
 
             public TypeReference IServiceProvider { get; }
 
             public ActionImport Action { get; }
 
             public TypeImport Type { get; }
+
+            public CollectionsImport Collections { get; }
+
+            public MethodReference AggregateException_Ctor { get; }
+
+            public MethodReference Func2_Ctor { get; }
 
             public class ActionImport
             {
@@ -84,7 +86,7 @@ public partial class ModuleWeaver
                     var resolved = Type.Resolve();
 
                     Invoke = moduleDefinition.ImportReference(resolved.GetMethods().Single(x => x.Name == "Invoke"));
-                    
+
                     Ctor = moduleDefinition.ImportReference(resolved.GetConstructors().Single());
                 }
             }
@@ -104,6 +106,46 @@ public partial class ModuleWeaver
                     GetTypeFromHandle =
                         moduleDefinition.ImportReference(type.GetMethods().Single(m => m.Name == "GetTypeFromHandle"));
                 }
+            }
+
+            public class CollectionsImport
+            {
+                public CollectionsImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                {
+                    List = new ListImport(findType, moduleDefinition);
+                    Enumerable = moduleDefinition.ImportReference(findType("System.Collections.Generic.IEnumerable`1"));
+
+                }
+
+                public ListImport List { get; }
+
+                public TypeReference Enumerable { get; }
+
+
+                public class ListImport
+                {
+                    public ListImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                    {
+                        TypeDefinition type = findType("System.Collections.Generic.List`1");
+
+                        Type = moduleDefinition.ImportReference(type);
+                        Ctor = moduleDefinition.ImportReference(type.GetConstructors()
+                            .Single(c => c.IsPublic && c.Parameters.Count == 0));
+                        Add = moduleDefinition.ImportReference(type.GetMethods()
+                            .Single(m => m.Name == "Add" && m.IsPublic && m.Parameters.Count == 1));
+                        Count = moduleDefinition.ImportReference(type.GetMethods()
+                            .Single(m => m.IsPublic && m.Name == "get_Count"));
+                    }
+
+                    public TypeReference Type { get; }
+
+                    public MethodReference Ctor { get; }
+
+                    public MethodReference Add { get; }
+
+                    public MethodReference Count { get; }
+                }
+
             }
         }
 
@@ -236,14 +278,5 @@ public partial class ModuleWeaver
             public MethodReference ServiceProviderServiceExtensions_GetService { get; }
 
         }
-
-
-
-
-        public TypeReference System_Exception { get; }
-        public MethodReference System_AggregateException_Ctor { get; }
-        public MethodReference System_Func2_Ctor { get; }
-
-        public TypeDefinition List_Type { get; }
     }
 }
