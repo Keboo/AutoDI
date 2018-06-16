@@ -94,23 +94,11 @@ namespace AutoDI
 
         public object Get(Type key, IServiceProvider provider)
         {
-            if (_accessors.TryGetValue(key, out DelegateContainer container))
+            if (TryGet(key, provider, out object result))
             {
-                return container.Get(provider);
+                return result;
             }
-            if (key.IsConstructedGenericType)
-            {
-                if (key.GetGenericTypeDefinition() == typeof(Lazy<>))
-                {
-                    return MakeLazyMethod.MakeGenericMethod(key.GenericTypeArguments[0])
-                        .Invoke(this, new object[] { provider });
-                }
-                if (key.GetGenericTypeDefinition() == typeof(Func<>))
-                {
-                    return MakeFuncMethod.MakeGenericMethod(key.GenericTypeArguments[0])
-                        .Invoke(this, new object[] { provider });
-                }
-            }
+
             //Type key not found
             var args = new TypeKeyNotFoundEventArgs(key);
             TypeKeyNotFound?.Invoke(this, args);
@@ -150,6 +138,58 @@ namespace AutoDI
         private Lazy<T> MakeLazy<T>(IServiceProvider provider) => new Lazy<T>(() => Get<T>(provider));
 
         private Func<T> MakeFunc<T>(IServiceProvider provider) => () => Get<T>(provider);
+
+        private bool TryGet(Type key, IServiceProvider provider, out object result)
+        {
+            if (_accessors.TryGetValue(key, out DelegateContainer container))
+            {
+                result = container.Get(provider);
+                return true;
+            }
+            if (key.IsConstructedGenericType)
+            {
+                if (key.GetGenericTypeDefinition() == typeof(Lazy<>))
+                {
+                    result = MakeLazyMethod.MakeGenericMethod(key.GenericTypeArguments[0])
+                        .Invoke(this, new object[] { provider });
+                    return true;
+                }
+                if (key.GetGenericTypeDefinition() == typeof(Func<>))
+                {
+                    result = MakeFuncMethod.MakeGenericMethod(key.GenericTypeArguments[0])
+                        .Invoke(this, new object[] { provider });
+                    return true;
+                }
+            }
+
+            if (key.IsClass && !key.IsAbstract)
+            {
+                foreach (ConstructorInfo constructor in key.GetConstructors().OrderByDescending(c => c.GetParameters().Length))
+                {
+                    var parameters = constructor.GetParameters();
+                    object[] parameterValues = new object[parameters.Length];
+                    bool found = true;
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        if (!TryGet(parameters[i].ParameterType, provider, out object parametersResult))
+                        {
+                            found = false;
+                            break;
+                        }
+                        parameterValues[i] = parametersResult;
+                    }
+
+                    if (found)
+                    {
+                        result = constructor.Invoke(parameterValues);
+                        return true;
+                    }
+                }
+            }
+
+            result = null;
+            return false;
+        }
 
         private class DelegateContainer 
         {

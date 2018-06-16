@@ -242,12 +242,63 @@ namespace AutoDI.Tests
             Assert.IsTrue(ReferenceEquals(@class, func()));
         }
 
+        [TestMethod]
+        [Description("Issue 106")]
+        public void ContainerMapCanConstructTypeWithDefaultConstructor()
+        {
+            var map = new ContainerMap();
+
+            Class @class = map.Get<Class>(null);
+            Assert.IsInstanceOfType(@class, typeof(Class));
+        }
+
+        [TestMethod]
+        [Description("Issue 106")]
+        public void ContainerMapCanConstructTypeWhoseDependenciesAreMapped()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDITransient<IInterface, Class>();
+            map.Add(services);
+
+            ClassWtihParameters @class = map.Get<ClassWtihParameters>(null);
+            Assert.IsInstanceOfType(@class, typeof(ClassWtihParameters));
+            Assert.IsInstanceOfType(@class.Service, typeof(Class));
+        }
+
+        [TestMethod]
+        [Description("Issue 106")]
+        public void AutoConstructedTypesAlwaysReturnNewInstances()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDITransient<IInterface, Class>();
+            map.Add(services);
+
+            ClassWtihParameters class1 = map.Get<ClassWtihParameters>(null);
+            Assert.IsInstanceOfType(class1, typeof(ClassWtihParameters));
+
+            ClassWtihParameters class2 = map.Get<ClassWtihParameters>(null);
+            Assert.IsInstanceOfType(class2, typeof(ClassWtihParameters));
+
+            Assert.IsFalse(ReferenceEquals(class1, class2));
+        }
+
         private interface IInterface { }
 
         private interface IInterface2 { }
 
-        public class Class : IInterface, IInterface2 { }
+        private class Class : IInterface, IInterface2 { }
 
-        public class Derived : Class { }
+        private class Derived : Class { }
+
+        private class ClassWtihParameters
+        {
+            public  IInterface Service { get; }
+            public ClassWtihParameters(IInterface service)
+            {
+                Service = service ?? throw new ArgumentNullException(nameof(service));
+            }
+        }
     }
 }
