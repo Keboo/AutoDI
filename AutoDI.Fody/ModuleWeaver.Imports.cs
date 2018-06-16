@@ -14,17 +14,18 @@ public partial class ModuleWeaver
     {
         if (Import == null)
         {
-            Import = new Imports(FindType, ModuleDefinition);
+            Import = new Imports(FindType, ModuleDefinition, this);
         }
     }
 
     internal class Imports
     {
-        public Imports(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+        public Imports(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition,
+            ModuleWeaver moduleWeaver)
         {
             System = new SystemImport(findType, moduleDefinition);
-            AutoDI = new AutoDIImport(findType, moduleDefinition);
             DependencyInjection = new DependencyInjectionImport(findType, moduleDefinition);
+            AutoDI = new AutoDIImport(findType, moduleDefinition, moduleWeaver, this);
         }
 
         public SystemImport System { get; }
@@ -163,13 +164,14 @@ public partial class ModuleWeaver
 
             public TypeReference DependencyAttributeType { get; }
 
-            public AutoDIImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+            public AutoDIImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition,
+                ModuleWeaver moduleWeaver, Imports imports)
             {
                 Exceptions = new AutoDIExceptionsImport(findType, moduleDefinition);
-                IApplicationBuilder = new IApplicationBuilderImport(findType, moduleDefinition);
+                IApplicationBuilder = new IApplicationBuilderImport(findType, moduleDefinition, moduleWeaver, imports);
                 ApplicationBuilder = new ApplicationBuilderImport(findType, moduleDefinition);
                 GlobalDI = new GlobalDIImport(findType, moduleDefinition);
-                ServiceCollectionMixins = new ServiceCollectionMixinsImport(findType, moduleDefinition);
+                ServiceCollectionMixins = new ServiceCollectionMixinsImport(findType, moduleDefinition, imports);
 
                 DependencyAttributeType = moduleDefinition.ImportReference(findType("AutoDI.DependencyAttribute"));
             }
@@ -196,14 +198,21 @@ public partial class ModuleWeaver
             {
                 public const string TypeName = "AutoDI.IApplicationBuilder";
 
-                public IApplicationBuilderImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                public IApplicationBuilderImport(Func<string, TypeDefinition> findType,
+                    ModuleDefinition moduleDefinition, ModuleWeaver moduleWeaver,
+                    Imports imports)
                 {
                     Type = moduleDefinition.ImportReference(findType(TypeName));
-
                     TypeDefinition resolved = Type.Resolve();
-                    ConfigureServices = moduleDefinition.ImportReference(resolved
+
+                    var configureServices = resolved
                         .GetMethods()
-                        .Single(x => x.Name == "ConfigureServices"));
+                        .Single(x => x.Name == "ConfigureServices");
+                    configureServices.Parameters[0].ParameterType =
+                        imports.System.Action.Type.MakeGenericInstanceType(imports.DependencyInjection
+                            .IServiceCollection);
+                    ConfigureServices = moduleDefinition.ImportReference(configureServices);
+                    
                     Build = moduleDefinition.ImportReference(resolved.GetMethods().Single(x => x.Name == "Build"));
                 }
 
@@ -253,12 +262,15 @@ public partial class ModuleWeaver
             {
                 public MethodReference AddAutoDIService { get; }
 
-                public ServiceCollectionMixinsImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                public ServiceCollectionMixinsImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition, Imports imports)
                 {
                     var type = findType("AutoDI.ServiceCollectionMixins");
 
-                    AddAutoDIService = moduleDefinition.ImportReference(
-                        type.GetMethods().Single(m => m.Name == "AddAutoDIService"));
+                    var addAutoDIService = type.GetMethods().Single(m => m.Name == "AddAutoDIService");
+                    addAutoDIService.Parameters[0].ParameterType = imports.DependencyInjection.IServiceCollection;
+                    addAutoDIService.ReturnType = imports.DependencyInjection.IServiceCollection;
+
+                    AddAutoDIService = moduleDefinition.ImportReference(addAutoDIService);
                 }
             }
         }
