@@ -20,6 +20,21 @@ namespace AutoDI
             method.Invoke(null, new object[] { configureMethod });
         }
 
+        public static bool TryInit(Assembly containerAssembly = null,
+            Action<IApplicationBuilder> configureMethod = null)
+        {
+            try
+            {
+                Init(containerAssembly, configureMethod);
+                return true;
+            }
+            catch (TargetInvocationException e) 
+                when(e.InnerException is AlreadyInitializedException)
+            {
+                return false;
+            }
+        }
+
         public static void AddServices(IServiceCollection collection, Assembly containerAssembly = null)
         {
             Type autoDI = GetAutoDIType(containerAssembly);
