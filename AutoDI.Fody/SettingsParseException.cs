@@ -1,18 +1,12 @@
-﻿using System;
-
-namespace AutoDI.Fody
+﻿namespace AutoDI.Fody
 {
-    public class SettingsParseException : AutoDIException
+    internal class SettingsParseException : AutoDIBuildException
     {
         public SettingsParseException()
         { }
 
         public SettingsParseException(string message) 
             : base(message)
-        { }
-
-        public SettingsParseException(string message, Exception innerException) 
-            : base(message, innerException)
         { }
     }
 }

@@ -1,5 +1,4 @@
 ﻿
-using AutoDI;
 using AutoDI.Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -14,7 +13,7 @@ partial class ModuleWeaver
     private TypeDefinition GenerateAutoDIClass(Mapping mapping, Settings settings,
         out MethodDefinition initMethod)
     {
-        var containerType = new TypeDefinition(DI.Namespace, DI.TypeName,
+        var containerType = new TypeDefinition(AutoDI.Constants.Namespace, AutoDI.Constants.TypeName,
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
             | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit)
         {
@@ -22,7 +21,7 @@ partial class ModuleWeaver
         };
 
         FieldDefinition globalServiceProvider =
-            ModuleDefinition.CreateStaticReadonlyField(DI.GlobalServiceProviderName, false, Import.IServiceProvider);
+            ModuleDefinition.CreateStaticReadonlyField(AutoDI.Constants.GlobalServiceProviderName, false, Import.System.IServiceProvider);
         containerType.Fields.Add(globalServiceProvider);
 
         MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType);
@@ -39,36 +38,34 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateAddServicesMethod(Mapping mapping, Settings settings, TypeDefinition containerType)
     {
-        var method = new MethodDefinition(nameof(DI.AddServices),
+        var method = new MethodDefinition("AddServices",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 
-        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.IServiceCollection);
+        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.DependencyInjection.IServiceCollection);
         method.Parameters.Add(serviceCollection);
 
         ILProcessor processor = method.Body.GetILProcessor();
 
         VariableDefinition exceptionList = null;
         VariableDefinition exception = null;
-        TypeDefinition listType = null;
         if (settings.DebugExceptions)
         {
-            var genericType = ModuleDefinition.ImportReference(Import.List_Type.MakeGenericInstanceType(Import.System_Exception));
-            listType = genericType.Resolve();
+            var genericType = ModuleDefinition.ImportReference(Import.System.Collections.List.Type.MakeGenericInstanceType(Import.System.Exception));
             exceptionList = new VariableDefinition(genericType);
-            exception = new VariableDefinition(Import.System_Exception);
+            exception = new VariableDefinition(Import.System.Exception);
 
             method.Body.Variables.Add(exceptionList);
             method.Body.Variables.Add(exception);
 
-            MethodReference listCtor = ModuleDefinition.ImportReference(Import.List_Type.GetConstructors().Single(c => c.IsPublic && c.Parameters.Count == 0));
-            listCtor = listCtor.MakeGenericDeclaringType(Import.System_Exception);
+            MethodReference listCtor = Import.System.Collections.List.Ctor;
+            listCtor = listCtor.MakeGenericDeclaringType(Import.System.Exception);
 
             processor.Emit(OpCodes.Newobj, listCtor);
             processor.Emit(OpCodes.Stloc, exceptionList);
         }
 
-        MethodReference funcCtor = Import.System_Func2_Ctor;
+        MethodReference funcCtor = Import.System.Func2_Ctor;
 
         if (mapping != null)
         {
@@ -77,13 +74,13 @@ partial class ModuleWeaver
             {
                 try
                 {
-                    Logger.Debug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
+                    Logger.Debug($"Processing map for {map.TargetType.FullName}", AutoDI.DebugLogLevel.Verbose);
 
                     MethodDefinition factoryMethod = GenerateFactoryMethod(map.TargetType, factoryIndex);
                     if (factoryMethod == null)
                     {
                         Logger.Debug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
-                            DebugLogLevel.Verbose);
+                            AutoDI.DebugLogLevel.Verbose);
                         continue;
                     }
                     containerType.Methods.Add(factoryMethod);
@@ -98,11 +95,11 @@ partial class ModuleWeaver
                         processor.Emit(OpCodes.Ldftn, factoryMethod);
                         processor.Emit(OpCodes.Newobj,
                             ModuleDefinition.ImportReference(
-                                funcCtor.MakeGenericDeclaringType(Import.IServiceProvider,
-                                    map.TargetType)));
+                                funcCtor.MakeGenericDeclaringType(Import.System.IServiceProvider,
+                                    ModuleDefinition.ImportReference(map.TargetType))));
 
                         processor.Emit(OpCodes.Ldc_I4, typeLifetime.Keys.Count);
-                        processor.Emit(OpCodes.Newarr, Import.System_Type);
+                        processor.Emit(OpCodes.Newarr, Import.System.Type.Type);
 
                         int arrayIndex = 0;
                         foreach (TypeDefinition key in typeLifetime.Keys)
@@ -110,20 +107,20 @@ partial class ModuleWeaver
                             TypeReference importedKey = ModuleDefinition.ImportReference(key);
                             Logger.Debug(
                                 $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({typeLifetime.Lifetime})",
-                                DebugLogLevel.Default);
+                                AutoDI.DebugLogLevel.Default);
                             processor.Emit(OpCodes.Dup);
                             processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
                             processor.Emit(OpCodes.Ldtoken, importedKey);
-                            processor.Emit(OpCodes.Call, Import.Type_GetTypeFromHandle);
+                            processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
                             processor.Emit(OpCodes.Stelem_Ref);
                         }
 
                         processor.Emit(OpCodes.Ldc_I4, (int)typeLifetime.Lifetime);
 
                         var genericAddMethod =
-                            new GenericInstanceMethod(Import.ServiceCollectionMixins_AddAutoDIService);
+                            new GenericInstanceMethod(Import.AutoDI.ServiceCollectionMixins.AddAutoDIService);
                         genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
-                        processor.Emit(OpCodes.Call, genericAddMethod);
+                        processor.Emit(OpCodes.Call, ModuleDefinition.ImportReference(genericAddMethod));
                         processor.Emit(OpCodes.Pop);
 
                         if (settings.DebugExceptions)
@@ -137,9 +134,9 @@ partial class ModuleWeaver
                             processor.Emit(OpCodes.Ldstr, $"Error adding type '{map.TargetType.FullName}' with key(s) '{string.Join(",", typeLifetime.Keys.Select(x => x.FullName))}'");
                             processor.Emit(OpCodes.Ldloc, exception);
 
-                            processor.Emit(OpCodes.Newobj, Import.AutoDIException_Ctor);
-                            var listAdd = ModuleDefinition.ImportReference(Import.List_Type.GetMethods().Single(m => m.Name == "Add" && m.IsPublic && m.Parameters.Count == 1));
-                            listAdd = listAdd.MakeGenericDeclaringType(Import.System_Exception);
+                            processor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AutoDIException_Ctor);
+                            var listAdd = Import.System.Collections.List.Add;
+                            listAdd = listAdd.MakeGenericDeclaringType(Import.System.Exception);
 
                             processor.Emit(OpCodes.Callvirt, listAdd);
 
@@ -149,7 +146,7 @@ partial class ModuleWeaver
                             var exceptionHandler =
                                 new ExceptionHandler(ExceptionHandlerType.Catch)
                                 {
-                                    CatchType = Import.System_Exception,
+                                    CatchType = Import.System.Exception,
                                     TryStart = tryStart,
                                     TryEnd = handlerStart,
                                     HandlerStart = handlerStart,
@@ -180,17 +177,17 @@ partial class ModuleWeaver
             Instruction loadList = Instruction.Create(OpCodes.Ldloc, exceptionList);
             processor.Append(loadList);
 
-            var listCount = ModuleDefinition.ImportReference(listType.GetMethods().Single(m => m.IsPublic && m.Name == "get_Count"));
-            listCount = listCount.MakeGenericDeclaringType(Import.System_Exception);
+            var listCount = Import.System.Collections.List.Count;
+            listCount = listCount.MakeGenericDeclaringType(Import.System.Exception);
             processor.Emit(OpCodes.Callvirt, listCount);
             processor.Emit(OpCodes.Ldc_I4_0);
             processor.Emit(OpCodes.Cgt);
             processor.Emit(OpCodes.Brfalse_S, @return);
 
-            processor.Emit(OpCodes.Ldstr, $"Error in {DI.TypeName}.{nameof(DI.AddServices)}() generated method");
+            processor.Emit(OpCodes.Ldstr, $"Error in {AutoDI.Constants.TypeName}.AddServices() generated method");
             processor.Emit(OpCodes.Ldloc, exceptionList);
 
-            processor.Emit(OpCodes.Newobj, Import.System_AggregateException_Ctor);
+            processor.Emit(OpCodes.Newobj, Import.System.AggregateException_Ctor);
             processor.Emit(OpCodes.Throw);
         }
 
@@ -209,11 +206,11 @@ partial class ModuleWeaver
         var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
             MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(targetType));
-        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.IServiceProvider));
+        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.System.IServiceProvider));
 
         ILProcessor factoryProcessor = factory.Body.GetILProcessor();
 
-        MethodReference getServiceMethod = Import.ServiceProviderServiceExtensions_GetService;
+        MethodReference getServiceMethod = Import.DependencyInjection.ServiceProviderServiceExtensions_GetService;
 
         foreach (ParameterDefinition parameter in targetTypeCtor.Parameters)
         {
@@ -230,22 +227,22 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateInitMethod(MethodDefinition configureMethod, FieldDefinition globalServiceProvider)
     {
-        var initMethod = new MethodDefinition(nameof(DI.Init),
+        var initMethod = new MethodDefinition(AutoDI.Constants.InitMethodName,
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
-        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, ModuleDefinition.Get<Action<IApplicationBuilder>>());
+        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, Import.System.Action.Type.MakeGenericInstanceType(Import.AutoDI.IApplicationBuilder.Type));
         initMethod.Parameters.Add(configureAction);
 
-        var applicationBuilder = new VariableDefinition(ModuleDefinition.Get<IApplicationBuilder>());
+        var applicationBuilder = new VariableDefinition(Import.AutoDI.IApplicationBuilder.Type);
         initMethod.Body.Variables.Add(applicationBuilder);
         ILProcessor initProcessor = initMethod.Body.GetILProcessor();
 
-        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, ModuleDefinition.GetDefaultConstructor<ApplicationBuilder>());
+        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, Import.AutoDI.ApplicationBuilder.Ctor);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
         //Compare
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AlreadyInitializedException>());
+        initProcessor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AlreadyInitializedException_Ctor);
         initProcessor.Emit(OpCodes.Throw);
 
         initProcessor.Append(createApplicationbuilder);
@@ -254,21 +251,21 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
         initProcessor.Emit(OpCodes.Ldnull);
         initProcessor.Emit(OpCodes.Ldftn, configureMethod);
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System_Action_Ctor.MakeGenericDeclaringType(Import.IServiceCollection)));
-        initProcessor.Emit(OpCodes.Callvirt, Import.IApplicationBuilder_ConfigureServices);
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System.Action.Ctor.MakeGenericDeclaringType(Import.DependencyInjection.IServiceCollection)));
+        initProcessor.Emit(OpCodes.Callvirt, Import.AutoDI.IApplicationBuilder.ConfigureServices);
         initProcessor.Emit(OpCodes.Pop);
 
         MethodDefinition setupMethod = SetupMethod.Find(ModuleDefinition, Logger);
         if (setupMethod != null)
         {
-            Logger.Debug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
+            Logger.Debug($"Found setup method '{setupMethod.FullName}'", AutoDI.DebugLogLevel.Default);
             initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
             initProcessor.Emit(OpCodes.Call, setupMethod);
             initProcessor.Emit(OpCodes.Nop);
         }
         else
         {
-            Logger.Debug("No setup method found", DebugLogLevel.Default);
+            Logger.Debug("No setup method found", AutoDI.DebugLogLevel.Default);
         }
 
         Instruction loadForBuild = Instruction.Create(OpCodes.Ldloc_0);
@@ -277,17 +274,15 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Brfalse_S, loadForBuild);
         initProcessor.Emit(OpCodes.Ldarg_0);
         initProcessor.Emit(OpCodes.Ldloc_0);
-        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<Action<IApplicationBuilder>>(nameof(Action<IApplicationBuilder>.Invoke)));
+        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.ImportReference(Import.System.Action.Invoke.MakeGenericDeclaringType(Import.AutoDI.IApplicationBuilder.Type)));
 
 
         initProcessor.Append(loadForBuild);
-        var buildMethod = ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.Build));
-        buildMethod.ReturnType = Import.IServiceProvider; //Must update the return type to handle .net core apps
-        initProcessor.Emit(OpCodes.Callvirt, buildMethod);
+        initProcessor.Emit(OpCodes.Callvirt, Import.AutoDI.IApplicationBuilder.Build);
         initProcessor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
-        initProcessor.Emit(OpCodes.Call, Import.GlobalDI_Register);
+        initProcessor.Emit(OpCodes.Call, Import.AutoDI.GlobalDI.Register);
 
 
         initProcessor.Emit(OpCodes.Ret);
@@ -297,7 +292,7 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateDisposeMethod(FieldDefinition globalServiceProvider)
     {
-        var disposeMethod = new MethodDefinition(nameof(DI.Dispose),
+        var disposeMethod = new MethodDefinition("Dispose",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 
@@ -318,7 +313,7 @@ partial class ModuleWeaver
         processor.Append(afterDispose);
 
         processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
-        processor.Emit(OpCodes.Call, Import.GlobalDI_Unregister);
+        processor.Emit(OpCodes.Call, Import.AutoDI.GlobalDI.Unregister);
         processor.Emit(OpCodes.Pop);
 
         processor.Emit(OpCodes.Ldnull);

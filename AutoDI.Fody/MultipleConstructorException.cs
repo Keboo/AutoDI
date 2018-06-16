@@ -1,18 +1,8 @@
-﻿using System;
-
-namespace AutoDI.Fody
+﻿namespace AutoDI.Fody
 {
-    public class MultipleConstructorException : AutoDIException
+    internal class MultipleConstructorException : AutoDIBuildException
     {
-        public MultipleConstructorException()
-        {
-        }
-
         public MultipleConstructorException(string message) : base(message)
-        {
-        }
-
-        public MultipleConstructorException(string message, Exception innerException) : base(message, innerException)
         {
         }
     }

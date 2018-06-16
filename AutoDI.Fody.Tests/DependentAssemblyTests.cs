@@ -1,7 +1,12 @@
-﻿using AutoDI.AssemblyGenerator;
+﻿extern alias AutoDIFody;
+
+using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+
+using Settings=AutoDIFody::AutoDI.Fody.Settings;
 
 namespace AutoDI.Fody.Tests
 {
@@ -18,6 +23,13 @@ namespace AutoDI.Fody.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
+            //gen.WeaverAdded += (sender, args) =>
+            //{
+            //    if (args.Weaver.Name == "AutoDI")
+            //    {
+            //        args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
+            //    }
+            //};
 
             var testAssemblies = await gen.Execute();
             
