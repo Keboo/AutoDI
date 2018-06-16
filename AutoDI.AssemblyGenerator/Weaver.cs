@@ -32,7 +32,7 @@ namespace AutoDI.AssemblyGenerator
                 if (weaverInstance != null)
                     return new Weaver(weaverName, weaverInstance);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // ignored
             }

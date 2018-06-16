@@ -1,7 +1,6 @@
 ﻿
 using AutoDI.Fody;
 using System;
-using AutoDI;
 
 partial class ModuleWeaver
 {
@@ -21,7 +20,7 @@ partial class ModuleWeaver
             _weaver.LogError(message);
         }
 
-        public void Debug(string message, DebugLogLevel debugLevel)
+        public void Debug(string message, AutoDI.DebugLogLevel debugLevel)
         {
             _weaver.InternalLogDebug(message, debugLevel);
         }

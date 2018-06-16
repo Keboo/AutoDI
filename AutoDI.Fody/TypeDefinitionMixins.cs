@@ -38,14 +38,14 @@ namespace AutoDI.Fody
         {
             var targetTypeCtors = targetType.GetConstructors();
             var annotatedConstructors = targetTypeCtors
-                .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.IsType<DiConstructorAttribute>())).ToArray();
+                .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.FullName == "AutoDI.DiConstructorAttribute")).ToArray();
             MethodDefinition targetTypeCtor;
 
             if (annotatedConstructors.Length > 0)
             {
                 if (annotatedConstructors.Length > 1)
                 {
-                    throw new MultipleConstructorException($"More then one constructor on '{targetType.Name}' annotated with {nameof(DiConstructorAttribute)}");
+                    throw new MultipleConstructorException($"More then one constructor on '{targetType.Name}' annotated with DiConstructorAttribute");
                 }
                 targetTypeCtor = annotatedConstructors[0];
             }
