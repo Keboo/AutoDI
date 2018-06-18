@@ -1,11 +1,17 @@
-﻿using AutoDI.AssemblyGenerator;
+﻿extern alias AutoDIFody;
+
+using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
+using Settings=AutoDIFody::AutoDI.Fody.Settings;
+
 namespace AutoDI.Fody.Tests
 {
+    using AutoDI;
+
     [TestClass]
     public class DisableContainerGeneration
     {
@@ -19,8 +25,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
+                    args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
                 }
             };
 
@@ -31,7 +36,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void WhenGenerateRegistrationsIsFalseResolutionFails()
         {
-            Assert.IsNull(_testAssembly.GetType($"{DI.Namespace}.{DI.TypeName}"));
+            Assert.IsNull(_testAssembly.GetType($"{Constants.Namespace}.{Constants.TypeName}"));
         }
     }
 

@@ -9,12 +9,34 @@ namespace AutoDI.Fody
 {
     internal class Mapping : IEnumerable<TypeMap>
     {
-        private readonly Action<string, DebugLogLevel> _logMessage;
+        private readonly ILogger _logger;
         private readonly Dictionary<string, TypeMap> _maps = new Dictionary<string, TypeMap>();
 
-        public Mapping(Action<string, DebugLogLevel> logMessage)
+        public static Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes, ILogger logger)
         {
-            _logMessage = logMessage ?? throw new ArgumentNullException(nameof(logMessage));
+            var rv = new Mapping(logger);
+
+            if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
+            {
+                rv.AddSingleInterfaceImplementation(allTypes);
+            }
+            if (settings.Behavior.HasFlag(Behaviors.IncludeClasses))
+            {
+                rv.AddClasses(allTypes);
+            }
+            if (settings.Behavior.HasFlag(Behaviors.IncludeBaseClasses))
+            {
+                rv.AddBaseClasses(allTypes);
+            }
+
+            rv.AddSettingsMap(settings, allTypes);
+
+            return rv;
+        }
+
+        private Mapping(ILogger logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior, Lifetime? lifetime)
@@ -25,20 +47,20 @@ namespace AutoDI.Fody
             //Issue 59 - don't allow compile-time mapping to open generics
             if (targetType.HasGenericParameters || key.HasGenericParameters)
             {
-                _logMessage($"Ignoring map from '{key.FullName}' => '{targetType.FullName}' because it contains an open generic", DebugLogLevel.Verbose);
+                _logger.Debug($"Ignoring map from '{key.FullName}' => '{targetType.FullName}' because it contains an open generic", DebugLogLevel.Verbose);
                 return;
             }
 
             //Last key in wins, this allows for manual mapping to override things added with behaviors
             bool duplicateKey = false;
-            foreach (var kvp in _maps.Where(kvp => kvp.Value.RemoveKey(key)))
+            foreach (var _ in _maps.Where(kvp => kvp.Value.RemoveKey(key)))
             {
                 duplicateKey = true;
             }
 
             if (duplicateKey && behavior == DuplicateKeyBehavior.RemoveAll)
             {
-                _logMessage($"Removing duplicate maps with service key '{key.FullName}'", DebugLogLevel.Verbose);
+                _logger.Debug($"Removing duplicate maps with service key '{key.FullName}'", DebugLogLevel.Verbose);
                 return;
             }
 
@@ -90,6 +112,104 @@ namespace AutoDI.Fody
                 sb.AppendLine(map.ToString());
             }
             return sb.ToString();
+        }
+
+        private void AddSingleInterfaceImplementation(IEnumerable<TypeDefinition> allTypes)
+        {
+            var types = new Dictionary<TypeReference, List<TypeDefinition>>(TypeComparer.FullName);
+
+            foreach (TypeDefinition type in allTypes.Where(t => t.IsClass && !t.IsAbstract))
+            {
+                foreach (var @interface in type.Interfaces)
+                {
+                    if (!types.TryGetValue(@interface.InterfaceType, out List<TypeDefinition> list))
+                    {
+                        types.Add(@interface.InterfaceType, list = new List<TypeDefinition>());
+                    }
+                    list.Add(type);
+                    //TODO: Base types
+                }
+            }
+
+            foreach (KeyValuePair<TypeReference, List<TypeDefinition>> kvp in types)
+            {
+                if (kvp.Value.Count != 1) continue;
+                Add(kvp.Key.Resolve(), kvp.Value[0], DuplicateKeyBehavior.RemoveAll, Lifetime.LazySingleton);
+            }
+        }
+
+        private void AddClasses(IEnumerable<TypeDefinition> types)
+        {
+            foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract))
+            {
+                Add(type, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
+            }
+        }
+
+        private void AddBaseClasses(IEnumerable<TypeDefinition> types)
+        {
+            TypeDefinition GetBaseType(TypeDefinition type)
+            {
+                return type.BaseType?.Resolve();
+            }
+
+            foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract && t.BaseType != null))
+            {
+                for (TypeDefinition t = GetBaseType(type); t != null; t = GetBaseType(t))
+                {
+                    if (t.FullName != typeof(object).FullName)
+                    {
+                        Add(t, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
+                    }
+                }
+            }
+        }
+
+        private void AddSettingsMap(Settings settings, IEnumerable<TypeDefinition> types)
+        {
+            Dictionary<string, TypeDefinition> allTypes = types.ToDictionary(x => x.FullName);
+
+            foreach (string typeName in allTypes.Keys)
+            {
+                foreach (Map settingsMap in settings.Maps)
+                {
+                    if (settingsMap.TryGetMap(allTypes[typeName], out string mappedType))
+                    {
+                        if (allTypes.TryGetValue(mappedType, out TypeDefinition mapped))
+                        {
+                            if (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped))
+                            {
+                                Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace, settingsMap.Lifetime);
+                            }
+                            else
+                            {
+                                _logger.Debug($"Found map '{typeName}' => '{mappedType}', but {mappedType} cannot be cast to '{typeName}'. Ignoring.", DebugLogLevel.Verbose);
+                            }
+                        }
+                        else
+                        {
+                            _logger.Debug($"Found map '{typeName}' => '{mappedType}', but {mappedType} does not exist. Ignoring.", DebugLogLevel.Verbose);
+                        }
+                    }
+                }
+            }
+            UpdateCreation(settings.Types);
+        }
+
+        private bool CanBeCastToType(TypeDefinition key, TypeDefinition targetType)
+        {
+            var comparer = TypeComparer.FullName;
+
+            for (TypeDefinition t = targetType; t != null; t = t.BaseType?.Resolve())
+            {
+                if (comparer.Equals(key, t)) return true;
+                if (t.Interfaces.Any(i => comparer.Equals(i.InterfaceType, key)))
+                {
+                    return true;
+                }
+            }
+            _logger.Debug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring", DebugLogLevel.Verbose);
+            return false;
         }
     }
 }

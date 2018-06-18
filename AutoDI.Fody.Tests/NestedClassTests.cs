@@ -22,8 +22,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse(@"
+                    args.Weaver.Instance.Config = XElement.Parse(@"
     <AutoDI>
         <map from=""Service+IService1"" to=""Service+MyService2"" />
     </AutoDI>");
@@ -48,9 +47,9 @@ namespace AutoDI.Fody.Tests
             var provider = DI.GetGlobalServiceProvider(_testAssembly);
             ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
 
-            foreach (var mappedType in containerMap.GetMappings()
+            foreach (var mappedType in containerMap
                 .Select(m => m.TargetType)
-                .Where(t => t.FullName.StartsWith(nameof(NestedClassesTestsNamespace)) &&
+                .Where(t => t.FullName?.StartsWith(nameof(NestedClassesTestsNamespace)) == true &&
                             t.Name.Contains("Nested")))
             {
                 if (mappedType.Name.Contains("Private"))
@@ -72,7 +71,7 @@ namespace AutoDI.Fody.Tests
             ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
 
             //1 for the first nested class, 3 for each of the accessible sub nested classes
-            Assert.AreEqual(4, containerMap.GetMappings().Count(m => m.TargetType.Name.StartsWith("PublicNested")));
+            Assert.AreEqual(4, containerMap.Count(m => m.TargetType.Name.StartsWith("PublicNested")));
         }
 
         [TestMethod]
@@ -83,7 +82,7 @@ namespace AutoDI.Fody.Tests
             ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
 
             //1 for the first nested class, 3 for each of the accessible sub nested classes
-            Assert.AreEqual(4, containerMap.GetMappings().Count(m => m.TargetType.Name.StartsWith("ProtectedInternalNested")));
+            Assert.AreEqual(4, containerMap.Count(m => m.TargetType.Name.StartsWith("ProtectedInternalNested")));
         }
 
         [TestMethod]
@@ -94,7 +93,7 @@ namespace AutoDI.Fody.Tests
             ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
 
             //1 for the first nested class, 3 for each of the accessible sub nested classes
-            Assert.AreEqual(4, containerMap.GetMappings().Count(m => m.TargetType.Name.StartsWith("InternalNested")));
+            Assert.AreEqual(4, containerMap.Count(m => m.TargetType.Name.StartsWith("InternalNested")));
         }
 
         [TestMethod]
@@ -104,7 +103,7 @@ namespace AutoDI.Fody.Tests
             var provider = DI.GetGlobalServiceProvider(_testAssembly);
             ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
 
-            var mappings = containerMap.GetMappings().ToList();
+            var mappings = containerMap.ToList();
             Assert.IsTrue(mappings.Any(m => m.SourceType.Name == "IService1" && m.TargetType.Name == "MyService2"));
         }
     }

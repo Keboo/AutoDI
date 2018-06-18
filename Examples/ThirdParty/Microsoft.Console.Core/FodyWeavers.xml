@@ -1,6 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Weavers>
-  <AutoDI DebugLogLevel="Verbose">
-    <Type Name="ExampleLib\.Service" Lifetime="Scoped" />
-  </AutoDI>
-</Weavers>

@@ -1,21 +1,19 @@
 ﻿
-using System;
-using System.Linq;
-using AutoDI;
 using AutoDI.Fody;
-using Microsoft.Extensions.DependencyInjection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using System;
+using System.Linq;
 
 // ReSharper disable once CheckNamespace
 partial class ModuleWeaver
 {
     //TODO: out parameters... yuck
-    private TypeDefinition GenerateAutoDIClass(Mapping mapping,
+    private TypeDefinition GenerateAutoDIClass(Mapping mapping, Settings settings,
         out MethodDefinition initMethod)
     {
-        var containerType = new TypeDefinition(DI.Namespace, DI.TypeName,
+        var containerType = new TypeDefinition(AutoDI.Constants.Namespace, AutoDI.Constants.TypeName,
             TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
             | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit)
         {
@@ -23,10 +21,10 @@ partial class ModuleWeaver
         };
 
         FieldDefinition globalServiceProvider =
-            ModuleDefinition.CreateStaticReadonlyField(DI.GlobalServiceProviderName, false, Import.IServiceProvider);
+            ModuleDefinition.CreateStaticReadonlyField(AutoDI.Constants.GlobalServiceProviderName, false, Import.System.IServiceProvider);
         containerType.Fields.Add(globalServiceProvider);
 
-        MethodDefinition configureMethod = GenerateConfigureMethod(mapping, containerType);
+        MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType);
         containerType.Methods.Add(configureMethod);
 
         initMethod = GenerateInitMethod(configureMethod, globalServiceProvider);
@@ -38,18 +36,36 @@ partial class ModuleWeaver
         return containerType;
     }
 
-    private MethodDefinition GenerateConfigureMethod(Mapping mapping, TypeDefinition containerType)
+    private MethodDefinition GenerateAddServicesMethod(Mapping mapping, Settings settings, TypeDefinition containerType)
     {
-        var method = new MethodDefinition(nameof(DI.AddServices),
+        var method = new MethodDefinition("AddServices",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 
-        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, ModuleDefinition.Get<IServiceCollection>());
+        var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.DependencyInjection.IServiceCollection);
         method.Parameters.Add(serviceCollection);
 
         ILProcessor processor = method.Body.GetILProcessor();
 
-        MethodDefinition funcCtor = ModuleDefinition.ResolveCoreConstructor(typeof(Func<,>));
+        VariableDefinition exceptionList = null;
+        VariableDefinition exception = null;
+        if (settings.DebugExceptions)
+        {
+            var genericType = ModuleDefinition.ImportReference(Import.System.Collections.List.Type.MakeGenericInstanceType(Import.System.Exception));
+            exceptionList = new VariableDefinition(genericType);
+            exception = new VariableDefinition(Import.System.Exception);
+
+            method.Body.Variables.Add(exceptionList);
+            method.Body.Variables.Add(exception);
+
+            MethodReference listCtor = Import.System.Collections.List.Ctor;
+            listCtor = listCtor.MakeGenericDeclaringType(Import.System.Exception);
+
+            processor.Emit(OpCodes.Newobj, listCtor);
+            processor.Emit(OpCodes.Stloc, exceptionList);
+        }
+
+        MethodReference funcCtor = Import.System.Func2_Ctor;
 
         if (mapping != null)
         {
@@ -58,13 +74,13 @@ partial class ModuleWeaver
             {
                 try
                 {
-                    InternalLogDebug($"Processing map for {map.TargetType.FullName}", DebugLogLevel.Verbose);
+                    Logger.Debug($"Processing map for {map.TargetType.FullName}", AutoDI.DebugLogLevel.Verbose);
 
                     MethodDefinition factoryMethod = GenerateFactoryMethod(map.TargetType, factoryIndex);
                     if (factoryMethod == null)
                     {
-                        InternalLogDebug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
-                            DebugLogLevel.Verbose);
+                        Logger.Debug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
+                            AutoDI.DebugLogLevel.Verbose);
                         continue;
                     }
                     containerType.Methods.Add(factoryMethod);
@@ -72,92 +88,129 @@ partial class ModuleWeaver
 
                     foreach (TypeLifetime typeLifetime in map.Lifetimes)
                     {
-                        processor.Emit(OpCodes.Ldarg_0); //collection parameter
+                        var tryStart = Instruction.Create(OpCodes.Ldarg_0); //collection parameter
+                        processor.Append(tryStart);
 
                         processor.Emit(OpCodes.Ldnull);
                         processor.Emit(OpCodes.Ldftn, factoryMethod);
                         processor.Emit(OpCodes.Newobj,
                             ModuleDefinition.ImportReference(
-                                funcCtor.MakeGenericTypeConstructor(Import.IServiceProvider,
-                                    map.TargetType)));
+                                funcCtor.MakeGenericDeclaringType(Import.System.IServiceProvider,
+                                    ModuleDefinition.ImportReference(map.TargetType))));
 
                         processor.Emit(OpCodes.Ldc_I4, typeLifetime.Keys.Count);
-                        processor.Emit(OpCodes.Newarr, Import.System_Type);
+                        processor.Emit(OpCodes.Newarr, Import.System.Type.Type);
 
                         int arrayIndex = 0;
-
                         foreach (TypeDefinition key in typeLifetime.Keys)
                         {
                             TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                            InternalLogDebug(
+                            Logger.Debug(
                                 $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({typeLifetime.Lifetime})",
-                                DebugLogLevel.Default);
+                                AutoDI.DebugLogLevel.Default);
                             processor.Emit(OpCodes.Dup);
                             processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
                             processor.Emit(OpCodes.Ldtoken, importedKey);
-                            processor.Emit(OpCodes.Call, Import.Type_GetTypeFromHandle);
+                            processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
                             processor.Emit(OpCodes.Stelem_Ref);
                         }
 
                         processor.Emit(OpCodes.Ldc_I4, (int)typeLifetime.Lifetime);
 
                         var genericAddMethod =
-                            new GenericInstanceMethod(Import.ServiceCollectionMixins_AddAutoDIService);
+                            new GenericInstanceMethod(Import.AutoDI.ServiceCollectionMixins.AddAutoDIService);
                         genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
-                        processor.Emit(OpCodes.Call, genericAddMethod);
+                        processor.Emit(OpCodes.Call, ModuleDefinition.ImportReference(genericAddMethod));
                         processor.Emit(OpCodes.Pop);
+
+                        if (settings.DebugExceptions)
+                        {
+                            Instruction afterCatch = Instruction.Create(OpCodes.Nop);
+                            processor.Emit(OpCodes.Leave_S, afterCatch);
+
+                            Instruction handlerStart = Instruction.Create(OpCodes.Stloc, exception);
+                            processor.Append(handlerStart);
+                            processor.Emit(OpCodes.Ldloc, exceptionList);
+                            processor.Emit(OpCodes.Ldstr, $"Error adding type '{map.TargetType.FullName}' with key(s) '{string.Join(",", typeLifetime.Keys.Select(x => x.FullName))}'");
+                            processor.Emit(OpCodes.Ldloc, exception);
+
+                            processor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AutoDIException_Ctor);
+                            var listAdd = Import.System.Collections.List.Add;
+                            listAdd = listAdd.MakeGenericDeclaringType(Import.System.Exception);
+
+                            processor.Emit(OpCodes.Callvirt, listAdd);
+
+                            Instruction handlerEnd = Instruction.Create(OpCodes.Leave_S, afterCatch);
+                            processor.Append(handlerEnd);
+
+                            var exceptionHandler =
+                                new ExceptionHandler(ExceptionHandlerType.Catch)
+                                {
+                                    CatchType = Import.System.Exception,
+                                    TryStart = tryStart,
+                                    TryEnd = handlerStart,
+                                    HandlerStart = handlerStart,
+                                    HandlerEnd = afterCatch,
+
+                                };
+
+                            method.Body.ExceptionHandlers.Add(exceptionHandler);
+
+                            processor.Append(afterCatch);
+                        }
                     }
                 }
-                catch (MultipleConstructorAutoDIException e)
+                catch (MultipleConstructorException e)
                 {
-                    LogError($"Failed to create map for {map}\r\n{e}");
+                    Logger.Error($"Failed to create map for {map}\r\n{e}");
                 }
                 catch (Exception e)
                 {
-                    LogWarning($"Failed to create map for {map}\r\n{e}");
+                    Logger.Warning($"Failed to create map for {map}\r\n{e}");
                 }
             }
         }
 
-        processor.Emit(OpCodes.Ret);
+        Instruction @return = Instruction.Create(OpCodes.Ret);
+        if (settings.DebugExceptions)
+        {
+            Instruction loadList = Instruction.Create(OpCodes.Ldloc, exceptionList);
+            processor.Append(loadList);
+
+            var listCount = Import.System.Collections.List.Count;
+            listCount = listCount.MakeGenericDeclaringType(Import.System.Exception);
+            processor.Emit(OpCodes.Callvirt, listCount);
+            processor.Emit(OpCodes.Ldc_I4_0);
+            processor.Emit(OpCodes.Cgt);
+            processor.Emit(OpCodes.Brfalse_S, @return);
+
+            processor.Emit(OpCodes.Ldstr, $"Error in {AutoDI.Constants.TypeName}.AddServices() generated method");
+            processor.Emit(OpCodes.Ldloc, exceptionList);
+
+            processor.Emit(OpCodes.Newobj, Import.System.AggregateException_Ctor);
+            processor.Emit(OpCodes.Throw);
+        }
+
+        processor.Append(@return);
 
         return method;
     }
 
     private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
     {
-        if (!CanMapType(targetType)) return null;
-
-        var targetTypeCtors = targetType.GetConstructors();
-        var annotatedConstructors = targetTypeCtors
-            .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.IsType<DiConstructorAttribute>())).ToArray();
-        MethodDefinition targetTypeCtor;
-
-        if (annotatedConstructors.Length > 0)
-        {
-            if (annotatedConstructors.Length > 1)
-            {
-                throw new MultipleConstructorAutoDIException($"More then one constructor on '{targetType.Name}' annotated with {nameof(DiConstructorAttribute)}");
-            }
-            targetTypeCtor = annotatedConstructors[0];
-        }
-        else
-        {
-            targetTypeCtor = targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count)
-                .FirstOrDefault();
-        }
-
+        if (!targetType.CanMapType()) return null;
+        
+        MethodDefinition targetTypeCtor = targetType.GetMappingConstructor();
         if (targetTypeCtor == null) return null;
 
         var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
             MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(targetType));
-        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.IServiceProvider));
+        factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.System.IServiceProvider));
 
         ILProcessor factoryProcessor = factory.Body.GetILProcessor();
 
-        MethodReference getServiceMethod = ModuleDefinition.GetMethod(typeof(ServiceProviderServiceExtensions),
-            nameof(ServiceProviderServiceExtensions.GetService));
+        MethodReference getServiceMethod = Import.DependencyInjection.ServiceProviderServiceExtensions_GetService;
 
         foreach (ParameterDefinition parameter in targetTypeCtor.Parameters)
         {
@@ -174,22 +227,22 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateInitMethod(MethodDefinition configureMethod, FieldDefinition globalServiceProvider)
     {
-        var initMethod = new MethodDefinition(nameof(DI.Init),
+        var initMethod = new MethodDefinition(AutoDI.Constants.InitMethodName,
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
-        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, ModuleDefinition.Get<Action<IApplicationBuilder>>());
+        var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, Import.System.Action.Type.MakeGenericInstanceType(Import.AutoDI.IApplicationBuilder.Type));
         initMethod.Parameters.Add(configureAction);
 
-        var applicationBuilder = new VariableDefinition(ModuleDefinition.Get<IApplicationBuilder>());
+        var applicationBuilder = new VariableDefinition(Import.AutoDI.IApplicationBuilder.Type);
         initMethod.Body.Variables.Add(applicationBuilder);
         ILProcessor initProcessor = initMethod.Body.GetILProcessor();
 
-        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, ModuleDefinition.GetDefaultConstructor<ApplicationBuilder>());
+        Instruction createApplicationbuilder = Instruction.Create(OpCodes.Newobj, Import.AutoDI.ApplicationBuilder.Ctor);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
         initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
         //Compare
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<AlreadyInitializedException>());
+        initProcessor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AlreadyInitializedException_Ctor);
         initProcessor.Emit(OpCodes.Throw);
 
         initProcessor.Append(createApplicationbuilder);
@@ -198,21 +251,21 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
         initProcessor.Emit(OpCodes.Ldnull);
         initProcessor.Emit(OpCodes.Ldftn, configureMethod);
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.GetConstructor<Action<IServiceCollection>>());
-        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.ConfigureServices)));
+        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System.Action.Ctor.MakeGenericDeclaringType(Import.DependencyInjection.IServiceCollection)));
+        initProcessor.Emit(OpCodes.Callvirt, Import.AutoDI.IApplicationBuilder.ConfigureServices);
         initProcessor.Emit(OpCodes.Pop);
 
-        MethodDefinition setupMethod = FindSetupMethod();
+        MethodDefinition setupMethod = SetupMethod.Find(ModuleDefinition, Logger);
         if (setupMethod != null)
         {
-            InternalLogDebug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
+            Logger.Debug($"Found setup method '{setupMethod.FullName}'", AutoDI.DebugLogLevel.Default);
             initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
             initProcessor.Emit(OpCodes.Call, setupMethod);
             initProcessor.Emit(OpCodes.Nop);
         }
         else
         {
-            InternalLogDebug("No setup method found", DebugLogLevel.Default);
+            Logger.Debug("No setup method found", AutoDI.DebugLogLevel.Default);
         }
 
         Instruction loadForBuild = Instruction.Create(OpCodes.Ldloc_0);
@@ -221,17 +274,15 @@ partial class ModuleWeaver
         initProcessor.Emit(OpCodes.Brfalse_S, loadForBuild);
         initProcessor.Emit(OpCodes.Ldarg_0);
         initProcessor.Emit(OpCodes.Ldloc_0);
-        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<Action<IApplicationBuilder>>(nameof(Action<IApplicationBuilder>.Invoke)));
+        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.ImportReference(Import.System.Action.Invoke.MakeGenericDeclaringType(Import.AutoDI.IApplicationBuilder.Type)));
 
 
         initProcessor.Append(loadForBuild);
-        var buildMethod = ModuleDefinition.GetMethod<IApplicationBuilder>(nameof(IApplicationBuilder.Build));
-        buildMethod.ReturnType = Import.IServiceProvider; //Must update the return type to handle .net core apps
-        initProcessor.Emit(OpCodes.Callvirt, buildMethod);
+        initProcessor.Emit(OpCodes.Callvirt, Import.AutoDI.IApplicationBuilder.Build);
         initProcessor.Emit(OpCodes.Stsfld, globalServiceProvider);
 
         initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
-        initProcessor.Emit(OpCodes.Call, Import.GlobalDI_Register);
+        initProcessor.Emit(OpCodes.Call, Import.AutoDI.GlobalDI.Register);
 
 
         initProcessor.Emit(OpCodes.Ret);
@@ -241,7 +292,7 @@ partial class ModuleWeaver
 
     private MethodDefinition GenerateDisposeMethod(FieldDefinition globalServiceProvider)
     {
-        var disposeMethod = new MethodDefinition(nameof(DI.Dispose),
+        var disposeMethod = new MethodDefinition("Dispose",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
             ModuleDefinition.ImportReference(typeof(void)));
 
@@ -262,7 +313,7 @@ partial class ModuleWeaver
         processor.Append(afterDispose);
 
         processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
-        processor.Emit(OpCodes.Call, Import.GlobalDI_Unregister);
+        processor.Emit(OpCodes.Call, Import.AutoDI.GlobalDI.Unregister);
         processor.Emit(OpCodes.Pop);
 
         processor.Emit(OpCodes.Ldnull);
@@ -272,39 +323,5 @@ partial class ModuleWeaver
         return disposeMethod;
     }
 
-    private MethodDefinition FindSetupMethod()
-    {
-        foreach (var method in ModuleDefinition.GetAllTypes().SelectMany(t => t.GetMethods())
-            .Where(m => m.CustomAttributes.Any(a => a.AttributeType.IsType<SetupMethodAttribute>())))
-        {
-            if (!method.IsStatic)
-            {
-                LogWarning($"Setup method '{method.FullName}' must be static");
-                return null;
-            }
-            if (!method.IsPublic && !method.IsAssembly)
-            {
-                LogWarning($"Setup method '{method.FullName}' must be public or internal");
-                return null;
-            }
-            if (method.Parameters.Count != 1 || !method.Parameters[0].ParameterType.IsType<IApplicationBuilder>())
-            {
-                LogWarning($"Setup method '{method.FullName}' must take a single parameter of type '{typeof(IApplicationBuilder).FullName}'");
-                return null;
-            }
-            return method;
-        }
-        return null;
-    }
-
-    //Issue 75
-    private static bool CanMapType(TypeDefinition type)
-    {
-        if (!type.IsNested) return true;
-
-        //public, protected internal, and internal
-        if (!type.IsNestedPublic && !type.IsNestedFamilyOrAssembly && !type.IsNestedAssembly) return false;
-
-        return CanMapType(type.DeclaringType);
-    }
+    
 }

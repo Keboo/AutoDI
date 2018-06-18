@@ -1,44 +1,22 @@
-﻿
-using AutoDI;
+﻿using AutoDI;
 using AutoDI.Fody;
-using Mono.Cecil;
-using System.Linq;
+using System;
 
 // ReSharper disable once CheckNamespace
 public partial class ModuleWeaver
 {
-    private Settings LoadSettings()
+    private Settings LoadSettings(TypeResolver typeResolver)
     {
-        var settings = new Settings();
-        foreach (CustomAttribute attribute in GetAllModules().SelectMany(m => m.Assembly.CustomAttributes))
+        Settings settings;
+        try
         {
-            if (attribute.AttributeType.IsType<SettingsAttribute>())
-            {
-                foreach (CustomAttributeNamedArgument property in attribute.Properties)
-                {
-                    if (property.Argument.Value != null)
-                    {
-                        switch (property.Name)
-                        {
-                            case nameof(SettingsAttribute.AutoInit):
-                                settings.AutoInit = (bool)property.Argument.Value;
-                                break;
-                            case nameof(SettingsAttribute.Behavior):
-                                settings.Behavior = (Behaviors)property.Argument.Value;
-                                break;
-                            case nameof(SettingsAttribute.DebugLogLevel):
-                                settings.DebugLogLevel = (DebugLogLevel)property.Argument.Value;
-                                break;
-                            case nameof(SettingsAttribute.GenerateRegistrations):
-                                settings.GenerateRegistrations = (bool)property.Argument.Value;
-                                break;
-                        }
-                    }
-                }
-            }
+            settings = Settings.Load(typeResolver, Config);
         }
-
-        settings = Settings.Parse(settings, Config);
+        catch (SettingsParseException e)
+        {
+            Logger.Error($"Failed to parse AutoDI settings from FodyWeavers.xml{Environment.NewLine}{e.Message}");
+            return null;
+        }
         InternalLogDebug = (s, l) =>
         {
             if (l <= settings.DebugLogLevel)
@@ -46,7 +24,7 @@ public partial class ModuleWeaver
                 LogDebug(s);
             }
         };
-        InternalLogDebug($"Loaded settings\r\n{settings}", DebugLogLevel.Default);
+        Logger.Debug($"Loaded settings\r\n{settings}", DebugLogLevel.Default);
 
         return settings;
     }

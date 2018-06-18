@@ -7,9 +7,6 @@ namespace AutoDI
 {
     public static class DI
     {
-        public const string Namespace = "AutoDI";
-        public const string TypeName = "<AutoDI>";
-        public const string GlobalServiceProviderName = "_globalServiceProvider";
 
         public static void Init(Assembly containerAssembly = null, Action<IApplicationBuilder> configureMethod = null)
         {
@@ -18,6 +15,21 @@ namespace AutoDI
             var method = autoDI.GetRuntimeMethod(nameof(Init), new[] { typeof(Action<IApplicationBuilder>) });
             if (method == null) throw new RequiredMethodMissingException($"Could not find {nameof(Init)} method on {autoDI.FullName}");
             method.Invoke(null, new object[] { configureMethod });
+        }
+
+        public static bool TryInit(Assembly containerAssembly = null,
+            Action<IApplicationBuilder> configureMethod = null)
+        {
+            try
+            {
+                Init(containerAssembly, configureMethod);
+                return true;
+            }
+            catch (TargetInvocationException e) 
+                when(e.InnerException is AlreadyInitializedException)
+            {
+                return false;
+            }
         }
 
         public static void AddServices(IServiceCollection collection, Assembly containerAssembly = null)
@@ -43,14 +55,14 @@ namespace AutoDI
             if (assembly == null) throw new ArgumentNullException(nameof(assembly));
 
             Type autoDI = GetAutoDIType(assembly);
-            FieldInfo field = autoDI.GetRuntimeFields().SingleOrDefault(f => f.Name == GlobalServiceProviderName) ??
-                        throw new GlobalServiceProviderNotFoundException($"Could not find {GlobalServiceProviderName} field");
+            FieldInfo field = autoDI.GetRuntimeFields().SingleOrDefault(f => f.Name == Constants.GlobalServiceProviderName) ??
+                        throw new GlobalServiceProviderNotFoundException($"Could not find {Constants.GlobalServiceProviderName} field");
             return (IServiceProvider)field.GetValue(null);
         }
 
         private static Type GetAutoDIType(Assembly containerAssembly)
         {
-            const string typeName = Namespace + "." + TypeName;
+            const string typeName = Constants.Namespace + "." + Constants.TypeName;
 
             Type containerType = containerAssembly != null
                 ? containerAssembly.GetType(typeName)

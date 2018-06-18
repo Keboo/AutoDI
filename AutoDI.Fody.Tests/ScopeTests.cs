@@ -22,8 +22,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse($@"
+                    args.Weaver.Instance.Config = XElement.Parse($@"
     <AutoDI>
         <type name="".*"" Lifetime=""{Lifetime.Scoped}"" />
     </AutoDI>");

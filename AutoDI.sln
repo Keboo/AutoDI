@@ -1,21 +1,24 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.15
+# Visual Studio 1515
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F9DD248-14DA-41C7-8F5F-71BDB8D60ADB} = {1F9DD248-14DA-41C7-8F5F-71BDB8D60ADB}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
 		NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec = NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec
 		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
+		NuGet\AutoDI.Generator\AutoDI.Generator.nuspec = NuGet\AutoDI.Generator\AutoDI.Generator.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}"
 	ProjectSection(SolutionItems) = preProject
 		appveyor.yml = appveyor.yml
-		AutoDI.snk = AutoDI.snk
 		BuildLocalNugets.ps1 = BuildLocalNugets.ps1
 		local.testsettings = local.testsettings
 		README.md = README.md
@@ -40,6 +43,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Tests", "AutoDI.Tests\AutoDI.Tests.csproj", "{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AspNetCore", "AutoDI.AspNetCore\AutoDI.AspNetCore.csproj", "{EC8FEB67-0EC6-430E-892B-20EFFC47B423}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Generator", "AutoDI.Generator\AutoDI.Generator.csproj", "{931F999C-07DD-4CB7-9DCB-657D795857F8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -75,6 +80,10 @@ Global
 		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Release|Any CPU.Build.0 = Release|Any CPU
+		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

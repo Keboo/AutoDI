@@ -23,8 +23,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    dynamic weaver = args.Weaver;
-                    weaver.Config = XElement.Parse($@"
+                    args.Weaver.Instance.Config = XElement.Parse($@"
     <AutoDI Behavior=""{Behaviors.None}"">
         <map from=""regex:.*"" to=""$0"" />
         <map from=""regex:(.*)\.I(.+)"" to=""$1.$2"" />
@@ -65,7 +64,7 @@ namespace AutoDI.Fody.Tests
             Assert.IsTrue(((object)sut.Service).Is<Service>(typeof(ManualMappingTests)));
             Assert.IsNull(sut.Service2);
             
-            var mappings = _map.GetMappings().ToArray();
+            var mappings = _map.ToArray();
 
             Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService2>(typeof(ManualMappingTests)) || m.TargetType.Is<Service2>(typeof(ManualMappingTests))));
         }
@@ -95,7 +94,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void WhenClassDoesNotImplementInterfaceItIsNotMapped()
         {
-            var mapings = _map.GetMappings().ToArray();
+            var mapings = _map.ToArray();
 
             Assert.IsFalse(mapings.Any(m => m.SourceType.Is<IService3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
             Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
@@ -104,7 +103,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanForceMappingWhenClassDoesNotImplementInterface()
         {
-            var mapings = _map.GetMappings().ToArray();
+            var mapings = _map.ToArray();
 
             Assert.IsTrue(mapings.Any(m => m.SourceType.Is<IService4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
             Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
@@ -122,11 +121,11 @@ namespace AutoDI.Fody.Tests
         [Description("Issue 59")]
         public void CanDeclareLifetimeInMap()
         {
-            var mapings = _map.GetMappings().ToArray();
+            var mapings = _map.ToArray();
 
             var map = mapings.Single(m => m.SourceType.Name == nameof(Service5) && m.TargetType.Name == nameof(Service5Extended));
 
-            Assert.AreEqual(Lifetime.Scoped, map.LifetimeMode);
+            Assert.AreEqual(Lifetime.Scoped, map.Lifetime);
         }
     }
 

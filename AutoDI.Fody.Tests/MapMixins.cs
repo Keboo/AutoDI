@@ -8,7 +8,7 @@ namespace AutoDI.Fody.Tests
     {
         public static bool IsMapped<TKey, TValue>(this IContainer container, Type containerType = null)
         {
-            return container.GetMappings().Any(map => map.SourceType.Is<TKey>(containerType) &&
+            return container.Any(map => map.SourceType.Is<TKey>(containerType) &&
                                                       map.TargetType.Is<TValue>(containerType));
         }
     }

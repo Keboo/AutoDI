@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="AutoDI.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="AutoDI.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build" Version="15.6.82" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.6.82" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AutoDI.Fody\AutoDI.Fody.csproj" />
+  </ItemGroup>
+
+  <Target Name="CopyOutput" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <CopyItems Include="$(TargetDir)..\**\AutoDI*.dll" />
+      <CopyItems Include="$(TargetDir)..\**\AutoDI*.pdb" />
+      <CopyItems Include="$(TargetDir)..\**\Mono.Cecil*" />
+      <ContentItems Include="$(ProjectDir)AutoDI.cs" />
+      <BuildItems Include="$(ProjectDir)AutoDI.Generator.targets" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
+    <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\content\" />
+    <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\contentFiles\cs\any\" />
+    <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\" />
+  </Target>
+
+</Project>

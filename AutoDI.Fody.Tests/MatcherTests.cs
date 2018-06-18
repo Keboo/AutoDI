@@ -1,4 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿extern alias AutoDIFody;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using StringMatcher=AutoDIFody::AutoDI.Fody.Matcher<string>;
 
 namespace AutoDI.Fody.Tests
 {
@@ -8,7 +12,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanMatchWithSimpleWildCard()
         {
-            var sut = new Matcher<string>(s => s, "Namespace.I*", "OtherNamespace.*");
+            var sut = new StringMatcher(s => s, "Namespace.I*", "OtherNamespace.*");
 
             bool result = sut.TryMatch("Namespace.IService", out string replacement);
             Assert.IsTrue(result);
@@ -18,7 +22,7 @@ namespace AutoDI.Fody.Tests
         [TestMethod]
         public void CanMatchWithRegex()
         {
-            var sut = new Matcher<string>(s => s, @"regex:(.+)\.I(.+)", "regex:$1.$2");
+            var sut = new StringMatcher(s => s, @"regex:(.+)\.I(.+)", "regex:$1.$2");
 
             bool result = sut.TryMatch("Namespace.IService", out string replacement);
             Assert.IsTrue(result);

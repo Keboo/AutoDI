@@ -14,5 +14,15 @@ namespace AutoDI.Fody
         {
             return string.Equals(reference.FullName, type.FullName, StringComparison.Ordinal);
         }
+
+        internal static bool IsType(this TypeReference reference, TypeReference type)
+        {
+            return string.Equals(reference.FullName, type.FullName, StringComparison.Ordinal);
+        }
+
+        public static string FullNameCSharp(this TypeReference type)
+        {
+            return type.FullName.Replace('/', '.');
+        }
     }
 }

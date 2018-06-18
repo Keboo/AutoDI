@@ -1,5 +1,4 @@
-﻿using AutoDI;
-using AutoDI.Fody;
+﻿using AutoDI.Fody;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -10,7 +9,7 @@ partial class ModuleWeaver
     {
         if (ModuleDefinition.EntryPoint != null)
         {
-            InternalLogDebug("Injecting AutoDI init call", DebugLogLevel.Verbose);
+            Logger.Debug("Injecting AutoDI init call", AutoDI.DebugLogLevel.Verbose);
 
             var injector = new Injector(ModuleDefinition.EntryPoint);
             injector.Insert(OpCodes.Ldnull);
@@ -18,7 +17,7 @@ partial class ModuleWeaver
         }
         else
         {
-            InternalLogDebug($"No entry point in {ModuleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
+            Logger.Debug($"No entry point in {ModuleDefinition.FileName}. Skipping container injection.", AutoDI.DebugLogLevel.Default);
         }
     }
 }

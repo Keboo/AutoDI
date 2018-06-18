@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <RunAutoDI Condition="'$(RunAutoDI)' == '' Or $(RunAutoDI) == '*Undefined*'">True</RunAutoDI>
+    <AutoDIOutputPath Condition="'$(AutoDIOutputPath)' == '' Or $(AutoDIOutputPath) == '*Undefined*'">$(ProjectDir)$(IntermediateOutputPath)AutoDI.Generated\</AutoDIOutputPath>
+    <AutoDIGeneratorAssembly Condition="'$(AutoDIGeneratorAssembly)' == '' Or $(AutoDIGeneratorAssembly) == '*Undefined*'">$(MSBuildThisFileDirectory)..\lib\net461\AutoDI.Generator.dll</AutoDIGeneratorAssembly>
+    <AutoDIGeneratedFileName>AutoDI.cs</AutoDIGeneratedFileName>
+  </PropertyGroup>
+  
+  <ItemGroup Condition="$(RunAutoDI) == 'False'">
+    <Compile Include="$(AutoDIOutputPath)$(AutoDIGeneratedFileName)" Condition="Exists('$(AutoDIOutputPath)$(AutoDIGeneratedFileName)')"/>
+  </ItemGroup>
+
+  <UsingTask TaskName="AutoDI.Generator.GeneratorTask"
+             AssemblyFile="$(AutoDIGeneratorAssembly)"/>
+
+  <Target Name="AutoDITask" AfterTargets="AfterCompile" Condition="$(RunAutoDI) == 'True'">
+    <GeneratorTask
+      ProjectPath="$(ProjectPath)"
+      OutputPath="@(IntermediateAssembly)"
+      GeneratedFilePath="$(AutoDIOutputPath)$(AutoDIGeneratedFileName)">
+      
+      <Output ItemName="Compile" TaskParameter="GeneratedCodeFiles" />
+    </GeneratorTask>
+
+    <MSBuild Projects="$(MSBuildProjectFile)" Properties="RunAutoDI=False" UseResultsCache="False" />
+  </Target>
+</Project>
