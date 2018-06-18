@@ -1,33 +1,36 @@
-# configuration for master/CI branch
+autodi_version: 3.2.0
+image: Visual Studio 2017
+configuration: Release
+platform: Any CPU
+skip_tags: true
+
+init:
+- ps: >-
+    Update-AppveyorBuild -Version "$env:autodi_version-ci$env:appveyor_build_number"
+  
+    Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version.$env:appveyor_build_number"
+
+assembly_info:
+  patch: false
+
+nuget:
+  account_feed: false
+  project_feed: true
+  disable_publish_on_pr: true
+
+before_build:
+- ps: nuget restore
+
+build:
+  project: AutoDI.sln
+  verbosity: minimal
+
+
+for:
 -
-  environment:
-    autodi_version: 3.2.0
-    APPVEYOR_BLOCK_DOTNETCORE_TESTS_AUTORUN: true
   branches:
     only:
-    - master
-  image: Visual Studio 2017
-  configuration: Release
-  platform: Any CPU
-  init:
-  - ps: >-
-      Update-AppveyorBuild -Version "$env:autodi_version-ci$env:appveyor_build_number"
-    
-      Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version.$env:appveyor_build_number"
-  assembly_info:
-    patch: false
-  nuget:
-    account_feed: false
-    project_feed: true
-    disable_publish_on_pr: true
-  #Temp work around for issues with nuget server.
-  #hosts:
-  #  api.nuget.org: 93.184.221.200
-  before_build:
-  - ps: nuget restore
-  build:
-    project: AutoDI.sln
-    verbosity: minimal
+      - preview
   after_build:
   - ps: >-
       .\Nuget\UpdateNuspecFiles.ps1 -Version "$env:autodi_version-ci$env:appveyor_build_number"
@@ -46,33 +49,10 @@
   - provider: Environment
     name: NuGet publish
 
-#Configuration for releases
 -
-  environment:
-    autodi_version: 3.2.0
-    APPVEYOR_BLOCK_DOTNETCORE_TESTS_AUTORUN: true
   branches:
     only:
-    - release
-  image: Visual Studio 2017
-  configuration: Release
-  platform: Any CPU
-  init:
-  - ps: >-
-      Update-AppveyorBuild -Version "$env:autodi_version"
-    
-      Set-AppveyorBuildVariable -Name "autodi_version_full" -Value "$env:autodi_version"
-  assembly_info:
-    patch: false
-  nuget:
-    account_feed: false
-    project_feed: true
-    disable_publish_on_pr: true
-  before_build:
-  - ps: nuget restore
-  build:
-    project: AutoDI.sln
-    verbosity: minimal
+      - release
   after_build:
   - ps: >-
       .\Nuget\UpdateNuspecFiles.ps1 -Version "$env:autodi_version"
