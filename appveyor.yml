@@ -6,6 +6,7 @@ skip_tags: true
 
 environment:
   autodi_version: 3.2.0
+  APPVEYOR_BLOCK_DOTNETCORE_TESTS_AUTORUN: true
 
 init:
 - ps: >-
