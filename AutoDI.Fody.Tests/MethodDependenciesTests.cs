@@ -45,6 +45,14 @@ namespace AutoDI.Fody.Tests
             @class.DoSomething();
             Assert.IsTrue(((object)@class.Service).Is<Service>());
         }
+
+        [TestMethod]
+        public void ExplicitInterfaceMethodDependenciesAreInjected()
+        {
+            dynamic @class = _testAssembly.CreateInstance<ClassWithExplicitInterfaceImplementation>();
+            @class.DoSomething();
+            Assert.IsTrue(((object)((dynamic)@class).Service).Is<Service>());
+        }
     }
 }
 
@@ -75,6 +83,23 @@ namespace MethodDependencyNamespace
         {
             Service = service;
         }
+    }
+
+    public class ClassWithExplicitInterfaceImplementation : IOther
+    {
+        public IService Service { get; private set; }
+
+        public void DoSomething() => ((IOther) this).DoSomething();
+
+        void IOther.DoSomething([Dependency]IService service)
+        {
+            Service = service;
+        }
+    }
+
+    public interface IOther
+    {
+        void DoSomething(IService service = null);
     }
 
     public interface IService { }

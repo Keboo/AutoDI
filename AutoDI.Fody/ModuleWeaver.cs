@@ -115,7 +115,6 @@ public partial class ModuleWeaver : BaseModuleWeaver
     {
         foreach (MethodDefinition method in type.Methods)
         {
-            Logger.Debug($"Processing method '{method.Name}' for '{method.DeclaringType.FullName}'", DebugLogLevel.Verbose);
             ProcessMethod(type, method);
         }
     }
@@ -131,6 +130,8 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
         if (dependencyParameters.Any() || dependencyProperties.Any())
         {
+            Logger.Debug($"Processing method '{method.Name}' for '{method.DeclaringType.FullName}'", DebugLogLevel.Verbose);
+
             var injector = new Injector(method);
 
             var end = Instruction.Create(OpCodes.Nop);
