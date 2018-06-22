@@ -113,24 +113,25 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
     private void ProcessType(TypeDefinition type)
     {
-        foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
+        foreach (MethodDefinition method in type.Methods)
         {
-            Logger.Debug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
-            ProcessConstructor(type, ctor);
+            Logger.Debug($"Processing method '{method.Name}' for '{method.DeclaringType.FullName}'", DebugLogLevel.Verbose);
+            ProcessMethod(type, method);
         }
     }
 
-    private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor)
+    private void ProcessMethod(TypeDefinition type, MethodDefinition method)
     {
-        List<ParameterDefinition> dependencyParameters = constructor.Parameters.Where(
+        List<ParameterDefinition> dependencyParameters = method.Parameters.Where(
                         p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList();
 
-        List<PropertyDefinition> dependencyProperties = type.Properties.Where(
-            p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList();
+        List<PropertyDefinition> dependencyProperties = method.IsConstructor ? 
+            type.Properties.Where(p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList() :
+            new List<PropertyDefinition>();
 
         if (dependencyParameters.Any() || dependencyProperties.Any())
         {
-            var injector = new Injector(constructor);
+            var injector = new Injector(method);
 
             var end = Instruction.Create(OpCodes.Nop);
 
@@ -184,7 +185,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
             injector.Insert(end);
 
-            constructor.Body.OptimizeMacros();
+            method.Body.OptimizeMacros();
 
             void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source,
                 IEnumerable<Instruction> loadSource,
