@@ -1,4 +1,4 @@
-﻿using ContainerDependencyNameSpace;
+﻿using ContainerDependencyNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -32,7 +32,7 @@ namespace AutoDI.Fody.Tests
 //<type: ConsoleApplication />
 //<ref: AutoDI />
 //<weaver: AutoDI />
-namespace ContainerDependencyNameSpace
+namespace ContainerDependencyNamespace
 {
     using AutoDI;
     using System;
