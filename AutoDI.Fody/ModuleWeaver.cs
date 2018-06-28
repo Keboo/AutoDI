@@ -25,7 +25,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
     {
         InternalLogDebug = (s, l) => LogDebug(s);
         Logger = new WeaverLogger(this);
-        
+
         try
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
@@ -33,7 +33,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
             Logger.Debug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}", DebugLogLevel.Default);
 
             var typeResolver = new TypeResolver(ModuleDefinition, ModuleDefinition.AssemblyResolver, Logger);
-            
+
             Settings settings = LoadSettings(typeResolver);
             if (settings == null) return;
 
@@ -133,26 +133,52 @@ public partial class ModuleWeaver : BaseModuleWeaver
             Logger.Debug($"Processing method '{method.Name}' for '{method.DeclaringType.FullName}'", DebugLogLevel.Verbose);
 
             var injector = new Injector(method);
+            var genDir = Path.Combine(Path.GetDirectoryName(ModuleDefinition.FileName), "AutoDI.Generated");
+            Directory.CreateDirectory(genDir);
 
-            var end = Instruction.Create(OpCodes.Nop);
-
-            foreach (ParameterDefinition parameter in dependencyParameters)
+            string filePath = Path.Combine(genDir, Path.GetRandomFileName() + ".cs");
+            using (var sw = new StreamWriter(filePath))
             {
-                if (!parameter.IsOptional)
+                sw.WriteLine($"namespace {type.Namespace}");
+                sw.WriteLine("{");
+                sw.WriteLine($"    public class {type.Name}");
+                sw.WriteLine("    {");
+                sw.WriteLine($"        public {type.Name}({string.Join(", ", method.Parameters.Select(x => $"{x.ParameterType.FullNameCSharp()} {x.Name}"))})");
+                sw.WriteLine("        {");
+                int line = 6;
+                foreach (ParameterDefinition parameter in dependencyParameters)
                 {
-                    Logger.Info(
-                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {Import.AutoDI.DependencyAttributeType.FullName} but is not an optional parameter. In {type.FullName}.");
-                }
-                if (parameter.Constant != null)
-                {
-                    Logger.Warning(
-                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
-                }
+                    if (!parameter.IsOptional)
+                    {
+                        Logger.Info(
+                            $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {Import.AutoDI.DependencyAttributeType.FullName} but is not an optional parameter. In {type.FullName}.");
+                    }
+                    if (parameter.Constant != null)
+                    {
+                        Logger.Warning(
+                            $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
+                    }
 
-                ResolveDependency(parameter.ParameterType, parameter,
-                    new[] { Instruction.Create(OpCodes.Ldarg, parameter) },
-                    null,
-                    Instruction.Create(OpCodes.Starg, parameter));
+                    var instruction = Instruction.Create(OpCodes.Ldarg, parameter);
+                    ResolveDependency(parameter.ParameterType, parameter,
+                        new[] { instruction },
+                        null,
+                        Instruction.Create(OpCodes.Starg, parameter));
+                    var sequencePoint = new SequencePoint(instruction, new Document(filePath));
+                    sequencePoint.StartLine = line;
+                    sequencePoint.EndLine = line + 4;
+                    sequencePoint.StartColumn = 12;
+                    sequencePoint.EndColumn = 12;
+                    method.DebugInformation.SequencePoints.Add(sequencePoint);
+                    sw.WriteLineAsync($"            if ({parameter.Name} == null)");
+                    sw.WriteLineAsync("            {");
+                    sw.WriteLineAsync($"                {parameter.Name} = GlobalDI.GetService<{parameter.ParameterType.FullNameCSharp()}>();");
+                    sw.WriteLineAsync("            }");
+                    line += 4;
+                }
+                sw.WriteLine("        }");
+                sw.WriteLine("    }");
+                sw.WriteLine("}");
             }
 
             foreach (PropertyDefinition property in dependencyProperties)
@@ -183,8 +209,6 @@ public partial class ModuleWeaver : BaseModuleWeaver
                         ? Instruction.Create(OpCodes.Call, property.SetMethod)
                         : Instruction.Create(OpCodes.Stfld, backingField));
             }
-
-            injector.Insert(end);
 
             method.Body.OptimizeMacros();
 
