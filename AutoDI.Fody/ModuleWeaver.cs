@@ -137,6 +137,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
             Directory.CreateDirectory(genDir);
 
             string filePath = Path.Combine(genDir, Path.GetRandomFileName() + ".cs");
+            InternalLogDebug($"Writing temp file '{filePath}'", DebugLogLevel.Default);
             using (var sw = new StreamWriter(filePath))
             {
                 sw.WriteLine($"namespace {type.Namespace}");
@@ -165,10 +166,10 @@ public partial class ModuleWeaver : BaseModuleWeaver
                         null,
                         Instruction.Create(OpCodes.Starg, parameter));
                     var sequencePoint = new SequencePoint(instruction, new Document(filePath));
-                    sequencePoint.StartLine = line;
+                    sequencePoint.StartLine = line + 1;
                     sequencePoint.EndLine = line + 4;
-                    sequencePoint.StartColumn = 12;
-                    sequencePoint.EndColumn = 12;
+                    sequencePoint.StartColumn = 13;
+                    sequencePoint.EndColumn = 13;
                     method.DebugInformation.SequencePoints.Add(sequencePoint);
                     sw.WriteLineAsync($"            if ({parameter.Name} == null)");
                     sw.WriteLineAsync("            {");
@@ -176,6 +177,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
                     sw.WriteLineAsync("            }");
                     line += 4;
                 }
+                sw.WriteLine("            //We now return you to your regularly scheduled method");
                 sw.WriteLine("        }");
                 sw.WriteLine("    }");
                 sw.WriteLine("}");
