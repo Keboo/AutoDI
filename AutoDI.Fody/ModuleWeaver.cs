@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using AutoDI;
+using AutoDI.Fody.CodeGen;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
@@ -75,11 +76,13 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 Logger.Debug("Skipping registration", DebugLogLevel.Verbose);
             }
 
+            ICodeGenerator gen = GetCodeGenerator();
             //We only update types in our module
             foreach (TypeDefinition type in allTypes.Where(type => type.Module == ModuleDefinition))
             {
-                ProcessType(type);
+                ProcessType(type, gen);
             }
+            gen?.Save();
         }
         catch (Exception ex)
         {
@@ -111,20 +114,28 @@ public partial class ModuleWeaver : BaseModuleWeaver
         }
     }
 
-    private void ProcessType(TypeDefinition type)
+    private void ProcessType(TypeDefinition type, ICodeGenerator generator)
     {
         foreach (MethodDefinition method in type.Methods)
         {
-            ProcessMethod(type, method);
+            ProcessMethod(type, method, generator);
         }
     }
 
-    private void ProcessMethod(TypeDefinition type, MethodDefinition method)
+    private ICodeGenerator GetCodeGenerator()
+    {
+        var genDir = Path.Combine(Path.GetDirectoryName(ModuleDefinition.FileName), "AutoDI.Generated");
+        Directory.CreateDirectory(genDir);
+        InternalLogDebug($"Generating temp file in '{genDir}'", DebugLogLevel.Verbose);
+        return new CSharpCodeGenerator(genDir);
+    }
+
+    private void ProcessMethod(TypeDefinition type, MethodDefinition method, ICodeGenerator generator)
     {
         List<ParameterDefinition> dependencyParameters = method.Parameters.Where(
                         p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList();
 
-        List<PropertyDefinition> dependencyProperties = method.IsConstructor ? 
+        List<PropertyDefinition> dependencyProperties = method.IsConstructor ?
             type.Properties.Where(p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList() :
             new List<PropertyDefinition>();
 
@@ -133,55 +144,35 @@ public partial class ModuleWeaver : BaseModuleWeaver
             Logger.Debug($"Processing method '{method.Name}' for '{method.DeclaringType.FullName}'", DebugLogLevel.Verbose);
 
             var injector = new Injector(method);
-            var genDir = Path.Combine(Path.GetDirectoryName(ModuleDefinition.FileName), "AutoDI.Generated");
-            Directory.CreateDirectory(genDir);
 
-            string filePath = Path.Combine(genDir, Path.GetRandomFileName() + ".cs");
-            InternalLogDebug($"Writing temp file '{filePath}'", DebugLogLevel.Default);
-            using (var sw = new StreamWriter(filePath))
+            IMethodGenerator methodGenerator = generator?.Method(method);
+            foreach (ParameterDefinition parameter in dependencyParameters)
             {
-                sw.WriteLine($"namespace {type.Namespace}");
-                sw.WriteLine("{");
-                sw.WriteLine($"    public class {type.Name}");
-                sw.WriteLine("    {");
-                sw.WriteLine($"        public {type.Name}({string.Join(", ", method.Parameters.Select(x => $"{x.ParameterType.FullNameCSharp()} {x.Name}"))})");
-                sw.WriteLine("        {");
-                int line = 6;
-                foreach (ParameterDefinition parameter in dependencyParameters)
+                if (!parameter.IsOptional)
                 {
-                    if (!parameter.IsOptional)
-                    {
-                        Logger.Info(
-                            $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {Import.AutoDI.DependencyAttributeType.FullName} but is not an optional parameter. In {type.FullName}.");
-                    }
-                    if (parameter.Constant != null)
-                    {
-                        Logger.Warning(
-                            $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
-                    }
-
-                    var instruction = Instruction.Create(OpCodes.Ldarg, parameter);
-                    ResolveDependency(parameter.ParameterType, parameter,
-                        new[] { instruction },
-                        null,
-                        Instruction.Create(OpCodes.Starg, parameter));
-                    var sequencePoint = new SequencePoint(instruction, new Document(filePath));
-                    sequencePoint.StartLine = line + 1;
-                    sequencePoint.EndLine = line + 4;
-                    sequencePoint.StartColumn = 13;
-                    sequencePoint.EndColumn = 13;
-                    method.DebugInformation.SequencePoints.Add(sequencePoint);
-                    sw.WriteLineAsync($"            if ({parameter.Name} == null)");
-                    sw.WriteLineAsync("            {");
-                    sw.WriteLineAsync($"                {parameter.Name} = GlobalDI.GetService<{parameter.ParameterType.FullNameCSharp()}>();");
-                    sw.WriteLineAsync("            }");
-                    line += 4;
+                    Logger.Info(
+                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} is marked with {Import.AutoDI.DependencyAttributeType.FullName} but is not an optional parameter. In {type.FullName}.");
                 }
-                sw.WriteLine("            //We now return you to your regularly scheduled method");
-                sw.WriteLine("        }");
-                sw.WriteLine("    }");
-                sw.WriteLine("}");
+                if (parameter.Constant != null)
+                {
+                    Logger.Warning(
+                        $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
+                }
+
+                var initInstruction = Instruction.Create(OpCodes.Ldarg, parameter);
+                var storeInstruction = Instruction.Create(OpCodes.Starg, parameter);
+                ResolveDependency(parameter.ParameterType, parameter,
+                    new[] { initInstruction },
+                    null,
+                    storeInstruction);
+
+                methodGenerator?.Append(
+                    $"if ({parameter.Name} == null)" + Environment.NewLine +
+                    "{" + Environment.NewLine + 
+                    $"    {parameter.Name} = GlobalDI.GetService<{parameter.ParameterType.FullNameCSharp()}>();" + Environment.NewLine +
+                    "}", initInstruction);
             }
+
 
             foreach (PropertyDefinition property in dependencyProperties)
             {
