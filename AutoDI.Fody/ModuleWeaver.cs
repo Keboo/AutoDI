@@ -1,7 +1,6 @@
 ﻿using AutoDI.Fody;
 using Fody;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
@@ -13,6 +12,7 @@ using System.Text;
 using AutoDI;
 using AutoDI.Fody.CodeGen;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
+using Instruction = Mono.Cecil.Cil.Instruction;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 [assembly: InternalsVisibleTo("AutoDI.Fody.Tests")]
@@ -164,13 +164,8 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 ResolveDependency(parameter.ParameterType, parameter,
                     new[] { initInstruction },
                     null,
-                    storeInstruction);
-
-                methodGenerator?.Append(
-                    $"if ({parameter.Name} == null)" + Environment.NewLine +
-                    "{" + Environment.NewLine + 
-                    $"    {parameter.Name} = GlobalDI.GetService<{parameter.ParameterType.FullNameCSharp()}>();" + Environment.NewLine +
-                    "}", initInstruction);
+                    storeInstruction,
+                    parameter.Name);
             }
 
 
@@ -200,17 +195,29 @@ public partial class ModuleWeaver : BaseModuleWeaver
                     Instruction.Create(OpCodes.Ldarg_0),
                     property.SetMethod != null
                         ? Instruction.Create(OpCodes.Call, property.SetMethod)
-                        : Instruction.Create(OpCodes.Stfld, backingField));
+                        : Instruction.Create(OpCodes.Stfld, backingField),
+                    property.Name);
             }
 
             method.Body.OptimizeMacros();
 
             void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source,
-                IEnumerable<Instruction> loadSource,
+                Instruction[] loadSource,
                 Instruction resolveAssignmentTarget,
-                Instruction setResult)
+                Instruction setResult, 
+                string dependencyName)
             {
+
+                //methodGenerator?.Append(
+                //    $"if ({parameter.Name} == null)" + Environment.NewLine +
+                //    "{" + Environment.NewLine + 
+                //    $"    {parameter.Name} = GlobalDI.GetService<{parameter.ParameterType.FullNameCSharp()}>();" + Environment.NewLine +
+                //    "}", initInstruction);
+                
                 //Push dependency parameter onto the stack
+                methodGenerator?.Append($"if ({dependencyName} == null)", loadSource.First());
+                methodGenerator?.Append(Environment.NewLine + "{" + Environment.NewLine);
+
                 injector.Insert(loadSource);
                 var afterParam = Instruction.Create(OpCodes.Nop);
                 //Push null onto the stack
@@ -233,7 +240,11 @@ public partial class ModuleWeaver : BaseModuleWeaver
                     .OfType<CustomAttributeArgument>()
                     .ToArray();
                 //Create array of appropriate length
-                injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
+                Instruction loadArraySize = injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
+
+                methodGenerator?.Append($"    {dependencyName} = GlobalDI.GetService<{dependencyType.FullNameCSharp()}>();", resolveAssignmentTarget ?? loadArraySize);
+                methodGenerator?.Append(Environment.NewLine);
+
                 injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
                 if (values?.Length > 0)
                 {
@@ -258,6 +269,9 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 //Set the return from the resolve method into the parameter
                 injector.Insert(setResult);
                 injector.Insert(afterParam);
+
+                methodGenerator?.Append("}", afterParam);
+                methodGenerator?.Append(Environment.NewLine);
             }
         }
     }

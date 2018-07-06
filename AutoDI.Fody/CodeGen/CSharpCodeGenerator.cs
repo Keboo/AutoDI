@@ -92,6 +92,7 @@ namespace AutoDI.Fody.CodeGen
                         int lastLineLength = 0;
                         foreach (string line in _newLinePattern.Split(pair.Key))
                         {
+                            if (line == "") continue;
                             if (numLines == 0)
                             {
                                 indent = pair.Key.TakeWhile(char.IsWhiteSpace).Count();
@@ -110,20 +111,23 @@ namespace AutoDI.Fody.CodeGen
 
                         Instruction instruction = pair.Value;
 
-                        var sequencePoint = new SequencePoint(instruction, _document)
+                        if (instruction != null)
                         {
-                            StartLine = lineNumber,
-                            EndLine = lineNumber + numLines - 1,
-                            StartColumn = startingIndent + indent + 1
-                        };
-                        sequencePoint.EndColumn = sequencePoint.StartColumn + lastLineLength;
+                            var sequencePoint = new SequencePoint(instruction, _document)
+                            {
+                                StartLine = lineNumber,
+                                EndLine = lineNumber + numLines - 1,
+                                StartColumn = startingIndent + indent + 1
+                            };
+                            sequencePoint.EndColumn = sequencePoint.StartColumn + lastLineLength;
 
-                        if (numLines == 1)
-                        {
-                            sequencePoint.EndColumn += pair.Key.Length;
+                            if (numLines == 1)
+                            {
+                                sequencePoint.EndColumn += pair.Key.Length;
+                            }
+
+                            _method.DebugInformation.SequencePoints.Add(sequencePoint);
                         }
-                        _method.DebugInformation.SequencePoints.Add(sequencePoint);
-
 
                         lineNumber += numLines;
                     }

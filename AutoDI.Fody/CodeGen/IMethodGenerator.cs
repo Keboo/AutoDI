@@ -4,6 +4,6 @@ namespace AutoDI.Fody.CodeGen
 {
     internal interface IMethodGenerator
     {
-        void Append(string code, Instruction instruction);
+        void Append(string code, Instruction instruction = null);
     }
 }
