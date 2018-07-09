@@ -3,7 +3,9 @@ using Mono.Cecil.Cil;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using Mono.Collections.Generic;
 
 namespace AutoDI.Fody.CodeGen
 {
@@ -83,7 +85,7 @@ namespace AutoDI.Fody.CodeGen
                     writer.WriteLine(2, GetMethodDeclaration());
                     writer.WriteLine(2, "{");
 
-                    int lineNumber = 7;
+                    int lineNumber = 8;
                     const int startingIndent = 12;
                     foreach (var pair in _codeBlocks)
                     {
@@ -97,7 +99,7 @@ namespace AutoDI.Fody.CodeGen
                             {
                                 indent = pair.Key.TakeWhile(char.IsWhiteSpace).Count();
                             }
-                            lastLineLength = line.Length;
+                            lastLineLength = line.Length - indent;
                             if (_newLinePattern.IsMatch(line))
                             {
                                 writer.WriteLine();
@@ -121,18 +123,12 @@ namespace AutoDI.Fody.CodeGen
                             };
                             sequencePoint.EndColumn = sequencePoint.StartColumn + lastLineLength;
 
-                            if (numLines == 1)
-                            {
-                                sequencePoint.EndColumn += pair.Key.Length;
-                            }
-
                             _method.DebugInformation.SequencePoints.Add(sequencePoint);
                         }
 
                         lineNumber += numLines;
                     }
-
-                    writer.WriteLine();
+                    
                     writer.WriteLine(3, "//We now return you to your regularly scheduled method");
                     writer.WriteLine(2, "}");
                     writer.WriteLine(1, "}");
@@ -144,12 +140,27 @@ namespace AutoDI.Fody.CodeGen
 
             private string GetMethodDeclaration()
             {
-                return $"{GetProtectionModifier()} { (_method.IsConstructor ? _method.DeclaringType.Name : _method.ReturnType.FullNameCSharp())}({GetParameters()})";
+                return $"{GetProtectionModifier()} { (_method.IsConstructor ? _method.DeclaringType.Name : _method.ReturnType.FullNameCSharp())}({GetParameters(_method.Parameters)})";
             }
 
-            private string GetParameters()
+            private static string GetParameters(Collection<ParameterDefinition> methodParameters)
             {
-                return "";
+                if (methodParameters?.Any() != true) return "";
+
+                var sb = new StringBuilder();
+                bool isFirst = true;
+                foreach (ParameterDefinition parameters in methodParameters)
+                {
+                    if (!isFirst)
+                    {
+                        sb.Append(", ");
+                    }
+                    sb.Append(parameters.ParameterType.FullNameCSharp());
+                    sb.Append(' ');
+                    sb.Append(parameters.Name);
+                    isFirst = false;
+                }
+                return sb.ToString();
             }
 
             private static string GetProtectionModifier()
