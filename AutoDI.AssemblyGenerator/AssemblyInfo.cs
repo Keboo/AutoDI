@@ -18,6 +18,8 @@ namespace AutoDI.AssemblyGenerator
 
         public Assembly Assembly { get; internal set; }
 
+        public string FilePath { get; internal set; }
+
         internal IReadOnlyList<MetadataReference> References => _references;
 
         public IReadOnlyList<Weaver> Weavers => _weavers;

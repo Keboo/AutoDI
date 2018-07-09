@@ -20,9 +20,69 @@ namespace AutoDI.Fody
             return string.Equals(reference.FullName, type.FullName, StringComparison.Ordinal);
         }
 
-        public static string FullNameCSharp(this TypeReference type)
+        internal static string FullNameCSharp(this TypeReference type)
         {
             return type.FullName.Replace('/', '.');
+        }
+
+        internal static string ProtectionModifierCSharp(this MethodAttributes methodAttributes)
+        {
+            if (methodAttributes.HasFlag(MethodAttributes.Public))
+            {
+                return "public";
+            }
+            if (methodAttributes.HasFlag(MethodAttributes.Assembly))
+            {
+                return "internal";
+            }
+            if (methodAttributes.HasFlag(MethodAttributes.FamORAssem))
+            {
+                return "protected internal";
+            }
+            if (methodAttributes.HasFlag(MethodAttributes.Family))
+            {
+                return "protected";
+            }
+            if (methodAttributes.HasFlag(MethodAttributes.FamANDAssem))
+            {
+                return "private protected";
+            }
+            if (methodAttributes.HasFlag(MethodAttributes.Private))
+            {
+                return "private";
+            }
+            return "";
+        }
+
+        internal static string ProtectionModifierCSharp(this TypeAttributes typeAttributes)
+        {
+            if (typeAttributes.HasFlag(TypeAttributes.NestedFamORAssem)) //Must come before NestedFamANDAssem
+            {
+                return "protected internal";
+            }
+            if (typeAttributes.HasFlag(TypeAttributes.NestedFamANDAssem))
+            {
+                return "private protected";
+            }
+            if (typeAttributes.HasFlag(TypeAttributes.NestedFamily) && !typeAttributes.HasFlag(TypeAttributes.Public))
+            {
+                return "protected";
+            }
+            
+            if (typeAttributes.HasFlag(TypeAttributes.NestedAssembly))
+            {
+                return "internal";
+            }
+            if (typeAttributes.HasFlag(TypeAttributes.Public) ^ 
+                typeAttributes.HasFlag(TypeAttributes.NestedPublic))
+            {
+                return "public";
+            }
+            if (typeAttributes.HasFlag(TypeAttributes.NestedPrivate)) //Must come after public
+            {
+                return "private";
+            }
+            return "internal";
         }
     }
 }
