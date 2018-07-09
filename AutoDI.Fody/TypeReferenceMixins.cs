@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using Mono.Cecil;
 
 namespace AutoDI.Fody
@@ -23,6 +25,22 @@ namespace AutoDI.Fody
         internal static string FullNameCSharp(this TypeReference type)
         {
             return type.FullName.Replace('/', '.');
+        }
+
+        internal static string NameCSharp(this TypeReference type, bool includeGenericParameters = false)
+        {
+            string rv = type.Name;
+            int index = rv.IndexOf('`');
+            if (index >= 0)
+            {
+                rv = rv.Substring(0, index);
+            }
+
+            if (includeGenericParameters && type.HasGenericParameters)
+            {
+                rv += $"<{string.Join(", ", type.GenericParameters.Select(x => x.Name))}>";
+            }
+            return rv;
         }
 
         internal static string ProtectionModifierCSharp(this MethodAttributes methodAttributes)
