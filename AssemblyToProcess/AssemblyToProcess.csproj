@@ -49,6 +49,7 @@
     <Compile Include="DISetup.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="IService2.cs" />
+    <Compile Include="IService3.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -207,13 +207,6 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 Instruction setResult, 
                 string dependencyName)
             {
-
-                //methodGenerator?.Append(
-                //    $"if ({parameter.Name} == null)" + Environment.NewLine +
-                //    "{" + Environment.NewLine + 
-                //    $"    {parameter.Name} = GlobalDI.GetService<{parameter.ParameterType.FullNameCSharp()}>();" + Environment.NewLine +
-                //    "}", initInstruction);
-                
                 //Push dependency parameter onto the stack
                 methodGenerator?.Append($"if ({dependencyName} == null)", loadSource.First());
                 methodGenerator?.Append(Environment.NewLine + "{" + Environment.NewLine);
