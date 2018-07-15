@@ -27,6 +27,11 @@ namespace AutoDI.Fody
             return type.FullName.Replace('/', '.');
         }
 
+        internal static string DeclarationCSharp(this TypeDefinition type)
+        {
+            return $"{type.Attributes.ProtectionModifierCSharp()} class {type.NameCSharp(true)}";
+        }
+
         internal static string NameCSharp(this TypeReference type, bool includeGenericParameters = false)
         {
             string rv = type.Name;
