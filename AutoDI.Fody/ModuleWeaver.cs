@@ -76,7 +76,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 Logger.Debug("Skipping registration", DebugLogLevel.Verbose);
             }
 
-            ICodeGenerator gen = GetCodeGenerator();
+            ICodeGenerator gen = GetCodeGenerator(settings);
             //We only update types in our module
             foreach (TypeDefinition type in allTypes.Where(type => type.Module == ModuleDefinition))
             {
@@ -122,12 +122,17 @@ public partial class ModuleWeaver : BaseModuleWeaver
         }
     }
 
-    private ICodeGenerator GetCodeGenerator()
+    private ICodeGenerator GetCodeGenerator(Settings settings)
     {
-        var genDir = Path.Combine(Path.GetDirectoryName(ModuleDefinition.FileName), "AutoDI.Generated");
-        Directory.CreateDirectory(genDir);
-        InternalLogDebug($"Generating temp file in '{genDir}'", DebugLogLevel.Verbose);
-        return new CSharpCodeGenerator(genDir);
+        switch (settings.DebugCodeGeneration)
+        {
+            case CodeLanguage.CSharp:
+                var genDir = Path.Combine(Path.GetDirectoryName(ModuleDefinition.FileName), "AutoDI.Generated");
+                InternalLogDebug($"Generating temp file in '{genDir}'", DebugLogLevel.Verbose);
+                return new CSharpCodeGenerator(genDir);
+            default:
+                return null;
+        }
     }
 
     private void ProcessMethod(TypeDefinition type, MethodDefinition method, ICodeGenerator generator)
@@ -204,7 +209,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
             void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source,
                 Instruction[] loadSource,
                 Instruction resolveAssignmentTarget,
-                Instruction setResult, 
+                Instruction setResult,
                 string dependencyName)
             {
                 //Push dependency parameter onto the stack

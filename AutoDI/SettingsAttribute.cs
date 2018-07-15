@@ -9,5 +9,6 @@ namespace AutoDI
         public bool AutoInit { get; set; }
         public bool GenerateRegistrations { get; set; }
         public DebugLogLevel DebugLogLevel { get; set; }
+        public CodeLanguage DebugCodeGeneration { get; set; }
     }
 }
