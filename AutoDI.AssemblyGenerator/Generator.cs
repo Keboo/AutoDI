@@ -126,13 +126,14 @@ namespace AutoDI.AssemblyGenerator
                 var project = workspace.AddProject(ProjectInfo.Create(projectId,
                     VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
                     compilationOptions: new CSharpCompilationOptions(assemblyInfo.OutputKind),
+                    parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3),
                     documents: new[] { document }, metadataReferences: assemblyInfo.References,
                     filePath: Path.GetFullPath(
                         $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
-
+                
                 Compilation compile = await project.GetCompilationAsync();
-                string filePath = Path.GetFullPath($"{assemblyName}.dll");
-                using (var file = File.Create(filePath))
+                assemblyInfo.FilePath = Path.GetFullPath($"{assemblyName}.dll");
+                using (var file = File.Create(assemblyInfo.FilePath))
                 {
                     var emitResult = compile.Emit(file);
                     if (emitResult.Success)
@@ -148,7 +149,7 @@ namespace AutoDI.AssemblyGenerator
                         throw new CompileException(emitResult.Diagnostics);
                     }
                 }
-                assemblyInfo.Assembly = Assembly.LoadFile(filePath);
+                assemblyInfo.Assembly = Assembly.LoadFile(assemblyInfo.FilePath);
                 builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
             }
             return builtAssemblies;

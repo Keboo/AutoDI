@@ -34,6 +34,9 @@ namespace AutoDI.Fody
                                 case nameof(SettingsAttribute.GenerateRegistrations):
                                     settings.GenerateRegistrations = (bool)property.Argument.Value;
                                     break;
+                                case nameof(SettingsAttribute.DebugCodeGeneration):
+                                    settings.DebugCodeGeneration = (CodeLanguage) property.Argument.Value;
+                                    break;
                             }
                         }
                     }
@@ -60,6 +63,8 @@ namespace AutoDI.Fody
         public bool DebugExceptions { get; set; }
 
         public DebugLogLevel DebugLogLevel { get; set; } = DebugLogLevel.Default;
+
+        public CodeLanguage DebugCodeGeneration { get; set; } = CodeLanguage.None;
 
         public IList<MatchType> Types { get; } = new List<MatchType>();
 
@@ -146,7 +151,8 @@ namespace AutoDI.Fody
                             return false;
                     }
                     return true;
-                }, false));
+                }, false),
+                Attrib.OptionalEnum<CodeLanguage>(nameof(DebugCodeGeneration), x => settings.DebugCodeGeneration = x));
 
             foreach (XElement element in rootElement.DescendantNodes().OfType<XElement>())
             {

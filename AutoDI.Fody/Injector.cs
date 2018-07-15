@@ -15,69 +15,70 @@ namespace AutoDI.Fody
             _constructor = constructor ?? throw new ArgumentNullException(nameof(constructor));
         }
 
-        public void Insert(OpCode code, TypeReference type)
+        public Instruction Insert(OpCode code, TypeReference type)
         {
-            Insert(Instruction.Create(code, type));
+            return Insert(Instruction.Create(code, type));
         }
 
-        public void Insert(OpCode code, MethodReference method)
+        public Instruction Insert(OpCode code, MethodReference method)
         {
-            Insert(Instruction.Create(code, method));
+            return Insert(Instruction.Create(code, method));
         }
 
-        public void Insert(OpCode code, FieldReference field)
+        public Instruction Insert(OpCode code, FieldReference field)
         {
-            Insert(Instruction.Create(code, field));
+            return Insert(Instruction.Create(code, field));
         }
 
-        public void Insert(OpCode code, int value)
+        public Instruction Insert(OpCode code, int value)
         {
-            Insert(Instruction.Create(code, value));
+            return Insert(Instruction.Create(code, value));
         }
 
-        public void Insert(OpCode code)
+        public Instruction Insert(OpCode code)
         {
-            Insert(Instruction.Create(code));
+            return Insert(Instruction.Create(code));
         }
 
-        public void Insert(OpCode code, VariableDefinition variable)
+        public Instruction Insert(OpCode code, VariableDefinition variable)
         {
-            Insert(Instruction.Create(code, variable));
+            return Insert(Instruction.Create(code, variable));
         }
 
-        public void Insert(OpCode code, Instruction target)
+        public Instruction Insert(OpCode code, Instruction target)
         {
-            Insert(Instruction.Create(code, target));
+            return Insert(Instruction.Create(code, target));
         }
 
-        public void Insert(OpCode code, ParameterDefinition parameter)
+        public Instruction Insert(OpCode code, ParameterDefinition parameter)
         {
-            Insert(Instruction.Create(code, parameter));
+            return Insert(Instruction.Create(code, parameter));
         }
 
-        public void Insert(OpCode code, string value)
+        public Instruction Insert(OpCode code, string value)
         {
-            Insert(Instruction.Create(code, value));
+            return Insert(Instruction.Create(code, value));
         }
 
-        public void Insert(OpCode code, long value)
+        public Instruction Insert(OpCode code, long value)
         {
-            Insert(Instruction.Create(code, value));
+            return Insert(Instruction.Create(code, value));
         }
 
-        public void Insert(OpCode code, double value)
+        public Instruction Insert(OpCode code, double value)
         {
-            Insert(Instruction.Create(code, value));
+            return Insert(Instruction.Create(code, value));
         }
 
-        public void Insert(OpCode code, float value)
+        public Instruction Insert(OpCode code, float value)
         {
-            Insert(Instruction.Create(code, value));
+            return Insert(Instruction.Create(code, value));
         }
 
-        public void Insert(Instruction instruction)
+        public Instruction Insert(Instruction instruction)
         {
             _constructor.Body.Instructions.Insert(_insertionPoint++, instruction);
+            return instruction;
         }
 
         public void Insert(IEnumerable<Instruction> instructions)
