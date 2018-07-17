@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 
 namespace AutoDI.AssemblyGenerator
 {
@@ -25,9 +26,12 @@ namespace AutoDI.AssemblyGenerator
             if (type == null) return null;
             string rv = type.FullName;
 
-            if (containerType?.Namespace != null && rv?.StartsWith(containerType.Namespace) == true)
+            if (containerType?.Namespace != null && rv != null)
             {
-                rv = rv.Substring(containerType.Namespace.Length).TrimStart('.');
+                Regex genericPattern = new Regex($@"(?<=\[){Regex.Escape(containerType.Namespace)}\.([^,]*),[^\]]*(?=\])");
+                rv = genericPattern.Replace(rv, "$1");
+                Regex namespacePattern = new Regex(Regex.Escape(containerType.Namespace) + @"\.");
+                rv = namespacePattern.Replace(rv, "");
             }
             return rv;
         }

@@ -243,6 +243,24 @@ namespace AutoDI.Fody.Tests
             TextExpectedParseException(xml, "'InvalidAttribute' is not a valid attribute for Map");
         }
 
+        [TestMethod]
+        public void DebugCodeGenerationDefaultsOff()
+        {
+            var settings = new Settings();
+
+            Assert.AreEqual((int)CodeLanguage.None, (int)settings.DebugCodeGeneration);
+        }
+
+        [TestMethod]
+        public void CanEnableCSharpCodeGeneration()
+        {
+            var xml = XElement.Parse($@"<AutoDI {nameof(Settings.DebugCodeGeneration)}=""{CodeLanguage.CSharp}"" />");
+
+            var settings = Settings.Parse(new Settings(), xml);
+
+            Assert.AreEqual((int)CodeLanguage.CSharp, (int)settings.DebugCodeGeneration);
+        }
+
         private static void TextExpectedParseException(XElement xml, string expectedMessage)
         {
             try

@@ -4,14 +4,11 @@ using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-
-using Settings=AutoDIFody::AutoDI.Fody.Settings;
 
 namespace AutoDI.Fody.Tests
 {
-    using SharedAssembly;
     using MainAssembly;
+    using SharedAssembly;
 
     [TestClass]
     public class DependentAssemblyTests

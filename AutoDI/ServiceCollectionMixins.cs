@@ -128,7 +128,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddAutoDIScoped(this IServiceCollection services, Type serviceType,
             Type implementationType)
         {
-            return services.AddAutoDIService(serviceType, serviceType, Lifetime.Scoped);
+            return services.AddAutoDIService(serviceType, implementationType, Lifetime.Scoped);
         }
 
         public static IServiceCollection AddAutoDIScoped(this IServiceCollection services, Type serviceType,

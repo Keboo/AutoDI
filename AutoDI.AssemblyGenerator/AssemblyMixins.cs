@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using Mono.Cecil;
 
 namespace AutoDI.AssemblyGenerator
 {
@@ -131,6 +132,11 @@ namespace AutoDI.AssemblyGenerator
         public static Assembly SingleAssembly(this IDictionary<string, AssemblyInfo> assemblies)
         {
             return assemblies?.Select(x => x.Value.Assembly).Single();
+        }
+
+        public static ModuleDefinition SingleModule(this IDictionary<string, AssemblyInfo> assemblies)
+        {
+            return assemblies?.Select(x => ModuleDefinition.ReadModule(x.Value.FilePath)).Single();
         }
     }
 }
