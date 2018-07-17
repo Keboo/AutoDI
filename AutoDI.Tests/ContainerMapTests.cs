@@ -284,9 +284,34 @@ namespace AutoDI.Tests
             Assert.IsFalse(ReferenceEquals(class1, class2));
         }
 
+        [TestMethod]
+        [Description("Issue 124")]
+        public void CanResolveClosedGenericFromOpenGenericRegistration()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.Add(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
+            map.Add(services);
+
+            var logger1 = map.Get<ILogger<MyClass>>(null);
+            var logger2 = map.Get<ILogger<MyOtherClass>>(null);
+
+            Assert.IsNotNull(logger1);
+            Assert.IsNotNull(logger2);
+            Assert.IsTrue(ReferenceEquals(logger1, map.Get<ILogger<MyClass>>(null)));
+            Assert.IsTrue(ReferenceEquals(logger2, map.Get<ILogger<MyOtherClass>>(null)));
+        }
+
         private interface IInterface { }
 
         private interface IInterface2 { }
+
+        private interface ILogger<T> { }
+
+        private class Logger<T> : ILogger<T> { }
+
+        private class MyClass { }
+        private class MyOtherClass { }
 
         private class Class : IInterface, IInterface2 { }
 

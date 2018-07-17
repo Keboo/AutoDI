@@ -26,11 +26,12 @@ namespace AutoDI
         public void Add(IServiceCollection services)
         {
             //TODO: This re-grouping seems off somewhere...
-            foreach (IGrouping<Type, ServiceDescriptor> serviceDescriptors in from ServiceDescriptor service in services
-                                                                              let autoDIService = service as AutoDIServiceDescriptor
-                                                                              group service by autoDIService?.TargetType
-                into @group
-                                                                              select @group
+            foreach (IGrouping<Type, ServiceDescriptor> serviceDescriptors in
+                        from ServiceDescriptor service in services
+                        let autoDIService = service as AutoDIServiceDescriptor
+                        group service by autoDIService?.TargetType
+                        into @group
+                        select @group
             )
             {
                 DelegateContainer container = null;
@@ -54,31 +55,11 @@ namespace AutoDI
 
         private DelegateContainer AddInternal(ServiceDescriptor serviceDescriptor)
         {
-            AutoDIServiceDescriptor autoDIDescriptor = serviceDescriptor as AutoDIServiceDescriptor;
-            Lifetime lifetime = autoDIDescriptor?.AutoDILifetime ?? serviceDescriptor.Lifetime.ToAutoDI();
-            Type targetType = autoDIDescriptor?.TargetType;
-
-            var container = new DelegateContainer(lifetime, targetType, GetFactory(serviceDescriptor));
+            var container = new DelegateContainer(serviceDescriptor);
 
             _accessors[serviceDescriptor.ServiceType] = container;
 
             return container;
-
-            Func<IServiceProvider, object> GetFactory(ServiceDescriptor descriptor)
-            {
-                if (descriptor.ImplementationType != null)
-                {
-                    //TODO, resolve parameters
-                    return sp => Activator.CreateInstance(descriptor.ImplementationType);
-                }
-                if (descriptor.ImplementationFactory != null)
-                {
-                    return descriptor.ImplementationFactory;
-                }
-                //NB: separate the instance from the ServiceDescriptor to avoid capturing both
-                object instance = descriptor.ImplementationInstance;
-                return _ => instance;
-            }
         }
 
         public T Get<T>(IServiceProvider provider)
@@ -148,16 +129,24 @@ namespace AutoDI
             }
             if (key.IsConstructedGenericType)
             {
-                if (key.GetGenericTypeDefinition() == typeof(Lazy<>))
+                Type genericType = key.GetGenericTypeDefinition();
+                if (genericType == typeof(Lazy<>))
                 {
                     result = MakeLazyMethod.MakeGenericMethod(key.GenericTypeArguments[0])
                         .Invoke(this, new object[] { provider });
                     return true;
                 }
-                if (key.GetGenericTypeDefinition() == typeof(Func<>))
+                if (genericType == typeof(Func<>))
                 {
                     result = MakeFuncMethod.MakeGenericMethod(key.GenericTypeArguments[0])
                         .Invoke(this, new object[] { provider });
+                    return true;
+                }
+                if (_accessors.TryGetValue(genericType, out container))
+                {
+                    DelegateContainer genericContainer = container.As(key.GenericTypeArguments);
+                    _accessors.Add(key, genericContainer);
+                    result = genericContainer.Get(provider);
                     return true;
                 }
             }
@@ -191,15 +180,24 @@ namespace AutoDI
             return false;
         }
 
-        private class DelegateContainer 
+        private class DelegateContainer
         {
+            private readonly ServiceDescriptor _serviceDescriptor;
             private readonly Func<IServiceProvider, object> _creationFactory;
             private readonly Func<IServiceProvider, object> _factoryWithLifetime;
             public Type TargetType { get; }
             public Lifetime Lifetime { get; }
 
-            //NB: Only used when creating a nested scope
-            public DelegateContainer(Lifetime lifetime, Type targetType, Func<IServiceProvider, object> creationFactory)
+            public DelegateContainer(ServiceDescriptor serviceDescriptor)
+                :this(GetLifetime(serviceDescriptor), 
+                      GetTargetType(serviceDescriptor), 
+                      GetFactory(serviceDescriptor))
+            {
+                _serviceDescriptor = serviceDescriptor ?? throw new ArgumentNullException(nameof(serviceDescriptor));
+            }
+
+            private DelegateContainer(Lifetime lifetime, Type targetType,
+                Func<IServiceProvider, object> creationFactory)
             {
                 Lifetime = lifetime;
                 TargetType = targetType;
@@ -213,10 +211,23 @@ namespace AutoDI
                 {
                     case Lifetime.Scoped:
                     case Lifetime.WeakSingleton:
-                        return new DelegateContainer(Lifetime, TargetType, _creationFactory);
+                        return new DelegateContainer(_serviceDescriptor);
                     default:
                         return this;
                 }
+            }
+
+            public DelegateContainer As(Type[] genericTypeParameters)
+            {
+                if (_serviceDescriptor.ImplementationType?.IsGenericTypeDefinition != true)
+                {
+                    throw new InvalidOperationException(
+                        $"Attempted to retrieved closed generic for non-open generic type '{_serviceDescriptor.ImplementationType?.FullName ?? "Unknown"}' using '{_serviceDescriptor.ServiceType.FullName}'");
+                }
+
+                Type targetType = _serviceDescriptor.ImplementationType.MakeGenericType(genericTypeParameters);
+                var closedGenericDescriptor = new AutoDIServiceDescriptor(_serviceDescriptor.ServiceType, targetType, Lifetime);
+                return new DelegateContainer(closedGenericDescriptor);
             }
 
             public object Get(IServiceProvider provider) => _factoryWithLifetime(provider);
@@ -263,6 +274,30 @@ namespace AutoDI
                     default:
                         throw new InvalidOperationException($"Unknown lifetime '{lifetime}'");
                 }
+            }
+
+            private static Lifetime GetLifetime(ServiceDescriptor serviceDescriptor) =>
+                (serviceDescriptor as AutoDIServiceDescriptor)?.AutoDILifetime ??
+                serviceDescriptor.Lifetime.ToAutoDI();
+
+            private static Type GetTargetType(ServiceDescriptor serviceDescriptor) =>
+                (serviceDescriptor as AutoDIServiceDescriptor)?.TargetType ??
+                serviceDescriptor.ImplementationType ??
+                serviceDescriptor.ImplementationInstance?.GetType();
+
+            private static Func<IServiceProvider, object> GetFactory(ServiceDescriptor descriptor)
+            {
+                if (descriptor.ImplementationType != null)
+                {
+                    return sp => Activator.CreateInstance(descriptor.ImplementationType);
+                }
+                if (descriptor.ImplementationFactory != null)
+                {
+                    return descriptor.ImplementationFactory;
+                }
+                //NB: separate the instance from the ServiceDescriptor to avoid capturing both
+                object instance = descriptor.ImplementationInstance;
+                return _ => instance;
             }
         }
     }
