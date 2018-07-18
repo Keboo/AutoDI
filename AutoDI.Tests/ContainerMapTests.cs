@@ -302,6 +302,23 @@ namespace AutoDI.Tests
             Assert.IsTrue(ReferenceEquals(logger2, map.Get<ILogger<MyOtherClass>>(null)));
         }
 
+        [TestMethod]
+        [Description("Issue 124")]
+        public void CanResolveClosedGenericFromOpenGenericRegistrationWithParameter()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.Add(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(LoggerEx<>)));
+            services.Add(ServiceDescriptor.Singleton(typeof(ILoggerFactory), typeof(LoggerFactory)));
+            map.Add(services);
+
+            var logger = map.Get<ILogger<MyClass>>(null) as LoggerEx<MyClass>;
+
+            Assert.IsNotNull(logger);
+            Assert.IsTrue(logger.Factory is LoggerFactory);
+        }
+
+
         private interface IInterface { }
 
         private interface IInterface2 { }
@@ -309,6 +326,20 @@ namespace AutoDI.Tests
         private interface ILogger<T> { }
 
         private class Logger<T> : ILogger<T> { }
+
+        private class LoggerEx<T> : ILogger<T>
+        {
+            public ILoggerFactory Factory { get; }
+
+            public LoggerEx(ILoggerFactory factory)
+            {
+                Factory = factory;
+            }
+        }
+
+        private interface ILoggerFactory { }
+
+        private class LoggerFactory : ILoggerFactory { }
 
         private class MyClass { }
         private class MyOtherClass { }
