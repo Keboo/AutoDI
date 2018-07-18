@@ -75,7 +75,7 @@ namespace AutoDI
 
         public object Get(Type key, IServiceProvider provider)
         {
-            if (TryGet(key, provider, out object result))
+            if (TryGet(key, provider ?? new ContainerServiceProvider(this), out object result))
             {
                 return result;
             }
@@ -151,21 +151,26 @@ namespace AutoDI
                 }
             }
 
-            if (key.IsClass && !key.IsAbstract)
+            return TryCreate(key, provider, out result);
+        }
+
+        private static bool TryCreate(Type desiredType, IServiceProvider provider, out object result)
+        {
+            if (desiredType.IsClass && !desiredType.IsAbstract)
             {
-                foreach (ConstructorInfo constructor in key.GetConstructors().OrderByDescending(c => c.GetParameters().Length))
+                foreach (ConstructorInfo constructor in desiredType.GetConstructors().OrderByDescending(c => c.GetParameters().Length))
                 {
                     var parameters = constructor.GetParameters();
                     object[] parameterValues = new object[parameters.Length];
                     bool found = true;
                     for (int i = 0; i < parameters.Length; i++)
                     {
-                        if (!TryGet(parameters[i].ParameterType, provider, out object parametersResult))
+                        parameterValues[i] = provider.GetService(parameters[i].ParameterType);
+                        if (parameterValues[i] == null)
                         {
                             found = false;
                             break;
                         }
-                        parameterValues[i] = parametersResult;
                     }
 
                     if (found)
@@ -183,7 +188,6 @@ namespace AutoDI
         private class DelegateContainer
         {
             private readonly ServiceDescriptor _serviceDescriptor;
-            private readonly Func<IServiceProvider, object> _creationFactory;
             private readonly Func<IServiceProvider, object> _factoryWithLifetime;
             public Type TargetType { get; }
             public Lifetime Lifetime { get; }
@@ -201,7 +205,6 @@ namespace AutoDI
             {
                 Lifetime = lifetime;
                 TargetType = targetType;
-                _creationFactory = creationFactory;
                 _factoryWithLifetime = WithLifetime(creationFactory, lifetime);
             }
 
@@ -289,7 +292,14 @@ namespace AutoDI
             {
                 if (descriptor.ImplementationType != null)
                 {
-                    return sp => Activator.CreateInstance(descriptor.ImplementationType);
+                    return sp =>
+                    {
+                        if (TryCreate(descriptor.ImplementationType, sp, out object result))
+                        {
+                            return result;
+                        }
+                        return null;
+                    };
                 }
                 if (descriptor.ImplementationFactory != null)
                 {
@@ -299,6 +309,18 @@ namespace AutoDI
                 object instance = descriptor.ImplementationInstance;
                 return _ => instance;
             }
+        }
+
+        private class ContainerServiceProvider : IServiceProvider
+        {
+            private readonly IContainer _container;
+
+            public ContainerServiceProvider(IContainer container)
+            {
+                _container = container;
+            }
+
+            public object GetService(Type serviceType) => _container.Get(serviceType, this);
         }
     }
 }
