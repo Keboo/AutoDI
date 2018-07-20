@@ -14,7 +14,7 @@ namespace AutoDI
         private static readonly MethodInfo MakeLazyMethod;
         private static readonly MethodInfo MakeFuncMethod;
 
-        private readonly Dictionary<Type, DelegateContainer> _accessors = new Dictionary<Type, DelegateContainer>();
+        private readonly Dictionary<Type, IDelegateContainer> _accessors = new Dictionary<Type, IDelegateContainer>();
 
         static ContainerMap()
         {
@@ -25,14 +25,12 @@ namespace AutoDI
 
         public void Add(IServiceCollection services)
         {
-            //TODO: This re-grouping seems off somewhere...
+            ////TODO: This re-grouping seems off somewhere...
             foreach (IGrouping<Type, ServiceDescriptor> serviceDescriptors in
-                        from ServiceDescriptor service in services
-                        let autoDIService = service as AutoDIServiceDescriptor
-                        group service by autoDIService?.TargetType
-                        into @group
-                        select @group
-            )
+                     from ServiceDescriptor service in services
+                     let autoDIService = service as AutoDIServiceDescriptor
+                     group service by autoDIService?.TargetType into @group
+                     select @group)
             {
                 DelegateContainer container = null;
                 foreach (ServiceDescriptor serviceDescriptor in serviceDescriptors)
@@ -40,26 +38,29 @@ namespace AutoDI
                     //Build up the container if it has not been generated or we do not have multiple AutoDI target types
                     if (container == null || serviceDescriptors.Key == null)
                     {
-                        container = AddInternal(serviceDescriptor);
+                        container = new DelegateContainer(serviceDescriptor);
                     }
 
-                    _accessors[serviceDescriptor.ServiceType] = container;
+                    AddInternal(container, serviceDescriptor.ServiceType);
                 }
             }
         }
 
         public void Add(ServiceDescriptor serviceDescriptor)
         {
-            AddInternal(serviceDescriptor);
+            AddInternal(new DelegateContainer(serviceDescriptor), serviceDescriptor.ServiceType);
         }
 
-        private DelegateContainer AddInternal(ServiceDescriptor serviceDescriptor)
+        private void AddInternal(DelegateContainer container, Type key)
         {
-            var container = new DelegateContainer(serviceDescriptor);
-
-            _accessors[serviceDescriptor.ServiceType] = container;
-
-            return container;
+            if (_accessors.TryGetValue(key, out IDelegateContainer existing))
+            {
+                _accessors[key] = existing + container;
+            }
+            else
+            {
+                _accessors[key] = container;
+            }
         }
 
         public T Get<T>(IServiceProvider provider)
@@ -90,7 +91,7 @@ namespace AutoDI
         {
             var rv = new ContainerMap();
 
-            foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors)
+            foreach (KeyValuePair<Type, IDelegateContainer> kvp in _accessors)
             {
                 rv._accessors[kvp.Key] = kvp.Value.ForNestedContainer();
             }
@@ -99,7 +100,7 @@ namespace AutoDI
         }
 
         public IEnumerator<Map> GetEnumerator() => _accessors.OrderBy(kvp => kvp.Key.FullName)
-            .Select(kvp => new Map(kvp.Key, kvp.Value.TargetType, kvp.Value.Lifetime)).GetEnumerator();
+            .SelectMany(kvp => kvp.Value.GetMaps(kvp.Key)).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -108,11 +109,9 @@ namespace AutoDI
         /// </summary>
         internal void CreateSingletons(IServiceProvider provider)
         {
-            foreach (KeyValuePair<Type, DelegateContainer> kvp in _accessors
-                .Where(kvp => kvp.Value.Lifetime == Lifetime.Singleton))
+            foreach (IDelegateContainer container in _accessors.Values)
             {
-                //Forces creation of objects.
-                kvp.Value.Get(provider);
+                container.InstantiateSingletons(provider);
             }
         }
 
@@ -122,9 +121,17 @@ namespace AutoDI
 
         private bool TryGet(Type key, IServiceProvider provider, out object result)
         {
-            if (_accessors.TryGetValue(key, out DelegateContainer container))
+            if (_accessors.TryGetValue(key, out IDelegateContainer container))
             {
                 result = container.Get(provider);
+                return true;
+            }
+
+            if (key.IsArray &&
+                key.GetElementType() is Type elementType &&
+                _accessors.TryGetValue(elementType, out container))
+            {
+                result = container.GetArray(elementType, provider);
                 return true;
             }
             if (key.IsConstructedGenericType)
@@ -142,13 +149,24 @@ namespace AutoDI
                         .Invoke(this, new object[] { provider });
                     return true;
                 }
-                if (_accessors.TryGetValue(genericType, out container))
+
+                if (genericType == typeof(IEnumerable<>) &&
+                    _accessors.TryGetValue(key.GenericTypeArguments[0], out container))
                 {
-                    DelegateContainer genericContainer = container.As(key.GenericTypeArguments);
-                    _accessors.Add(key, genericContainer);
-                    result = genericContainer.Get(provider);
+                    result = container.GetArray(key.GenericTypeArguments[0], provider);
                     return true;
                 }
+                if (_accessors.TryGetValue(genericType, out container))
+                {
+                    IDelegateContainer genericContainer = container.AsGeneric(key.GenericTypeArguments);
+                    if (genericContainer != null)
+                    {
+                        _accessors.Add(key, genericContainer);
+                        result = genericContainer.Get(provider);
+                        return true;
+                    }
+                }
+
             }
 
             return TryCreate(key, provider, out result);
@@ -185,17 +203,27 @@ namespace AutoDI
             return false;
         }
 
-        private class DelegateContainer
+        private interface IDelegateContainer
+        {
+            void InstantiateSingletons(IServiceProvider provider);
+            IEnumerable<Map> GetMaps(Type sourceType);
+            IDelegateContainer ForNestedContainer();
+            object Get(IServiceProvider provider);
+            Array GetArray(Type elementType, IServiceProvider provider);
+            IDelegateContainer AsGeneric(Type[] genericTypeArguments);
+        }
+
+        private sealed class DelegateContainer : IDelegateContainer
         {
             private readonly ServiceDescriptor _serviceDescriptor;
             private readonly Func<IServiceProvider, object> _factoryWithLifetime;
-            public Type TargetType { get; }
-            public Lifetime Lifetime { get; }
+            private Type TargetType { get; }
+            private Lifetime Lifetime { get; }
 
             public DelegateContainer(ServiceDescriptor serviceDescriptor)
-                :this(GetLifetime(serviceDescriptor), 
-                      GetTargetType(serviceDescriptor), 
-                      GetFactory(serviceDescriptor))
+                : this(GetLifetime(serviceDescriptor),
+                       GetTargetType(serviceDescriptor),
+                       GetFactory(serviceDescriptor))
             {
                 _serviceDescriptor = serviceDescriptor ?? throw new ArgumentNullException(nameof(serviceDescriptor));
             }
@@ -208,7 +236,20 @@ namespace AutoDI
                 _factoryWithLifetime = WithLifetime(creationFactory, lifetime);
             }
 
-            public DelegateContainer ForNestedContainer()
+            public void InstantiateSingletons(IServiceProvider provider)
+            {
+                if (Lifetime == Lifetime.Singleton)
+                {
+                    Get(provider);
+                }
+            }
+
+            public IEnumerable<Map> GetMaps(Type sourceType)
+            {
+                yield return new Map(sourceType, TargetType, Lifetime);
+            }
+
+            public IDelegateContainer ForNestedContainer()
             {
                 switch (Lifetime)
                 {
@@ -220,7 +261,14 @@ namespace AutoDI
                 }
             }
 
-            public DelegateContainer As(Type[] genericTypeParameters)
+            public Array GetArray(Type elementType, IServiceProvider provider)
+            {
+                var array = Array.CreateInstance(elementType, 1);
+                array.SetValue(Get(provider), 0);
+                return array;
+            }
+
+            public IDelegateContainer AsGeneric(Type[] genericTypeParameters)
             {
                 if (_serviceDescriptor.ImplementationType?.IsGenericTypeDefinition != true)
                 {
@@ -308,6 +356,69 @@ namespace AutoDI
                 //NB: separate the instance from the ServiceDescriptor to avoid capturing both
                 object instance = descriptor.ImplementationInstance;
                 return _ => instance;
+            }
+            
+            public static IDelegateContainer operator +(IDelegateContainer left, DelegateContainer right)
+            {
+                if (left == null) return right;
+                if (right == null) return left;
+
+                if (left is MulticastDelegateContainer multicastDelegateContainer)
+                {
+                    multicastDelegateContainer.Add(right);
+                    return multicastDelegateContainer;
+                }
+                return new MulticastDelegateContainer(left, right);
+            }
+
+            private sealed class MulticastDelegateContainer : IDelegateContainer
+            {
+                private List<IDelegateContainer> Containers { get; }
+
+                public MulticastDelegateContainer(params IDelegateContainer[] containers)
+                {
+                    Containers = new List<IDelegateContainer>(containers);
+                }
+
+                public void Add(IDelegateContainer container)
+                {
+                    Containers.Add(container);
+                }
+
+                public void InstantiateSingletons(IServiceProvider provider)
+                {
+                    foreach (IDelegateContainer container in Containers)
+                    {
+                        container.InstantiateSingletons(provider);
+                    }
+                }
+
+                public IEnumerable<Map> GetMaps(Type sourceType)
+                {
+                    return Containers.SelectMany(c => c.GetMaps(sourceType));
+                }
+
+                public IDelegateContainer ForNestedContainer()
+                {
+                    return new MulticastDelegateContainer(Containers.Select(x => x.ForNestedContainer()).ToArray());
+                }
+
+                public object Get(IServiceProvider provider) => null;
+
+                public Array GetArray(Type elementType, IServiceProvider provider)
+                {
+                    Array[] arrays = Containers.Select(c => c.GetArray(elementType, provider)).ToArray();
+                    Array rv = Array.CreateInstance(elementType, arrays.Sum(x => x.Length));
+                    int index = 0;
+                    foreach (Array array in arrays)
+                    {
+                        Array.Copy(array, 0, rv, index, array.Length);
+                        index += array.Length;
+                    }
+                    return rv;
+                }
+
+                public IDelegateContainer AsGeneric(Type[] genericTypeArguments) => null;
             }
         }
 
