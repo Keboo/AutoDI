@@ -1,5 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AutoDI.Tests
@@ -318,6 +320,76 @@ namespace AutoDI.Tests
             Assert.IsTrue(logger.Factory is LoggerFactory);
         }
 
+        [TestMethod]
+        [Description("Issue 127")]
+        public void CanResolveSingleIEnumerableContructoreParameter()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface, Derived1>();
+            map.Add(services);
+
+            var @class = map.Get<ClassWithParameter<IEnumerable<IInterface>>>(null);
+
+            Assert.IsNotNull(@class);
+            CollectionAssert.AreEquivalent(
+                new[] {typeof(Derived1)}, 
+                @class.Parameter.Select(x => x.GetType()).ToArray());
+        }
+
+        [TestMethod]
+        [Description("Issue 127")]
+        public void CanResolveMultipleIEnumerableContructoreParameter()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface, Derived1>();
+            services.AddAutoDISingleton<IInterface, Derived2>();
+            map.Add(services);
+
+            var @class = map.Get<ClassWithParameter<IEnumerable<IInterface>>>(null);
+
+            Assert.IsNotNull(@class);
+            CollectionAssert.AreEquivalent(
+                new[] {typeof(Derived1), typeof(Derived2)}, 
+                @class.Parameter.Select(x => x.GetType()).ToArray());
+        }
+
+        [TestMethod]
+        [Description("Issue 127")]
+        public void CanResolveSingleArrayContructoreParameter()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface, Derived1>();
+            services.AddAutoDISingleton<IInterface, Derived2>();
+            map.Add(services);
+
+            var @class = map.Get<ClassWithParameter<IInterface[]>>(null);
+
+            Assert.IsNotNull(@class);
+            CollectionAssert.AreEquivalent(
+                new[] {typeof(Derived1), typeof(Derived2)}, 
+                @class.Parameter.Select(x => x.GetType()).ToArray());
+        }
+
+        [TestMethod]
+        [Description("Issue 127")]
+        public void CanResolveMultipleArrayContructoreParameter()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface, Derived1>();
+            services.AddAutoDISingleton<IInterface, Derived2>();
+            map.Add(services);
+
+            var @class = map.Get<ClassWithParameter<IInterface[]>>(null);
+
+            Assert.IsNotNull(@class);
+            CollectionAssert.AreEquivalent(
+                new[] {typeof(Derived1), typeof(Derived2)}, 
+                @class.Parameter.Select(x => x.GetType()).ToArray());
+        }
 
         private interface IInterface { }
 
@@ -347,6 +419,20 @@ namespace AutoDI.Tests
         private class Class : IInterface, IInterface2 { }
 
         private class Derived : Class { }
+
+        private class Derived1 : IInterface { }
+        private class Derived2 : IInterface { }
+        private class Derived3 : Derived2 { }
+
+        private class ClassWithParameter<T>
+        {
+            public ClassWithParameter(T parameter)
+            {
+                Parameter = parameter;
+            }
+
+            public T Parameter { get; }
+        }
 
         private class ClassWtihParameters
         {
