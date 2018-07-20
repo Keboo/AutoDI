@@ -25,49 +25,41 @@ namespace AutoDI
 
         public void Add(IServiceCollection services)
         {
-            foreach (ServiceDescriptor descriptor in services)
-            {
-                Add(descriptor);
-            }
             ////TODO: This re-grouping seems off somewhere...
-            //foreach (IGrouping<Type, ServiceDescriptor> serviceDescriptors in
-            //            from ServiceDescriptor service in services
-            //            let autoDIService = service as AutoDIServiceDescriptor
-            //            group service by autoDIService?.TargetType
-            //            into @group
-            //            select @group
-            //)
-            //{
-            //    DelegateContainer container = null;
-            //    foreach (ServiceDescriptor serviceDescriptor in serviceDescriptors)
-            //    {
-            //        //Build up the container if it has not been generated or we do not have multiple AutoDI target types
-            //        if (container == null || serviceDescriptors.Key == null)
-            //        {
-            //            container = AddInternal(serviceDescriptor);
-            //        }
-            //
-            //        _accessors[serviceDescriptor.ServiceType] = container;
-            //    }
-            //}
+            foreach (IGrouping<Type, ServiceDescriptor> serviceDescriptors in
+                     from ServiceDescriptor service in services
+                     let autoDIService = service as AutoDIServiceDescriptor
+                     group service by autoDIService?.TargetType into @group
+                     select @group)
+            {
+                DelegateContainer container = null;
+                foreach (ServiceDescriptor serviceDescriptor in serviceDescriptors)
+                {
+                    //Build up the container if it has not been generated or we do not have multiple AutoDI target types
+                    if (container == null || serviceDescriptors.Key == null)
+                    {
+                        container = new DelegateContainer(serviceDescriptor);
+                    }
+
+                    AddInternal(container, serviceDescriptor.ServiceType);
+                }
+            }
         }
 
         public void Add(ServiceDescriptor serviceDescriptor)
         {
-            AddInternal(serviceDescriptor);
+            AddInternal(new DelegateContainer(serviceDescriptor), serviceDescriptor.ServiceType);
         }
 
-        private void AddInternal(ServiceDescriptor serviceDescriptor)
+        private void AddInternal(DelegateContainer container, Type key)
         {
-            var container = new DelegateContainer(serviceDescriptor);
-
-            if (_accessors.TryGetValue(serviceDescriptor.ServiceType, out IDelegateContainer existing))
+            if (_accessors.TryGetValue(key, out IDelegateContainer existing))
             {
-                _accessors[serviceDescriptor.ServiceType] = existing + container;
+                _accessors[key] = existing + container;
             }
             else
             {
-                _accessors[serviceDescriptor.ServiceType] = container;
+                _accessors[key] = container;
             }
         }
 
@@ -227,8 +219,8 @@ namespace AutoDI
 
             public DelegateContainer(ServiceDescriptor serviceDescriptor)
                 : this(GetLifetime(serviceDescriptor),
-                      GetTargetType(serviceDescriptor),
-                      GetFactory(serviceDescriptor))
+                       GetTargetType(serviceDescriptor),
+                       GetFactory(serviceDescriptor))
             {
                 _serviceDescriptor = serviceDescriptor ?? throw new ArgumentNullException(nameof(serviceDescriptor));
             }
