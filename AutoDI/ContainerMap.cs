@@ -159,9 +159,12 @@ namespace AutoDI
                 if (_accessors.TryGetValue(genericType, out container))
                 {
                     IDelegateContainer genericContainer = container.AsGeneric(key.GenericTypeArguments);
-                    _accessors.Add(key, genericContainer);
-                    result = genericContainer.Get(provider);
-                    return true;
+                    if (genericContainer != null)
+                    {
+                        _accessors.Add(key, genericContainer);
+                        result = genericContainer.Get(provider);
+                        return true;
+                    }
                 }
 
             }
@@ -370,7 +373,7 @@ namespace AutoDI
 
             private sealed class MulticastDelegateContainer : IDelegateContainer
             {
-                public List<IDelegateContainer> Containers { get; }
+                private List<IDelegateContainer> Containers { get; }
 
                 public MulticastDelegateContainer(params IDelegateContainer[] containers)
                 {
@@ -400,10 +403,7 @@ namespace AutoDI
                     return new MulticastDelegateContainer(Containers.Select(x => x.ForNestedContainer()).ToArray());
                 }
 
-                public object Get(IServiceProvider provider)
-                {
-                    throw new NotImplementedException();
-                }
+                public object Get(IServiceProvider provider) => null;
 
                 public Array GetArray(Type elementType, IServiceProvider provider)
                 {
@@ -418,10 +418,7 @@ namespace AutoDI
                     return rv;
                 }
 
-                public IDelegateContainer AsGeneric(Type[] genericTypeArguments)
-                {
-                    throw new NotImplementedException();
-                }
+                public IDelegateContainer AsGeneric(Type[] genericTypeArguments) => null;
             }
         }
 
