@@ -25,7 +25,6 @@ namespace AutoDI
 
         public void Add(IServiceCollection services)
         {
-            ////TODO: This re-grouping seems off somewhere...
             foreach (IGrouping<Type, ServiceDescriptor> serviceDescriptors in
                      from ServiceDescriptor service in services
                      let autoDIService = service as AutoDIServiceDescriptor
@@ -63,6 +62,10 @@ namespace AutoDI
             }
         }
 
+        public bool Remove<T>() => Remove(typeof(T));
+
+        public bool Remove(Type serviceType) => _accessors.Remove(serviceType);
+
         public T Get<T>(IServiceProvider provider)
         {
             //https://github.com/Keboo/DoubleDownWat
@@ -74,15 +77,15 @@ namespace AutoDI
             return default(T);
         }
 
-        public object Get(Type key, IServiceProvider provider)
+        public object Get(Type serviceType, IServiceProvider provider)
         {
-            if (TryGet(key, provider ?? new ContainerServiceProvider(this), out object result))
+            if (TryGet(serviceType, provider ?? new ContainerServiceProvider(this), out object result))
             {
                 return result;
             }
 
             //Type key not found
-            var args = new TypeKeyNotFoundEventArgs(key);
+            var args = new TypeKeyNotFoundEventArgs(serviceType);
             TypeKeyNotFound?.Invoke(this, args);
             return args.Instance;
         }

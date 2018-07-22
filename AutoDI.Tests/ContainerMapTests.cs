@@ -391,6 +391,22 @@ namespace AutoDI.Tests
                 @class.Parameter.Select(x => x.GetType()).ToArray());
         }
 
+        [TestMethod]
+        public void CanRemovedRegisteredMap()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface, Derived1>();
+            services.AddAutoDISingleton<IInterface, Derived2>();
+            map.Add(services);
+            
+            bool wasRemoved = map.Remove<IInterface>();
+            var interfaces = map.Get<IEnumerable<IInterface>>(null);
+
+            Assert.IsTrue(wasRemoved);
+            Assert.IsNull(interfaces);
+        }
+        
         private interface IInterface { }
 
         private interface IInterface2 { }
