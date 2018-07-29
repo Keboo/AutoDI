@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using Mono.Cecil;
@@ -22,7 +23,7 @@ namespace AutoDI.Fody
         {
             if (_keys.TryGetValue(lifetime, out TypeLifetime typeKey))
             {
-                typeKey.Keys.Add(type);
+                typeKey.Add(type);
             }
             else
             {
@@ -43,16 +44,6 @@ namespace AutoDI.Fody
             return sb.ToString();
         }
 
-        public bool RemoveKey(TypeDefinition key)
-        {
-            bool rv = false;
-            foreach (KeyValuePair<Lifetime, TypeLifetime> kvp in _keys)
-            {
-                rv |= kvp.Value.Keys.Remove(key);
-            }
-            return rv;
-        }
-
         public void SetLifetime(Lifetime lifetime)
         {
             var typeKey = new TypeLifetime(lifetime, _keys.Values.SelectMany(tk => tk.Keys).ToArray());
@@ -63,17 +54,27 @@ namespace AutoDI.Fody
 
     internal class TypeLifetime
     {
-        public ICollection<TypeDefinition> Keys { get; } = new HashSet<TypeDefinition>(TypeComparer.FullName);
+        private readonly List<TypeDefinition> _keys = new List<TypeDefinition>();
+        public IReadOnlyCollection<TypeDefinition> Keys { get; }
         
         public Lifetime Lifetime { get; }
 
         public TypeLifetime(Lifetime lifetime, params TypeDefinition[] keys)
         {
+            Keys = new ReadOnlyCollection<TypeDefinition>(_keys);
             foreach (TypeDefinition key in keys)
             {
-                Keys.Add(key);
+                Add(key);
             }
             Lifetime = lifetime;
+        }
+
+        public void Add(TypeDefinition key)
+        {
+            if (!_keys.Contains(key, TypeComparer.FullName))
+            {
+                _keys.Add(key);
+            }
         }
     }
 }

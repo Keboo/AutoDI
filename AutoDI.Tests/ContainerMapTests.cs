@@ -406,6 +406,20 @@ namespace AutoDI.Tests
             Assert.IsTrue(wasRemoved);
             Assert.IsNull(interfaces);
         }
+
+        [TestMethod]
+        public void WhenMultipleRegistrationsExistItResolvesTheLastOne()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<IInterface, Derived1>();
+            services.AddAutoDISingleton<IInterface, Derived2>();
+            map.Add(services);
+
+            var @class = map.Get<IInterface>(null);
+            
+            Assert.IsTrue(@class is Derived2);
+        }
         
         private interface IInterface { }
 

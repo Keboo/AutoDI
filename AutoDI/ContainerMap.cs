@@ -25,17 +25,22 @@ namespace AutoDI
 
         public void Add(IServiceCollection services)
         {
-            foreach (IGrouping<Type, ServiceDescriptor> serviceDescriptors in
+            foreach (IGrouping<(Type, Lifetime), ServiceDescriptor> serviceDescriptors in
                      from ServiceDescriptor service in services
                      let autoDIService = service as AutoDIServiceDescriptor
-                     group service by autoDIService?.TargetType into @group
+                     group service by
+                     (
+                         autoDIService?.TargetType,
+                         service.GetAutoDILifetime()
+                     ) into @group
                      select @group)
             {
+
                 DelegateContainer container = null;
                 foreach (ServiceDescriptor serviceDescriptor in serviceDescriptors)
                 {
                     //Build up the container if it has not been generated or we do not have multiple AutoDI target types
-                    if (container == null || serviceDescriptors.Key == null)
+                    if (container == null || serviceDescriptors.Key.Item1 == null)
                     {
                         container = new DelegateContainer(serviceDescriptor);
                     }
@@ -360,7 +365,7 @@ namespace AutoDI
                 object instance = descriptor.ImplementationInstance;
                 return _ => instance;
             }
-            
+
             public static IDelegateContainer operator +(IDelegateContainer left, DelegateContainer right)
             {
                 if (left == null) return right;
@@ -406,7 +411,7 @@ namespace AutoDI
                     return new MulticastDelegateContainer(Containers.Select(x => x.ForNestedContainer()).ToArray());
                 }
 
-                public object Get(IServiceProvider provider) => null;
+                public object Get(IServiceProvider provider) => Containers.Last().Get(provider);
 
                 public Array GetArray(Type elementType, IServiceProvider provider)
                 {

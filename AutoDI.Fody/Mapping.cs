@@ -16,17 +16,18 @@ namespace AutoDI.Fody
         {
             var rv = new Mapping(logger);
 
-            if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
+            //Order matters, when conflicts occur the last one wins.
+            if (settings.Behavior.HasFlag(Behaviors.IncludeBaseClasses))
             {
-                rv.AddSingleInterfaceImplementation(allTypes);
+                rv.AddBaseClasses(allTypes);
             }
             if (settings.Behavior.HasFlag(Behaviors.IncludeClasses))
             {
                 rv.AddClasses(allTypes);
             }
-            if (settings.Behavior.HasFlag(Behaviors.IncludeBaseClasses))
+            if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
             {
-                rv.AddBaseClasses(allTypes);
+                rv.AddSingleInterfaceImplementation(allTypes);
             }
 
             rv.AddSettingsMap(settings, allTypes);
@@ -39,7 +40,7 @@ namespace AutoDI.Fody
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior, Lifetime? lifetime)
+        public void Add(TypeDefinition key, TypeDefinition targetType, Lifetime? lifetime, object source)
         {
             //TODO Better filtering, mostly just to remove <Module>
             if (targetType.Name.StartsWith("<") || targetType.Name.EndsWith(">")) return;
@@ -48,19 +49,6 @@ namespace AutoDI.Fody
             if (targetType.HasGenericParameters || key.HasGenericParameters)
             {
                 _logger.Debug($"Ignoring map from '{key.FullName}' => '{targetType.FullName}' because it contains an open generic", DebugLogLevel.Verbose);
-                return;
-            }
-
-            //Last key in wins, this allows for manual mapping to override things added with behaviors
-            bool duplicateKey = false;
-            foreach (var _ in _maps.Where(kvp => kvp.Value.RemoveKey(key)))
-            {
-                duplicateKey = true;
-            }
-
-            if (duplicateKey && behavior == DuplicateKeyBehavior.RemoveAll)
-            {
-                _logger.Debug($"Removing duplicate maps with service key '{key.FullName}'", DebugLogLevel.Verbose);
                 return;
             }
 
@@ -134,7 +122,7 @@ namespace AutoDI.Fody
             foreach (KeyValuePair<TypeReference, List<TypeDefinition>> kvp in types)
             {
                 if (kvp.Value.Count != 1) continue;
-                Add(kvp.Key.Resolve(), kvp.Value[0], DuplicateKeyBehavior.RemoveAll, Lifetime.LazySingleton);
+                Add(kvp.Key.Resolve(), kvp.Value[0], Lifetime.LazySingleton, Behaviors.SingleInterfaceImplementation);
             }
         }
 
@@ -142,7 +130,7 @@ namespace AutoDI.Fody
         {
             foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract))
             {
-                Add(type, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
+                Add(type, type, Lifetime.Transient, Behaviors.IncludeClasses);
             }
         }
 
@@ -159,7 +147,7 @@ namespace AutoDI.Fody
                 {
                     if (t.FullName != typeof(object).FullName)
                     {
-                        Add(t, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
+                        Add(t, type, Lifetime.Transient, Behaviors.IncludeBaseClasses);
                     }
                 }
             }
@@ -179,7 +167,7 @@ namespace AutoDI.Fody
                         {
                             if (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped))
                             {
-                                Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace, settingsMap.Lifetime);
+                                Add(allTypes[typeName], mapped, settingsMap.Lifetime, null);
                             }
                             else
                             {

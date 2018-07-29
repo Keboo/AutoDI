@@ -63,7 +63,9 @@ namespace AutoDI.Fody.Tests
             var @class = Resolve<Service>();
             Assert.IsNotNull(@interface);
             Assert.IsNotNull(@class);
-            Assert.IsTrue(ReferenceEquals(@interface, @class));
+            //NB: The class registration is transient while the single interfance registration is lazy singleton.
+            //These are different registrations.
+            Assert.IsFalse(ReferenceEquals(@interface, @class));
         }
 
         [TestMethod]
@@ -81,12 +83,6 @@ namespace AutoDI.Fody.Tests
         {
             //This works because it is the only derived class from Base2
             Assert.IsTrue(Resolve<Base2>().Is<Derived2>(GetType()));
-        }
-
-        [TestMethod]
-        public void CannotResolveClassByBaseTypeIfThereAreMultipleDerivedClasses()
-        {
-            Assert.IsNull(Resolve<Base>());
         }
     }
 
