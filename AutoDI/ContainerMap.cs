@@ -25,26 +25,21 @@ namespace AutoDI
 
         public void Add(IServiceCollection services)
         {
-            foreach (IGrouping<(Type, Lifetime), ServiceDescriptor> serviceDescriptors in
-                     from ServiceDescriptor service in services
-                     group service by
-                     (
-                         service.GetTargetType(),
-                         service.GetAutoDILifetime()
-                     ) into @group
-                     select @group)
+            var factories = new Dictionary<(Type, Lifetime), Func<IServiceProvider, object>>();
+            //NB: Order of items in the collection matter (last in wins)
+            foreach (ServiceDescriptor serviceDescriptor in services)
             {
-                Func<IServiceProvider, object> factory = null;
-                foreach (ServiceDescriptor serviceDescriptor in serviceDescriptors)
+                Type targetType = serviceDescriptor.GetTargetType();
+                Lifetime lifetime = serviceDescriptor.GetAutoDILifetime();
+                if (targetType == null || !factories.TryGetValue((targetType, lifetime), out Func<IServiceProvider, object> factory))
                 {
-                    //Build up the container if it has not been generated or we do not have multiple AutoDI target types
-                    if (factory == null || serviceDescriptors.Key.Item1 == null)
+                    factory = GetFactory(serviceDescriptor, lifetime);
+                    if (targetType != null)
                     {
-                        factory = GetFactory(serviceDescriptor, serviceDescriptors.Key.Item2);
+                        factories[(targetType, lifetime)] = factory;
                     }
-
-                    AddInternal(new DelegateContainer(serviceDescriptor, factory), serviceDescriptor.ServiceType);
                 }
+                AddInternal(new DelegateContainer(serviceDescriptor, factory), serviceDescriptor.ServiceType);
             }
         }
 

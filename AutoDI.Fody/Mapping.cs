@@ -52,6 +52,8 @@ namespace AutoDI.Fody
                 return;
             }
 
+            _logger.Debug($"{key.FullName} => {targetType.FullName} ({lifetime}) [{source}]", DebugLogLevel.Default);
+
             if (!_maps.TryGetValue(targetType.FullName, out TypeMap typeMap))
             {
                 _maps[targetType.FullName] = typeMap = new TypeMap(targetType);

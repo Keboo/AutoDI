@@ -29,10 +29,13 @@ namespace AutoDI.Fody.Tests
         public void ClassesShouldDefaultToResolvingToThemselves()
         {
             DI.Init(_testAssembly);
-
-            Assert.IsTrue(_testAssembly.Resolve<LibraryClass>(GetType()).Is<LibraryClass>(GetType()));
-            Assert.IsTrue(_testAssembly.Resolve<MyBaseClass>(GetType()).Is<MyBaseClass>(GetType()));
-            Assert.IsTrue(_testAssembly.Resolve<MyClass>(GetType()).Is<MyClass>(GetType()));
+            
+            var libraryClass = _testAssembly.Resolve<LibraryClass>(GetType());
+            Assert.IsTrue(libraryClass.Is<LibraryClass>(GetType()), $"Expected {nameof(LibraryClass)} but was {libraryClass?.GetType().Name ?? "<null>"}");
+            var myBaseClass = _testAssembly.Resolve<MyBaseClass>(GetType());
+            Assert.IsTrue(myBaseClass.Is<MyBaseClass>(GetType()), $"Expected {nameof(MyBaseClass)} but was {myBaseClass?.GetType().Name ?? "<null>"}");
+            var myClass = _testAssembly.Resolve<MyClass>(GetType());
+            Assert.IsTrue(myClass.Is<MyClass>(GetType()), $"Expected {nameof(MyClass)} but was {myClass?.GetType().Name ?? "<null>"}");
         }
     }
 
