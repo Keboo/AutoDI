@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace AutoDI
 {
@@ -8,5 +9,10 @@ namespace AutoDI
         {
             return (descriptor as AutoDIServiceDescriptor)?.AutoDILifetime ?? descriptor.Lifetime.ToAutoDI();
         }
+
+        public static Type GetTargetType(this ServiceDescriptor serviceDescriptor) =>
+                (serviceDescriptor as AutoDIServiceDescriptor)?.TargetType ??
+                serviceDescriptor.ImplementationType ??
+                serviceDescriptor.ImplementationInstance?.GetType();
     }
 }

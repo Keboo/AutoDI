@@ -27,25 +27,23 @@ namespace AutoDI
         {
             foreach (IGrouping<(Type, Lifetime), ServiceDescriptor> serviceDescriptors in
                      from ServiceDescriptor service in services
-                     let autoDIService = service as AutoDIServiceDescriptor
                      group service by
                      (
-                         autoDIService?.TargetType,
+                         service.GetTargetType(),
                          service.GetAutoDILifetime()
                      ) into @group
                      select @group)
             {
-
-                DelegateContainer container = null;
+                Func<IServiceProvider, object> factory = null;
                 foreach (ServiceDescriptor serviceDescriptor in serviceDescriptors)
                 {
                     //Build up the container if it has not been generated or we do not have multiple AutoDI target types
-                    if (container == null || serviceDescriptors.Key.Item1 == null)
+                    if (factory == null || serviceDescriptors.Key.Item1 == null)
                     {
-                        container = new DelegateContainer(serviceDescriptor);
+                        factory = GetFactory(serviceDescriptor, serviceDescriptors.Key.Item2);
                     }
 
-                    AddInternal(container, serviceDescriptor.ServiceType);
+                    AddInternal(new DelegateContainer(serviceDescriptor, factory), serviceDescriptor.ServiceType);
                 }
             }
         }
@@ -211,6 +209,76 @@ namespace AutoDI
             return false;
         }
 
+        private static Func<IServiceProvider, object> GetFactory(ServiceDescriptor descriptor, Lifetime lifetime)
+        {
+            return WithLifetime(GetFactoryMethod());
+
+            Func<IServiceProvider, object> GetFactoryMethod()
+            {
+                if (descriptor.ImplementationType != null)
+                {
+                    return sp =>
+                    {
+                        if (TryCreate(descriptor.ImplementationType, sp, out object result))
+                        {
+                            return result;
+                        }
+                        return null;
+                    };
+                }
+                if (descriptor.ImplementationFactory != null)
+                {
+                    return descriptor.ImplementationFactory;
+                }
+                //NB: separate the instance from the ServiceDescriptor to avoid capturing both
+                object instance = descriptor.ImplementationInstance;
+                return _ => instance;
+            }
+
+            Func<IServiceProvider, object> WithLifetime(Func<IServiceProvider, object> factory)
+            {
+                switch (lifetime)
+                {
+                    case Lifetime.Singleton:
+                    case Lifetime.LazySingleton:
+                    case Lifetime.Scoped:
+                        {
+                            var syncLock = new object();
+                            object value = null;
+                            return provider =>
+                            {
+                                if (value != null) return value;
+                                lock (syncLock)
+                                {
+                                    if (value != null) return value;
+                                    return value = factory(provider);
+                                }
+                            };
+                        }
+                    case Lifetime.WeakSingleton:
+                        {
+                            var weakRef = new WeakReference<object>(null);
+                            return provider =>
+                            {
+                                lock (weakRef)
+                                {
+                                    if (!weakRef.TryGetTarget(out object value))
+                                    {
+                                        value = factory(provider);
+                                        weakRef.SetTarget(value);
+                                    }
+                                    return value;
+                                }
+                            };
+                        }
+                    case Lifetime.Transient:
+                        return factory;
+                    default:
+                        throw new InvalidOperationException($"Unknown lifetime '{lifetime}'");
+                }
+            }
+        }
+
         private interface IDelegateContainer
         {
             void InstantiateSingletons(IServiceProvider provider);
@@ -228,10 +296,16 @@ namespace AutoDI
             private Type TargetType { get; }
             private Lifetime Lifetime { get; }
 
+            public DelegateContainer(ServiceDescriptor serviceDescriptor, Func<IServiceProvider, object> factory)
+                : this(serviceDescriptor.GetAutoDILifetime(), serviceDescriptor.GetTargetType(), factory)
+            {
+                _serviceDescriptor = serviceDescriptor ?? throw new ArgumentNullException(nameof(serviceDescriptor));
+            }
+
             public DelegateContainer(ServiceDescriptor serviceDescriptor)
-                : this(GetLifetime(serviceDescriptor),
-                       GetTargetType(serviceDescriptor),
-                       GetFactory(serviceDescriptor))
+                : this(serviceDescriptor.GetAutoDILifetime(),
+                       serviceDescriptor.GetTargetType(),
+                       GetFactory(serviceDescriptor, serviceDescriptor.GetAutoDILifetime()))
             {
                 _serviceDescriptor = serviceDescriptor ?? throw new ArgumentNullException(nameof(serviceDescriptor));
             }
@@ -241,7 +315,7 @@ namespace AutoDI
             {
                 Lifetime = lifetime;
                 TargetType = targetType;
-                _factoryWithLifetime = WithLifetime(creationFactory, lifetime);
+                _factoryWithLifetime = creationFactory;
             }
 
             public void InstantiateSingletons(IServiceProvider provider)
@@ -290,81 +364,6 @@ namespace AutoDI
             }
 
             public object Get(IServiceProvider provider) => _factoryWithLifetime(provider);
-
-            private static Func<IServiceProvider, object> WithLifetime(Func<IServiceProvider, object> factory,
-                Lifetime lifetime)
-            {
-                switch (lifetime)
-                {
-                    case Lifetime.Singleton:
-                    case Lifetime.LazySingleton:
-                    case Lifetime.Scoped:
-                        {
-                            var syncLock = new object();
-                            object value = null;
-                            return provider =>
-                            {
-                                if (value != null) return value;
-                                lock (syncLock)
-                                {
-                                    if (value != null) return value;
-                                    return value = factory(provider);
-                                }
-                            };
-                        }
-                    case Lifetime.WeakSingleton:
-                        {
-                            var weakRef = new WeakReference<object>(null);
-                            return provider =>
-                            {
-                                lock (weakRef)
-                                {
-                                    if (!weakRef.TryGetTarget(out object value))
-                                    {
-                                        value = factory(provider);
-                                        weakRef.SetTarget(value);
-                                    }
-                                    return value;
-                                }
-                            };
-                        }
-                    case Lifetime.Transient:
-                        return factory;
-                    default:
-                        throw new InvalidOperationException($"Unknown lifetime '{lifetime}'");
-                }
-            }
-
-            private static Lifetime GetLifetime(ServiceDescriptor serviceDescriptor) =>
-                (serviceDescriptor as AutoDIServiceDescriptor)?.AutoDILifetime ??
-                serviceDescriptor.Lifetime.ToAutoDI();
-
-            private static Type GetTargetType(ServiceDescriptor serviceDescriptor) =>
-                (serviceDescriptor as AutoDIServiceDescriptor)?.TargetType ??
-                serviceDescriptor.ImplementationType ??
-                serviceDescriptor.ImplementationInstance?.GetType();
-
-            private static Func<IServiceProvider, object> GetFactory(ServiceDescriptor descriptor)
-            {
-                if (descriptor.ImplementationType != null)
-                {
-                    return sp =>
-                    {
-                        if (TryCreate(descriptor.ImplementationType, sp, out object result))
-                        {
-                            return result;
-                        }
-                        return null;
-                    };
-                }
-                if (descriptor.ImplementationFactory != null)
-                {
-                    return descriptor.ImplementationFactory;
-                }
-                //NB: separate the instance from the ServiceDescriptor to avoid capturing both
-                object instance = descriptor.ImplementationInstance;
-                return _ => instance;
-            }
 
             public static IDelegateContainer operator +(IDelegateContainer left, DelegateContainer right)
             {
