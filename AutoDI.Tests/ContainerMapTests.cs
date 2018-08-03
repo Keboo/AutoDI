@@ -153,7 +153,8 @@ namespace AutoDI.Tests
         {
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
-            services.AddAutoDIService<Class>(provider => new Class(), new[] {typeof(IInterface), typeof(IInterface2)}, Lifetime.LazySingleton);
+            services.AddAutoDILazySingleton<IInterface, Class>(provider => new Class());
+            services.AddAutoDILazySingleton<IInterface2, Class>(provider => new Class());
             map.Add(services);
 
             var instance1 = map.Get<IInterface>(null);
@@ -169,11 +170,11 @@ namespace AutoDI.Tests
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
             int instanceCount = 0;
-            services.AddAutoDIService<Class>(provider =>
+            services.AddAutoDIWeakSingleton<IInterface, Class>(provider =>
             {
                 instanceCount++;
                 return new Class();
-            }, new[] {typeof(IInterface)}, Lifetime.WeakSingleton);
+            });
             map.Add(services);
 
             var instance = map.Get<IInterface>(null);
@@ -198,11 +199,11 @@ namespace AutoDI.Tests
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
             int instanceCount = 0;
-            services.AddAutoDIService<Class>(provider =>
+            services.AddAutoDITransient<IInterface, Class>(provider =>
             {
                 instanceCount++;
                 return new Class();
-            }, new[] { typeof(IInterface) }, Lifetime.Transient);
+            });
             map.Add(services);
 
             var a = map.Get<IInterface>(null);
