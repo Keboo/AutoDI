@@ -7,10 +7,11 @@ using System.Text;
 
 namespace AutoDI.Fody
 {
-    internal class Mapping : IEnumerable<TypeMap>
+    internal class Mapping : IEnumerable<Registration>
     {
         private readonly ILogger _logger;
-        private readonly Dictionary<string, TypeMap> _maps = new Dictionary<string, TypeMap>();
+
+        private readonly List<Registration> _internalMaps = new List<Registration>();
 
         public static Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes, ILogger logger)
         {
@@ -54,39 +55,61 @@ namespace AutoDI.Fody
 
             _logger.Debug($"{key.FullName} => {targetType.FullName} ({lifetime}) [{source}]", DebugLogLevel.Default);
 
-            if (!_maps.TryGetValue(targetType.FullName, out TypeMap typeMap))
-            {
-                _maps[targetType.FullName] = typeMap = new TypeMap(targetType);
-            }
+            _internalMaps.Add(new Registration(key, targetType, lifetime ?? Settings.DefaultLifetime));
+
+            //if (!_maps.TryGetValue(targetType.FullName, out TypeMap typeMap))
+            //{
+            //    _maps[targetType.FullName] = typeMap = new TypeMap(targetType);
+            //}
             
-            typeMap.AddKey(key, lifetime ?? Settings.DefaultLifetime);
+            //typeMap.AddKey(key, lifetime ?? Settings.DefaultLifetime);
         }
 
         public void UpdateCreation(ICollection<MatchType> matchTypes)
         {
-            foreach (string targetType in _maps.Keys.ToList())
+            for(int i = _internalMaps.Count - 1; i >= 0; i --)
             {
-                foreach (MatchType type in matchTypes)
+                foreach (MatchType matchType in matchTypes)
                 {
-                    if (type.Matches(targetType))
+                    Registration map = _internalMaps[i];
+                    if (matchType.Matches(map.TargetType.FullName))
                     {
-                        switch (type.Lifetime)
+                        switch (matchType.Lifetime)
                         {
                             case Lifetime.None:
-                                _maps.Remove(targetType);
+                                _internalMaps.RemoveAt(i);
                                 break;
                             default:
-                                _maps[targetType].SetLifetime(type.Lifetime);
+                                map.Lifetime = matchType.Lifetime;
                                 break;
                         }
                     }
                 }
             }
+
+            //foreach (string targetType in _maps.Keys.ToList())
+            //{
+            //    foreach (MatchType type in matchTypes)
+            //    {
+            //        if (type.Matches(targetType))
+            //        {
+            //            switch (type.Lifetime)
+            //            {
+            //                case Lifetime.None:
+            //                    _maps.Remove(targetType);
+            //                    break;
+            //                default:
+            //                    _maps[targetType].SetLifetime(type.Lifetime);
+            //                    break;
+            //            }
+            //        }
+            //    }
+            //}
         }
 
-        public IEnumerator<TypeMap> GetEnumerator()
+        public IEnumerator<Registration> GetEnumerator()
         {
-            return _maps.Values.GetEnumerator();
+            return _internalMaps.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -97,7 +120,7 @@ namespace AutoDI.Fody
         public override string ToString()
         {
             var sb = new StringBuilder();
-            foreach (TypeMap map in this)
+            foreach (Registration map in this)
             {
                 sb.AppendLine(map.ToString());
             }
@@ -117,7 +140,7 @@ namespace AutoDI.Fody
                         types.Add(@interface.InterfaceType, list = new List<TypeDefinition>());
                     }
                     list.Add(type);
-                    //TODO: Base types
+                    //TODO: Base types?
                 }
             }
 
@@ -200,6 +223,26 @@ namespace AutoDI.Fody
             }
             _logger.Debug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring", DebugLogLevel.Verbose);
             return false;
+        }
+    }
+
+    public class Registration
+    {
+        public TypeDefinition Key { get; }
+        public TypeDefinition TargetType { get; }
+
+        public Lifetime Lifetime { get; set; }
+
+        public Registration(TypeDefinition key, TypeDefinition targetType, Lifetime lifetime)
+        {
+            Key = key;
+            TargetType = targetType;
+            Lifetime = lifetime;
+        }
+
+        public override string ToString()
+        {
+            return $"{Key.FullName} => {TargetType.FullName} ({Lifetime})";
         }
     }
 }
