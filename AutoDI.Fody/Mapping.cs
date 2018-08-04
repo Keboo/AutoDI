@@ -56,13 +56,6 @@ namespace AutoDI.Fody
             _logger.Debug($"{key.FullName} => {targetType.FullName} ({lifetime}) [{source}]", DebugLogLevel.Default);
 
             _internalMaps.Add(new Registration(key, targetType, lifetime ?? Settings.DefaultLifetime));
-
-            //if (!_maps.TryGetValue(targetType.FullName, out TypeMap typeMap))
-            //{
-            //    _maps[targetType.FullName] = typeMap = new TypeMap(targetType);
-            //}
-            
-            //typeMap.AddKey(key, lifetime ?? Settings.DefaultLifetime);
         }
 
         public void UpdateCreation(ICollection<MatchType> matchTypes)
@@ -86,25 +79,6 @@ namespace AutoDI.Fody
                     }
                 }
             }
-
-            //foreach (string targetType in _maps.Keys.ToList())
-            //{
-            //    foreach (MatchType type in matchTypes)
-            //    {
-            //        if (type.Matches(targetType))
-            //        {
-            //            switch (type.Lifetime)
-            //            {
-            //                case Lifetime.None:
-            //                    _maps.Remove(targetType);
-            //                    break;
-            //                default:
-            //                    _maps[targetType].SetLifetime(type.Lifetime);
-            //                    break;
-            //            }
-            //        }
-            //    }
-            //}
         }
 
         public IEnumerator<Registration> GetEnumerator()
@@ -147,7 +121,9 @@ namespace AutoDI.Fody
             foreach (KeyValuePair<TypeReference, List<TypeDefinition>> kvp in types)
             {
                 if (kvp.Value.Count != 1) continue;
-                Add(kvp.Key.Resolve(), kvp.Value[0], Lifetime.LazySingleton, Behaviors.SingleInterfaceImplementation);
+                Add(kvp.Key.Resolve(), kvp.Value[0], 
+                    GetLifetime(kvp.Value[0], Lifetime.LazySingleton), 
+                    Behaviors.SingleInterfaceImplementation);
             }
         }
 
@@ -155,7 +131,7 @@ namespace AutoDI.Fody
         {
             foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract))
             {
-                Add(type, type, Lifetime.Transient, Behaviors.IncludeClasses);
+                Add(type, type, GetLifetime(type, Lifetime.Transient), Behaviors.IncludeClasses);
             }
         }
 
@@ -172,7 +148,7 @@ namespace AutoDI.Fody
                 {
                     if (t.FullName != typeof(object).FullName)
                     {
-                        Add(t, type, Lifetime.Transient, Behaviors.IncludeBaseClasses);
+                        Add(t, type, GetLifetime(type, Lifetime.Transient), Behaviors.IncludeBaseClasses);
                     }
                 }
             }
@@ -192,7 +168,12 @@ namespace AutoDI.Fody
                         {
                             if (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped))
                             {
-                                Add(allTypes[typeName], mapped, settingsMap.Lifetime, null);
+                                Lifetime? lifetime = settingsMap.Lifetime;
+                                if (lifetime == null)
+                                {
+                                    lifetime = GetLifetime(mapped, null);
+                                }
+                                Add(allTypes[typeName], mapped, lifetime, "Explicit Map");
                             }
                             else
                             {
@@ -209,6 +190,17 @@ namespace AutoDI.Fody
             UpdateCreation(settings.Types);
         }
 
+        private static Lifetime? GetLifetime(TypeDefinition targetType, Lifetime? @default)
+        {
+            CustomAttribute mapAttribute =
+                targetType.CustomAttributes.FirstOrDefault(attribute => attribute.AttributeType.IsType<MapAttribute>());
+            if (mapAttribute != null)
+            {
+                return (Lifetime)mapAttribute.ConstructorArguments.Single(x => x.Type.IsType<Lifetime>()).Value;
+            }
+            return @default;
+        }
+
         private bool CanBeCastToType(TypeDefinition key, TypeDefinition targetType)
         {
             var comparer = TypeComparer.FullName;
@@ -223,26 +215,6 @@ namespace AutoDI.Fody
             }
             _logger.Debug($"'{targetType.FullName}' cannot be cast to '{key.FullName}', ignoring", DebugLogLevel.Verbose);
             return false;
-        }
-    }
-
-    public class Registration
-    {
-        public TypeDefinition Key { get; }
-        public TypeDefinition TargetType { get; }
-
-        public Lifetime Lifetime { get; set; }
-
-        public Registration(TypeDefinition key, TypeDefinition targetType, Lifetime lifetime)
-        {
-            Key = key;
-            TargetType = targetType;
-            Lifetime = lifetime;
-        }
-
-        public override string ToString()
-        {
-            return $"{Key.FullName} => {TargetType.FullName} ({Lifetime})";
         }
     }
 }

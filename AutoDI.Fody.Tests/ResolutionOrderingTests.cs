@@ -1,5 +1,5 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Fody.Tests.BehaviorsTestsNamespace;
+using AutoDI.Fody.Tests.ResolutionOrderingTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace AutoDI.Fody.Tests
 {
     [TestClass]
-    public class BehaviorsTests
+    public class ResolutionOrderingTests
     {
         private static Assembly _testAssembly;
 
@@ -42,7 +42,7 @@ namespace AutoDI.Fody.Tests
     //<assembly>
     //<ref: AutoDI />
     //<weaver: AutoDI />
-    namespace BehaviorsTestsNamespace
+    namespace ResolutionOrderingTestsNamespace
     {
         public class LibraryClass {}
 
