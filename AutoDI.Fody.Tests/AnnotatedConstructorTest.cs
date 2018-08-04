@@ -35,7 +35,7 @@ namespace AutoDI.Fody.Tests
             var service2 = (object) manager.Service2;
 
             Assert.IsNotNull(service1);
-            Assert.IsTrue((service1).Is<Service1>(GetType()));
+            Assert.IsTrue(service1.Is<Service1>(GetType()));
             Assert.IsNull(service2);
         }
     }

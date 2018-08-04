@@ -7,26 +7,28 @@ using System.Text;
 
 namespace AutoDI.Fody
 {
-    internal class Mapping : IEnumerable<TypeMap>
+    internal class Mapping : IEnumerable<Registration>
     {
         private readonly ILogger _logger;
-        private readonly Dictionary<string, TypeMap> _maps = new Dictionary<string, TypeMap>();
+
+        private readonly List<Registration> _internalMaps = new List<Registration>();
 
         public static Mapping GetMapping(Settings settings, ICollection<TypeDefinition> allTypes, ILogger logger)
         {
             var rv = new Mapping(logger);
 
-            if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
+            //Order matters, when conflicts occur the last one wins.
+            if (settings.Behavior.HasFlag(Behaviors.IncludeBaseClasses))
             {
-                rv.AddSingleInterfaceImplementation(allTypes);
+                rv.AddBaseClasses(allTypes);
             }
             if (settings.Behavior.HasFlag(Behaviors.IncludeClasses))
             {
                 rv.AddClasses(allTypes);
             }
-            if (settings.Behavior.HasFlag(Behaviors.IncludeBaseClasses))
+            if (settings.Behavior.HasFlag(Behaviors.SingleInterfaceImplementation))
             {
-                rv.AddBaseClasses(allTypes);
+                rv.AddSingleInterfaceImplementation(allTypes);
             }
 
             rv.AddSettingsMap(settings, allTypes);
@@ -39,7 +41,7 @@ namespace AutoDI.Fody
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public void Add(TypeDefinition key, TypeDefinition targetType, DuplicateKeyBehavior behavior, Lifetime? lifetime)
+        public void Add(TypeDefinition key, TypeDefinition targetType, Lifetime? lifetime, object source)
         {
             //TODO Better filtering, mostly just to remove <Module>
             if (targetType.Name.StartsWith("<") || targetType.Name.EndsWith(">")) return;
@@ -51,42 +53,27 @@ namespace AutoDI.Fody
                 return;
             }
 
-            //Last key in wins, this allows for manual mapping to override things added with behaviors
-            bool duplicateKey = false;
-            foreach (var _ in _maps.Where(kvp => kvp.Value.RemoveKey(key)))
-            {
-                duplicateKey = true;
-            }
+            _logger.Debug($"{key.FullName} => {targetType.FullName} ({lifetime}) [{source}]", DebugLogLevel.Default);
 
-            if (duplicateKey && behavior == DuplicateKeyBehavior.RemoveAll)
-            {
-                _logger.Debug($"Removing duplicate maps with service key '{key.FullName}'", DebugLogLevel.Verbose);
-                return;
-            }
-
-            if (!_maps.TryGetValue(targetType.FullName, out TypeMap typeMap))
-            {
-                _maps[targetType.FullName] = typeMap = new TypeMap(targetType);
-            }
-            
-            typeMap.AddKey(key, lifetime ?? Settings.DefaultLifetime);
+            _internalMaps.Add(new Registration(key, targetType, lifetime ?? Settings.DefaultLifetime));
         }
 
         public void UpdateCreation(ICollection<MatchType> matchTypes)
         {
-            foreach (string targetType in _maps.Keys.ToList())
+            for(int i = _internalMaps.Count - 1; i >= 0; i --)
             {
-                foreach (MatchType type in matchTypes)
+                foreach (MatchType matchType in matchTypes)
                 {
-                    if (type.Matches(targetType))
+                    Registration map = _internalMaps[i];
+                    if (matchType.Matches(map.TargetType.FullName))
                     {
-                        switch (type.Lifetime)
+                        switch (matchType.Lifetime)
                         {
                             case Lifetime.None:
-                                _maps.Remove(targetType);
+                                _internalMaps.RemoveAt(i);
                                 break;
                             default:
-                                _maps[targetType].SetLifetime(type.Lifetime);
+                                map.Lifetime = matchType.Lifetime;
                                 break;
                         }
                     }
@@ -94,9 +81,9 @@ namespace AutoDI.Fody
             }
         }
 
-        public IEnumerator<TypeMap> GetEnumerator()
+        public IEnumerator<Registration> GetEnumerator()
         {
-            return _maps.Values.GetEnumerator();
+            return _internalMaps.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -107,7 +94,7 @@ namespace AutoDI.Fody
         public override string ToString()
         {
             var sb = new StringBuilder();
-            foreach (TypeMap map in this)
+            foreach (Registration map in this)
             {
                 sb.AppendLine(map.ToString());
             }
@@ -127,14 +114,16 @@ namespace AutoDI.Fody
                         types.Add(@interface.InterfaceType, list = new List<TypeDefinition>());
                     }
                     list.Add(type);
-                    //TODO: Base types
+                    //TODO: Base types?
                 }
             }
 
             foreach (KeyValuePair<TypeReference, List<TypeDefinition>> kvp in types)
             {
                 if (kvp.Value.Count != 1) continue;
-                Add(kvp.Key.Resolve(), kvp.Value[0], DuplicateKeyBehavior.RemoveAll, Lifetime.LazySingleton);
+                Add(kvp.Key.Resolve(), kvp.Value[0], 
+                    GetLifetime(kvp.Value[0], Lifetime.LazySingleton), 
+                    Behaviors.SingleInterfaceImplementation);
             }
         }
 
@@ -142,7 +131,7 @@ namespace AutoDI.Fody
         {
             foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract))
             {
-                Add(type, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
+                Add(type, type, GetLifetime(type, Lifetime.Transient), Behaviors.IncludeClasses);
             }
         }
 
@@ -159,7 +148,7 @@ namespace AutoDI.Fody
                 {
                     if (t.FullName != typeof(object).FullName)
                     {
-                        Add(t, type, DuplicateKeyBehavior.RemoveAll, Lifetime.Transient);
+                        Add(t, type, GetLifetime(type, Lifetime.Transient), Behaviors.IncludeBaseClasses);
                     }
                 }
             }
@@ -179,7 +168,12 @@ namespace AutoDI.Fody
                         {
                             if (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped))
                             {
-                                Add(allTypes[typeName], mapped, DuplicateKeyBehavior.Replace, settingsMap.Lifetime);
+                                Lifetime? lifetime = settingsMap.Lifetime;
+                                if (lifetime == null)
+                                {
+                                    lifetime = GetLifetime(mapped, null);
+                                }
+                                Add(allTypes[typeName], mapped, lifetime, "Explicit Map");
                             }
                             else
                             {
@@ -194,6 +188,17 @@ namespace AutoDI.Fody
                 }
             }
             UpdateCreation(settings.Types);
+        }
+
+        private static Lifetime? GetLifetime(TypeDefinition targetType, Lifetime? @default)
+        {
+            CustomAttribute mapAttribute =
+                targetType.CustomAttributes.FirstOrDefault(attribute => attribute.AttributeType.IsType<MapAttribute>());
+            if (mapAttribute != null)
+            {
+                return (Lifetime)mapAttribute.ConstructorArguments.Single(x => x.Type.IsType<Lifetime>()).Value;
+            }
+            return @default;
         }
 
         private bool CanBeCastToType(TypeDefinition key, TypeDefinition targetType)

@@ -35,10 +35,39 @@ namespace AutoDI.Fody
                                     settings.GenerateRegistrations = (bool)property.Argument.Value;
                                     break;
                                 case nameof(SettingsAttribute.DebugCodeGeneration):
-                                    settings.DebugCodeGeneration = (CodeLanguage) property.Argument.Value;
+                                    settings.DebugCodeGeneration = (CodeLanguage)property.Argument.Value;
                                     break;
                             }
                         }
+                    }
+                }
+                else if (attribute.AttributeType.IsType<MapAttribute>())
+                {
+                    Lifetime? lifetime = null;
+                    string pattern = null;
+                    foreach (CustomAttributeArgument ctorArgument in attribute.ConstructorArguments)
+                    {
+                        if (ctorArgument.Type.IsType<Lifetime>())
+                        {
+                            lifetime = (Lifetime)ctorArgument.Value;
+                        }
+                        else if (ctorArgument.Type.IsType<string>())
+                        {
+                            pattern = (string)ctorArgument.Value;
+                        }
+                        else if (ctorArgument.Type.IsType<Type>())
+                        {
+                            pattern = ((TypeDefinition)ctorArgument.Value).FullName;
+                        }
+                    }
+
+                    if (lifetime != null && pattern != null)
+                    {
+                        settings.Types.Add(new MatchType(pattern, lifetime.Value));
+                    }
+                    else
+                    {
+                        throw new SettingsParseException($"Assembly level {nameof(MapAttribute)} must contain both a {nameof(MapAttribute.Lifetime)} and a {nameof(MapAttribute.TargetTypePattern)}");
                     }
                 }
             }

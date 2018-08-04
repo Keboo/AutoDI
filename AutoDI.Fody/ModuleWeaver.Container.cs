@@ -4,7 +4,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 // ReSharper disable once CheckNamespace
 partial class ModuleWeaver
@@ -70,103 +70,99 @@ partial class ModuleWeaver
         if (mapping != null)
         {
             int factoryIndex = 0;
-            foreach (TypeMap map in mapping)
+            var factoryMethods = new Dictionary<string, MethodDefinition>();
+
+            foreach (Registration registration in mapping)
             {
                 try
                 {
-                    Logger.Debug($"Processing map for {map.TargetType.FullName}", AutoDI.DebugLogLevel.Verbose);
+                    Logger.Debug($"Processing map for {registration.TargetType.FullName}", AutoDI.DebugLogLevel.Verbose);
 
-                    MethodDefinition factoryMethod = GenerateFactoryMethod(map.TargetType, factoryIndex);
-                    if (factoryMethod == null)
+                    if (!factoryMethods.TryGetValue(registration.TargetType.FullName,
+                        out MethodDefinition factoryMethod))
                     {
-                        Logger.Debug($"No acceptable constructor for '{map.TargetType.FullName}', skipping map",
-                            AutoDI.DebugLogLevel.Verbose);
-                        continue;
+                        factoryMethod = GenerateFactoryMethod(registration.TargetType, factoryIndex);
+                        if (factoryMethod == null)
+                        {
+                            Logger.Debug($"No acceptable constructor for '{registration.TargetType.FullName}', skipping map",
+                                AutoDI.DebugLogLevel.Verbose);
+                            continue;
+                        }
+                        factoryMethods[registration.TargetType.FullName] = factoryMethod;
+                        factoryIndex++;
+                        containerType.Methods.Add(factoryMethod);
                     }
-                    containerType.Methods.Add(factoryMethod);
-                    factoryIndex++;
 
-                    foreach (TypeLifetime typeLifetime in map.Lifetimes)
+                    
+                    var tryStart = Instruction.Create(OpCodes.Ldarg_0); //collection parameter
+                    processor.Append(tryStart);
+
+                    TypeReference importedKey = ModuleDefinition.ImportReference(registration.Key);
+                    Logger.Debug(
+                        $"Mapping {importedKey.FullName} => {registration.TargetType.FullName} ({registration.Lifetime})",
+                        AutoDI.DebugLogLevel.Default);
+                    processor.Emit(OpCodes.Ldtoken, importedKey);
+                    processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
+
+                    processor.Emit(OpCodes.Ldtoken, ModuleDefinition.ImportReference(registration.TargetType));
+                    processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
+
+                    processor.Emit(OpCodes.Ldnull);
+                    processor.Emit(OpCodes.Ldftn, factoryMethod);
+                    processor.Emit(OpCodes.Newobj,
+                        ModuleDefinition.ImportReference(
+                            funcCtor.MakeGenericDeclaringType(Import.System.IServiceProvider,
+                                ModuleDefinition.ImportReference(registration.TargetType))));
+
+                    processor.Emit(OpCodes.Ldc_I4, (int)registration.Lifetime);
+                    
+                    processor.Emit(OpCodes.Call, Import.AutoDI.ServiceCollectionMixins.AddAutoDIService);
+                    processor.Emit(OpCodes.Pop);
+
+                    if (settings.DebugExceptions)
                     {
-                        var tryStart = Instruction.Create(OpCodes.Ldarg_0); //collection parameter
-                        processor.Append(tryStart);
+                        Instruction afterCatch = Instruction.Create(OpCodes.Nop);
+                        processor.Emit(OpCodes.Leave_S, afterCatch);
 
-                        processor.Emit(OpCodes.Ldnull);
-                        processor.Emit(OpCodes.Ldftn, factoryMethod);
-                        processor.Emit(OpCodes.Newobj,
-                            ModuleDefinition.ImportReference(
-                                funcCtor.MakeGenericDeclaringType(Import.System.IServiceProvider,
-                                    ModuleDefinition.ImportReference(map.TargetType))));
+                        Instruction handlerStart = Instruction.Create(OpCodes.Stloc, exception);
+                        processor.Append(handlerStart);
+                        processor.Emit(OpCodes.Ldloc, exceptionList);
+                        processor.Emit(OpCodes.Ldstr, $"Error adding type '{registration.TargetType.FullName}' with key '{registration.Key.FullName}'");
+                        processor.Emit(OpCodes.Ldloc, exception);
 
-                        processor.Emit(OpCodes.Ldc_I4, typeLifetime.Keys.Count);
-                        processor.Emit(OpCodes.Newarr, Import.System.Type.Type);
+                        processor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AutoDIException_Ctor);
+                        var listAdd = Import.System.Collections.List.Add;
+                        listAdd = listAdd.MakeGenericDeclaringType(Import.System.Exception);
 
-                        int arrayIndex = 0;
-                        foreach (TypeDefinition key in typeLifetime.Keys)
-                        {
-                            TypeReference importedKey = ModuleDefinition.ImportReference(key);
-                            Logger.Debug(
-                                $"Mapping {importedKey.FullName} => {map.TargetType.FullName} ({typeLifetime.Lifetime})",
-                                AutoDI.DebugLogLevel.Default);
-                            processor.Emit(OpCodes.Dup);
-                            processor.Emit(OpCodes.Ldc_I4, arrayIndex++);
-                            processor.Emit(OpCodes.Ldtoken, importedKey);
-                            processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
-                            processor.Emit(OpCodes.Stelem_Ref);
-                        }
+                        processor.Emit(OpCodes.Callvirt, listAdd);
 
-                        processor.Emit(OpCodes.Ldc_I4, (int)typeLifetime.Lifetime);
+                        Instruction handlerEnd = Instruction.Create(OpCodes.Leave_S, afterCatch);
+                        processor.Append(handlerEnd);
 
-                        var genericAddMethod =
-                            new GenericInstanceMethod(Import.AutoDI.ServiceCollectionMixins.AddAutoDIService);
-                        genericAddMethod.GenericArguments.Add(ModuleDefinition.ImportReference(map.TargetType));
-                        processor.Emit(OpCodes.Call, ModuleDefinition.ImportReference(genericAddMethod));
-                        processor.Emit(OpCodes.Pop);
+                        var exceptionHandler =
+                            new ExceptionHandler(ExceptionHandlerType.Catch)
+                            {
+                                CatchType = Import.System.Exception,
+                                TryStart = tryStart,
+                                TryEnd = handlerStart,
+                                HandlerStart = handlerStart,
+                                HandlerEnd = afterCatch,
 
-                        if (settings.DebugExceptions)
-                        {
-                            Instruction afterCatch = Instruction.Create(OpCodes.Nop);
-                            processor.Emit(OpCodes.Leave_S, afterCatch);
+                            };
 
-                            Instruction handlerStart = Instruction.Create(OpCodes.Stloc, exception);
-                            processor.Append(handlerStart);
-                            processor.Emit(OpCodes.Ldloc, exceptionList);
-                            processor.Emit(OpCodes.Ldstr, $"Error adding type '{map.TargetType.FullName}' with key(s) '{string.Join(",", typeLifetime.Keys.Select(x => x.FullName))}'");
-                            processor.Emit(OpCodes.Ldloc, exception);
+                        method.Body.ExceptionHandlers.Add(exceptionHandler);
 
-                            processor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AutoDIException_Ctor);
-                            var listAdd = Import.System.Collections.List.Add;
-                            listAdd = listAdd.MakeGenericDeclaringType(Import.System.Exception);
-
-                            processor.Emit(OpCodes.Callvirt, listAdd);
-
-                            Instruction handlerEnd = Instruction.Create(OpCodes.Leave_S, afterCatch);
-                            processor.Append(handlerEnd);
-
-                            var exceptionHandler =
-                                new ExceptionHandler(ExceptionHandlerType.Catch)
-                                {
-                                    CatchType = Import.System.Exception,
-                                    TryStart = tryStart,
-                                    TryEnd = handlerStart,
-                                    HandlerStart = handlerStart,
-                                    HandlerEnd = afterCatch,
-
-                                };
-
-                            method.Body.ExceptionHandlers.Add(exceptionHandler);
-
-                            processor.Append(afterCatch);
-                        }
+                        processor.Append(afterCatch);
                     }
+                    //}
                 }
                 catch (MultipleConstructorException e)
                 {
-                    Logger.Error($"Failed to create map for {map}\r\n{e}");
+                    Logger.Error($"Failed to create map for {registration}\r\n{e}");
                 }
                 catch (Exception e)
                 {
-                    Logger.Warning($"Failed to create map for {map}\r\n{e}");
+                    Logger.Warning($"Failed to create map for {registration}\r\n{e}");
                 }
             }
         }
@@ -199,7 +195,7 @@ partial class ModuleWeaver
     private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
     {
         if (!targetType.CanMapType()) return null;
-        
+
         MethodDefinition targetTypeCtor = targetType.GetMappingConstructor();
         if (targetTypeCtor == null) return null;
 
@@ -323,5 +319,5 @@ partial class ModuleWeaver
         return disposeMethod;
     }
 
-    
+
 }
