@@ -8,7 +8,10 @@ namespace AutoDI
         event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFound;
 
         T Get<T>(IServiceProvider provider);
-        object Get(Type key, IServiceProvider provider);
+        object Get(Type serviceType, IServiceProvider provider);
+
+        bool Remove<T>();
+        bool Remove(Type serviceType);
 
         IContainer CreatedNestedContainer();
     }

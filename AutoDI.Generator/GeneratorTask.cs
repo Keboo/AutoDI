@@ -33,7 +33,7 @@ namespace AutoDI.Generator
 
         public override bool Execute()
         {
-            
+
             XElement configElement = GetConfigElement(ProjectPath);
             var settings = Settings.Parse(new Settings(), configElement);
             var logger = new TaskLogger(BuildEngine, settings.DebugLogLevel);
@@ -86,15 +86,21 @@ namespace AutoDI.Generator
                 sw.WriteLine(1, "{");
 
                 int index = 0;
-                foreach (TypeMap typeMap in mapping)
+                var factoryMethodIndexes = new Dictionary<string, int>();
+
+                foreach (Registration registration in mapping)
                 {
-                    if (!typeMap.TargetType.CanMapType()) continue;
-                    MethodDefinition ctor = typeMap.TargetType.GetMappingConstructor();
+                    if (!registration.TargetType.CanMapType()) continue;
+                    if (factoryMethodIndexes.ContainsKey(registration.TargetType.FullName)) continue;
+
+                    MethodDefinition ctor = registration.TargetType.GetMappingConstructor();
                     if (ctor == null) continue;
 
-                    sw.WriteLine(2, $"private static global::{typeMap.TargetType.FullNameCSharp()} generated_{index++}(IServiceProvider serviceProvider)");
+                    factoryMethodIndexes[registration.TargetType.FullName] = index;
+
+                    sw.WriteLine(2, $"private static global::{registration.TargetType.FullNameCSharp()} generated_{index++}(IServiceProvider serviceProvider)");
                     sw.WriteLine(2, "{");
-                    sw.Write(3, $"return new global::{typeMap.TargetType.FullNameCSharp()}(");
+                    sw.Write(3, $"return new global::{registration.TargetType.FullNameCSharp()}(");
 
                     sw.Write(string.Join(", ", ctor.Parameters.Select(p => $"serviceProvider.GetService<global::{p.ParameterType.FullNameCSharp()}>()")));
 
@@ -108,36 +114,28 @@ namespace AutoDI.Generator
                 {
                     sw.WriteLine(3, "List<Exception> list = new List<Exception>();");
                 }
-                index = 0;
-                foreach (TypeMap typeMap in mapping)
+
+                foreach (Registration registration in mapping)
                 {
-                    if (!typeMap.TargetType.CanMapType() || typeMap.TargetType.GetMappingConstructor() == null) continue;
-                    
-                    foreach (TypeLifetime lifetime in typeMap.Lifetimes)
+                    if (!registration.TargetType.CanMapType() || registration.TargetType.GetMappingConstructor() == null) continue;
+
+                    int indent = 3;
+                    if (settings.DebugExceptions)
                     {
-                        int indent = 3;
-                        if (settings.DebugExceptions)
-                        {
-                            sw.WriteLine(indent, "try");
-                            sw.WriteLine(indent++, "{");
-                        }
-
-                        sw.WriteLine(indent, $"collection.AddAutoDIService<global::{typeMap.TargetType.FullNameCSharp()}>(generated_{index}, new System.Type[{lifetime.Keys.Count}]");
-                        sw.WriteLine(indent, "{");
-                        sw.WriteLine(indent + 1, string.Join(", ", lifetime.Keys.Select(t => $"typeof(global::{t.FullNameCSharp()})")));
-                        sw.WriteLine(indent, $"}}, Lifetime.{lifetime.Lifetime});");
-
-                        if (settings.DebugExceptions)
-                        {
-                            sw.WriteLine(--indent, "}");
-                            sw.WriteLine(indent, "catch(Exception innerException)");
-                            sw.WriteLine(indent, "{");
-                            sw.WriteLine(indent + 1, $"list.Add(new AutoDIException(\"Error adding type '{typeMap.TargetType.FullNameCSharp()}' with key(s) '{string.Join(",", lifetime.Keys.Select(x => x.FullName))}'\", innerException));");
-                            sw.WriteLine(indent, "}");
-                        }
+                        sw.WriteLine(indent, "try");
+                        sw.WriteLine(indent++, "{");
                     }
+
+                    sw.WriteLine(indent, $"collection.AddAutoDIService(typeof(global::{registration.Key.FullNameCSharp()}),typeof(global::{registration.TargetType.FullNameCSharp()}), generated_{factoryMethodIndexes[registration.TargetType.FullName]}, Lifetime.{registration.Lifetime});");
                     
-                    index++;
+                    if (settings.DebugExceptions)
+                    {
+                        sw.WriteLine(--indent, "}");
+                        sw.WriteLine(indent, "catch(Exception innerException)");
+                        sw.WriteLine(indent, "{");
+                        sw.WriteLine(indent + 1, $"list.Add(new AutoDIException(\"Error adding type '{registration.TargetType.FullNameCSharp()}' with key '{registration.Key.FullNameCSharp()}'\", innerException));");
+                        sw.WriteLine(indent, "}");
+                    }
                 }
 
                 if (settings.DebugExceptions)

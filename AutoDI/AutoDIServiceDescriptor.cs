@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AutoDI
 {
+    [DebuggerDisplay("Lifetime = {AutoDILifetime}, ServiceType = {ServiceType}, TargetType = {TargetType}, ImplementationType = {ImplementationType}")]
     internal class AutoDIServiceDescriptor : ServiceDescriptor
     {
         public Lifetime AutoDILifetime { get; }

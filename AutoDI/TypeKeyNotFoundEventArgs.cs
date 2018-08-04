@@ -4,13 +4,13 @@ namespace AutoDI
 {
     public class TypeKeyNotFoundEventArgs : EventArgs
     {
-        public Type ServiceKey { get; }
+        public Type ServiceType { get; }
 
         public object Instance { get; set; }
 
-        public TypeKeyNotFoundEventArgs(Type serviceKey)
+        public TypeKeyNotFoundEventArgs(Type serviceType)
         {
-            ServiceKey = serviceKey;
+            ServiceType = serviceType;
         }
     }
 }

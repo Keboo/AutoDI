@@ -264,9 +264,9 @@ public partial class ModuleWeaver
 
                 public ServiceCollectionMixinsImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition, Imports imports)
                 {
-                    var type = findType("AutoDI.ServiceCollectionMixins");
+                    var type = findType("Microsoft.Extensions.DependencyInjection.AutoDIServiceCollectionMixins");
 
-                    var addAutoDIService = type.GetMethods().Single(m => m.Name == "AddAutoDIService");
+                    var addAutoDIService = type.GetMethods().Single(m => m.Name == "AddAutoDIService" && m.Parameters.Count == 5);
                     addAutoDIService.Parameters[0].ParameterType = imports.DependencyInjection.IServiceCollection;
                     addAutoDIService.ReturnType = imports.DependencyInjection.IServiceCollection;
 

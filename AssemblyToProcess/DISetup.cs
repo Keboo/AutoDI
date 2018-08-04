@@ -1,5 +1,6 @@
 ﻿using System;
 using AutoDI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AssemblyToProcess
 {
@@ -10,7 +11,7 @@ namespace AssemblyToProcess
         {
             builder.ConfigureServices(c =>
             {
-                c.AddAutoDIService<object>(p => new object(), new Type[] {typeof(object)}, Lifetime.Singleton);
+                c.AddAutoDIService(typeof(object), typeof(object), p => new object(), Lifetime.Singleton);
             });
         }
     }
