@@ -3,6 +3,7 @@ using AutoDI.Fody.Tests.NormalConstructorTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace AutoDI.Fody.Tests
 {
@@ -15,6 +16,13 @@ namespace AutoDI.Fody.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
+            gen.WeaverAdded += (sender, args) =>
+            {
+                if (args.Weaver.Name == "AutoDI")
+                {
+                    args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI DebugCodeGeneration=""CSharp"" />");
+                }
+            };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
@@ -31,7 +39,7 @@ namespace AutoDI.Fody.Tests
         public void CanResolveNormalConstructorDependencies()
         {
             dynamic manager = _testAssembly.Resolve<Manager>(GetType());
-            
+
             Assert.IsTrue(((object)manager.Service).Is<Service>(GetType()));
         }
     }

@@ -58,13 +58,15 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
             LoadRequiredData();
 
+            ICodeGenerator gen = GetCodeGenerator(settings);
+
             if (settings.GenerateRegistrations)
             {
                 Mapping mapping = Mapping.GetMapping(settings, allTypes, Logger);
 
                 Logger.Debug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
 
-                ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, out MethodDefinition initMethod));
+                ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, gen, out MethodDefinition initMethod));
 
                 if (settings.AutoInit)
                 {
@@ -76,7 +78,6 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 Logger.Debug("Skipping registration", DebugLogLevel.Verbose);
             }
 
-            ICodeGenerator gen = GetCodeGenerator(settings);
             //We only update types in our module
             foreach (TypeDefinition type in allTypes.Where(type => type.Module == ModuleDefinition))
             {
