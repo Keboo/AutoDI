@@ -1,16 +1,18 @@
 ﻿
 using AutoDI.Fody;
+using AutoDI.Fody.CodeGen;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 // ReSharper disable once CheckNamespace
 partial class ModuleWeaver
 {
     //TODO: out parameters... yuck
-    private TypeDefinition GenerateAutoDIClass(Mapping mapping, Settings settings,
+    private TypeDefinition GenerateAutoDIClass(Mapping mapping, Settings settings, ICodeGenerator codeGenerator,
         out MethodDefinition initMethod)
     {
         var containerType = new TypeDefinition(AutoDI.Constants.Namespace, AutoDI.Constants.TypeName,
@@ -24,7 +26,7 @@ partial class ModuleWeaver
             ModuleDefinition.CreateStaticReadonlyField(AutoDI.Constants.GlobalServiceProviderName, false, Import.System.IServiceProvider);
         containerType.Fields.Add(globalServiceProvider);
 
-        MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType);
+        MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType, codeGenerator);
         containerType.Methods.Add(configureMethod);
 
         initMethod = GenerateInitMethod(configureMethod, globalServiceProvider);
@@ -36,7 +38,7 @@ partial class ModuleWeaver
         return containerType;
     }
 
-    private MethodDefinition GenerateAddServicesMethod(Mapping mapping, Settings settings, TypeDefinition containerType)
+    private MethodDefinition GenerateAddServicesMethod(Mapping mapping, Settings settings, TypeDefinition containerType, ICodeGenerator codeGenerator)
     {
         var method = new MethodDefinition("AddServices",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
@@ -45,6 +47,7 @@ partial class ModuleWeaver
         var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.DependencyInjection.IServiceCollection);
         method.Parameters.Add(serviceCollection);
 
+        IMethodGenerator methodGenerator = codeGenerator?.Method(method);
         ILProcessor processor = method.Body.GetILProcessor();
 
         VariableDefinition exceptionList = null;
@@ -61,8 +64,12 @@ partial class ModuleWeaver
             MethodReference listCtor = Import.System.Collections.List.Ctor;
             listCtor = listCtor.MakeGenericDeclaringType(Import.System.Exception);
 
-            processor.Emit(OpCodes.Newobj, listCtor);
+            Instruction createListInstruction = Instruction.Create(OpCodes.Newobj, listCtor);
+            processor.Append(createListInstruction);
             processor.Emit(OpCodes.Stloc, exceptionList);
+
+            methodGenerator?.Append("List<Exception> list = new List<Exception>();", createListInstruction);
+            methodGenerator?.Append(Environment.NewLine);
         }
 
         MethodReference funcCtor = Import.System.Func2_Ctor;
@@ -81,7 +88,7 @@ partial class ModuleWeaver
                     if (!factoryMethods.TryGetValue(registration.TargetType.FullName,
                         out MethodDefinition factoryMethod))
                     {
-                        factoryMethod = GenerateFactoryMethod(registration.TargetType, factoryIndex);
+                        factoryMethod = GenerateFactoryMethod(registration.TargetType, factoryIndex, codeGenerator);
                         if (factoryMethod == null)
                         {
                             Logger.Debug($"No acceptable constructor for '{registration.TargetType.FullName}', skipping map",
@@ -93,7 +100,7 @@ partial class ModuleWeaver
                         containerType.Methods.Add(factoryMethod);
                     }
 
-                    
+
                     var tryStart = Instruction.Create(OpCodes.Ldarg_0); //collection parameter
                     processor.Append(tryStart);
 
@@ -115,9 +122,10 @@ partial class ModuleWeaver
                                 ModuleDefinition.ImportReference(registration.TargetType))));
 
                     processor.Emit(OpCodes.Ldc_I4, (int)registration.Lifetime);
-                    
+
                     processor.Emit(OpCodes.Call, Import.AutoDI.ServiceCollectionMixins.AddAutoDIService);
                     processor.Emit(OpCodes.Pop);
+
 
                     if (settings.DebugExceptions)
                     {
@@ -153,8 +161,20 @@ partial class ModuleWeaver
                         method.Body.ExceptionHandlers.Add(exceptionHandler);
 
                         processor.Append(afterCatch);
+                        if (methodGenerator != null)
+                        {
+                            methodGenerator.Append("try" + Environment.NewLine + "{" + Environment.NewLine);
+                            methodGenerator.Append($"    {serviceCollection.Name}.{Import.AutoDI.ServiceCollectionMixins.AddAutoDIService.Name}(typeof({importedKey.FullNameCSharp()}), typeof({registration.TargetType.FullNameCSharp()}), new Func<{Import.System.IServiceProvider.NameCSharp()}, {registration.TargetType.FullNameCSharp()}>({factoryMethod.Name}), Lifetime.{registration.Lifetime});", tryStart);
+                            methodGenerator.Append(Environment.NewLine + "}" + Environment.NewLine + "catch(Exception innerException)" + Environment.NewLine + "{" + Environment.NewLine);
+                            methodGenerator.Append($"    list.{listAdd.Name}(new {Import.AutoDI.Exceptions.AutoDIException_Ctor.DeclaringType.Name}(\"Error adding type '{registration.TargetType.FullName}' with key '{registration.Key.FullName}'\", innerException));", handlerStart);
+                            methodGenerator.Append(Environment.NewLine + "}" + Environment.NewLine);
+                        }
                     }
-                    //}
+                    else if (methodGenerator != null)
+                    {
+                        methodGenerator.Append($"{serviceCollection.Name}.{Import.AutoDI.ServiceCollectionMixins.AddAutoDIService.Name}(typeof({importedKey.FullNameCSharp()}), typeof({registration.TargetType.FullNameCSharp()}), new Func<{Import.System.IServiceProvider.NameCSharp()}, {registration.TargetType.FullNameCSharp()}>({factoryMethod.Name}), Lifetime.{registration.Lifetime});", tryStart);
+                        methodGenerator.Append(Environment.NewLine);
+                    }
                 }
                 catch (MultipleConstructorException e)
                 {
@@ -180,19 +200,30 @@ partial class ModuleWeaver
             processor.Emit(OpCodes.Cgt);
             processor.Emit(OpCodes.Brfalse_S, @return);
 
-            processor.Emit(OpCodes.Ldstr, $"Error in {AutoDI.Constants.TypeName}.AddServices() generated method");
+            Instruction ldStr = Instruction.Create(OpCodes.Ldstr, $"Error in {AutoDI.Constants.TypeName}.AddServices() generated method");
+            processor.Append(ldStr);
             processor.Emit(OpCodes.Ldloc, exceptionList);
 
             processor.Emit(OpCodes.Newobj, Import.System.AggregateException_Ctor);
             processor.Emit(OpCodes.Throw);
+
+            if (methodGenerator != null)
+            {
+                methodGenerator.Append("if (list.Count > 0)", loadList);
+                methodGenerator.Append(Environment.NewLine + "{" + Environment.NewLine);
+                methodGenerator.Append($"    throw new {Import.System.AggregateException_Ctor.DeclaringType.Name}(\"Error in {AutoDI.Constants.TypeName}.{method.Name}() generated method\", list);", ldStr);
+                methodGenerator.Append(Environment.NewLine + "}" + Environment.NewLine);
+            }
         }
 
         processor.Append(@return);
 
+        method.Body.OptimizeMacros();
+
         return method;
     }
 
-    private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
+    private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index, ICodeGenerator codeGenerator)
     {
         if (!targetType.CanMapType()) return null;
 
@@ -218,6 +249,14 @@ partial class ModuleWeaver
 
         factoryProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
         factoryProcessor.Emit(OpCodes.Ret);
+
+        IMethodGenerator methodGenerator = codeGenerator?.Method(factory);
+        if (methodGenerator != null)
+        {
+            var parameters = string.Join(", ", targetTypeCtor.Parameters.Select(x => $"serviceProvider.GetService<{x.ParameterType.NameCSharp(true)}>()"));
+            methodGenerator.Append($"return new {targetType.NameCSharp(true)}({parameters});", factoryProcessor.Body.Instructions.First());
+            methodGenerator.Append(Environment.NewLine);
+        }
         return factory;
     }
 

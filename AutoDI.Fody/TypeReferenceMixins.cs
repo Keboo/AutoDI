@@ -23,6 +23,7 @@ namespace AutoDI.Fody
 
         internal static string FullNameCSharp(this TypeReference type)
         {
+            if (TryGetKeyword(type.FullName, out string keyword)) return keyword;
             return type.FullName.Replace('/', '.');
         }
 
@@ -33,6 +34,8 @@ namespace AutoDI.Fody
 
         internal static string NameCSharp(this TypeReference type, bool includeGenericParameters = false)
         {
+            if (TryGetKeyword(type.Name, out string keyword)) return keyword;
+
             string rv = type.Name;
             int index = rv.IndexOf('`');
             if (index >= 0)
@@ -45,6 +48,19 @@ namespace AutoDI.Fody
                 rv += $"<{string.Join(", ", type.GenericParameters.Select(x => x.Name))}>";
             }
             return rv;
+        }
+
+        internal static bool TryGetKeyword(string input, out string keyword)
+        {
+            switch(input)
+            {
+                case "System.Void": 
+                    keyword = "void";
+                    return true;
+                    //TODO: The rest of them....
+            }
+            keyword = null;
+            return false;
         }
 
         internal static string ProtectionModifierCSharp(this MethodAttributes methodAttributes)

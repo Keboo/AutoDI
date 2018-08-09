@@ -70,6 +70,11 @@ namespace AutoDI.Fody.CodeGen
 
             public void Save(string outputDirectory)
             {
+                if (_method.DebugInformation.Scope == null)
+                {
+                    _method.DebugInformation.Scope = new ScopeDebugInformation(_method.Body.Instructions.First(), _method.Body.Instructions.Last());
+                }
+
                 string filePath = GetFilePath(outputDirectory, _method.DeclaringType.FullNameCSharp());
                 _document.Url = filePath;
 
@@ -138,7 +143,7 @@ namespace AutoDI.Fody.CodeGen
                         lineNumber += numLines;
                     }
 
-                    writer.WriteLine(indentLevel--, "//We now return you to your regularly scheduled method");
+                    indentLevel--;
 
                     do
                     {
