@@ -44,6 +44,7 @@ AutoDI uses the latest C# and Visual Studio. If you are experiencing compile iss
  * Keep the changes specific to the bug or feature you are working on
  * Run the unit tests - AppVeyor will do this as well when you submit a PR. PRs will not be accepted until all of the unit tests pass.
  * Create a PR from your branch back to the master branch. Make sure to reference the issue you are fixing.
+ * Do **NOT** include the string "WIP" in any of the commit messages (or squash your commits prior to submitting the PR). These are blocked by [WIP app](https://github.com/apps/wip) 
 
 ### Respond to feedback on pull request
 

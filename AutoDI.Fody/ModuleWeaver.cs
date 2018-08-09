@@ -1,7 +1,6 @@
 ﻿using AutoDI.Fody;
 using Fody;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
@@ -11,7 +10,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using AutoDI;
+using AutoDI.Fody.CodeGen;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
+using Instruction = Mono.Cecil.Cil.Instruction;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
 [assembly: InternalsVisibleTo("AutoDI.Fody.Tests")]
@@ -25,7 +26,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
     {
         InternalLogDebug = (s, l) => LogDebug(s);
         Logger = new WeaverLogger(this);
-        
+
         try
         {
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
@@ -33,7 +34,7 @@ public partial class ModuleWeaver : BaseModuleWeaver
             Logger.Debug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}", DebugLogLevel.Default);
 
             var typeResolver = new TypeResolver(ModuleDefinition, ModuleDefinition.AssemblyResolver, Logger);
-            
+
             Settings settings = LoadSettings(typeResolver);
             if (settings == null) return;
 
@@ -57,13 +58,15 @@ public partial class ModuleWeaver : BaseModuleWeaver
 
             LoadRequiredData();
 
+            ICodeGenerator gen = GetCodeGenerator(settings);
+
             if (settings.GenerateRegistrations)
             {
                 Mapping mapping = Mapping.GetMapping(settings, allTypes, Logger);
 
                 Logger.Debug($"Found potential map:\r\n{mapping}", DebugLogLevel.Verbose);
 
-                ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, out MethodDefinition initMethod));
+                ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, gen, out MethodDefinition initMethod));
 
                 if (settings.AutoInit)
                 {
@@ -78,8 +81,9 @@ public partial class ModuleWeaver : BaseModuleWeaver
             //We only update types in our module
             foreach (TypeDefinition type in allTypes.Where(type => type.Module == ModuleDefinition))
             {
-                ProcessType(type);
+                ProcessType(type, gen);
             }
+            gen?.Save();
         }
         catch (Exception ex)
         {
@@ -111,29 +115,43 @@ public partial class ModuleWeaver : BaseModuleWeaver
         }
     }
 
-    private void ProcessType(TypeDefinition type)
+    private void ProcessType(TypeDefinition type, ICodeGenerator generator)
     {
-        foreach (MethodDefinition ctor in type.Methods.Where(x => x.IsConstructor))
+        foreach (MethodDefinition method in type.Methods)
         {
-            Logger.Debug($"Processing constructor for '{ctor.DeclaringType.FullName}'", DebugLogLevel.Verbose);
-            ProcessConstructor(type, ctor);
+            ProcessMethod(type, method, generator);
         }
     }
 
-    private void ProcessConstructor(TypeDefinition type, MethodDefinition constructor)
+    private ICodeGenerator GetCodeGenerator(Settings settings)
     {
-        List<ParameterDefinition> dependencyParameters = constructor.Parameters.Where(
+        switch (settings.DebugCodeGeneration)
+        {
+            case CodeLanguage.CSharp:
+                var genDir = Path.Combine(Path.GetDirectoryName(ModuleDefinition.FileName), "AutoDI.Generated");
+                InternalLogDebug($"Generating temp file in '{genDir}'", DebugLogLevel.Verbose);
+                return new CSharpCodeGenerator(genDir);
+            default:
+                return null;
+        }
+    }
+
+    private void ProcessMethod(TypeDefinition type, MethodDefinition method, ICodeGenerator generator)
+    {
+        List<ParameterDefinition> dependencyParameters = method.Parameters.Where(
                         p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList();
 
-        List<PropertyDefinition> dependencyProperties = type.Properties.Where(
-            p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList();
+        List<PropertyDefinition> dependencyProperties = method.IsConstructor ?
+            type.Properties.Where(p => p.CustomAttributes.Any(a => a.AttributeType.IsType(Import.AutoDI.DependencyAttributeType))).ToList() :
+            new List<PropertyDefinition>();
 
         if (dependencyParameters.Any() || dependencyProperties.Any())
         {
-            var injector = new Injector(constructor);
+            Logger.Debug($"Processing method '{method.Name}' for '{method.DeclaringType.FullName}'", DebugLogLevel.Verbose);
 
-            var end = Instruction.Create(OpCodes.Nop);
+            var injector = new Injector(method);
 
+            IMethodGenerator methodGenerator = generator?.Method(method);
             foreach (ParameterDefinition parameter in dependencyParameters)
             {
                 if (!parameter.IsOptional)
@@ -147,11 +165,15 @@ public partial class ModuleWeaver : BaseModuleWeaver
                         $"Constructor parameter {parameter.ParameterType.Name} {parameter.Name} in {type.FullName} does not have a null default value. AutoDI will only resolve dependencies that are null");
                 }
 
+                var initInstruction = Instruction.Create(OpCodes.Ldarg, parameter);
+                var storeInstruction = Instruction.Create(OpCodes.Starg, parameter);
                 ResolveDependency(parameter.ParameterType, parameter,
-                    new[] { Instruction.Create(OpCodes.Ldarg, parameter) },
+                    new[] { initInstruction },
                     null,
-                    Instruction.Create(OpCodes.Starg, parameter));
+                    storeInstruction,
+                    parameter.Name);
             }
+
 
             foreach (PropertyDefinition property in dependencyProperties)
             {
@@ -179,19 +201,27 @@ public partial class ModuleWeaver : BaseModuleWeaver
                     Instruction.Create(OpCodes.Ldarg_0),
                     property.SetMethod != null
                         ? Instruction.Create(OpCodes.Call, property.SetMethod)
-                        : Instruction.Create(OpCodes.Stfld, backingField));
+                        : Instruction.Create(OpCodes.Stfld, backingField),
+                    property.Name);
             }
 
-            injector.Insert(end);
+            methodGenerator?.Append("//We now return you to your regularly scheduled method");
 
-            constructor.Body.OptimizeMacros();
+            method.Body.OptimizeMacros();
 
             void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source,
-                IEnumerable<Instruction> loadSource,
+                Instruction[] loadSource,
                 Instruction resolveAssignmentTarget,
-                Instruction setResult)
+                Instruction setResult,
+                string dependencyName)
             {
                 //Push dependency parameter onto the stack
+                if (methodGenerator != null)
+                {
+                    methodGenerator.Append($"if ({dependencyName} == null)", loadSource.First());
+                    methodGenerator.Append(Environment.NewLine + "{" + Environment.NewLine);
+                }
+
                 injector.Insert(loadSource);
                 var afterParam = Instruction.Create(OpCodes.Nop);
                 //Push null onto the stack
@@ -214,7 +244,14 @@ public partial class ModuleWeaver : BaseModuleWeaver
                     .OfType<CustomAttributeArgument>()
                     .ToArray();
                 //Create array of appropriate length
-                injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
+                Instruction loadArraySize = injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
+
+                if (methodGenerator != null)
+                {
+                    methodGenerator.Append($"    {dependencyName} = GlobalDI.GetService<{dependencyType.FullNameCSharp()}>();", resolveAssignmentTarget ?? loadArraySize);
+                    methodGenerator.Append(Environment.NewLine);
+                }
+
                 injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
                 if (values?.Length > 0)
                 {
@@ -239,6 +276,12 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 //Set the return from the resolve method into the parameter
                 injector.Insert(setResult);
                 injector.Insert(afterParam);
+
+                if (methodGenerator != null)
+                {
+                    methodGenerator.Append("}", afterParam);
+                    methodGenerator.Append(Environment.NewLine);
+                }
             }
         }
     }

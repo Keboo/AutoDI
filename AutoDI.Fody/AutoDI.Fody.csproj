@@ -10,14 +10,16 @@
 
   <ItemGroup>
     <Compile Include="..\AutoDI\Behaviors.cs" Link="Behaviors.cs" />
+    <Compile Include="..\AutoDI\CodeLanguage.cs" Link="CodeLanguage.cs" />
     <Compile Include="..\AutoDI\Constants.cs" Link="Constants.cs" />
     <Compile Include="..\AutoDI\DebugLogLevel.cs" Link="DebugLogLevel.cs" />
     <Compile Include="..\AutoDI\Lifetime.cs" Link="Lifetime.cs" />
+    <Compile Include="..\AutoDI\MapAttribute.cs" Link="MapAttribute.cs" />
     <Compile Include="..\AutoDI\SettingsAttribute.cs" Link="SettingsAttribute.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FodyHelpers" Version="3.0.4" />
+    <PackageReference Include="FodyHelpers" Version="3.1.4" />
   </ItemGroup>
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">

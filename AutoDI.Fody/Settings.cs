@@ -34,8 +34,40 @@ namespace AutoDI.Fody
                                 case nameof(SettingsAttribute.GenerateRegistrations):
                                     settings.GenerateRegistrations = (bool)property.Argument.Value;
                                     break;
+                                case nameof(SettingsAttribute.DebugCodeGeneration):
+                                    settings.DebugCodeGeneration = (CodeLanguage)property.Argument.Value;
+                                    break;
                             }
                         }
+                    }
+                }
+                else if (attribute.AttributeType.IsType<MapAttribute>())
+                {
+                    Lifetime? lifetime = null;
+                    string pattern = null;
+                    foreach (CustomAttributeArgument ctorArgument in attribute.ConstructorArguments)
+                    {
+                        if (ctorArgument.Type.IsType<Lifetime>())
+                        {
+                            lifetime = (Lifetime)ctorArgument.Value;
+                        }
+                        else if (ctorArgument.Type.IsType<string>())
+                        {
+                            pattern = (string)ctorArgument.Value;
+                        }
+                        else if (ctorArgument.Type.IsType<Type>())
+                        {
+                            pattern = ((TypeDefinition)ctorArgument.Value).FullName;
+                        }
+                    }
+
+                    if (lifetime != null && pattern != null)
+                    {
+                        settings.Types.Add(new MatchType(pattern, lifetime.Value));
+                    }
+                    else
+                    {
+                        throw new SettingsParseException($"Assembly level {nameof(MapAttribute)} must contain both a {nameof(MapAttribute.Lifetime)} and a {nameof(MapAttribute.TargetTypePattern)}");
                     }
                 }
             }
@@ -60,6 +92,8 @@ namespace AutoDI.Fody
         public bool DebugExceptions { get; set; }
 
         public DebugLogLevel DebugLogLevel { get; set; } = DebugLogLevel.Default;
+
+        public CodeLanguage DebugCodeGeneration { get; set; } = CodeLanguage.None;
 
         public IList<MatchType> Types { get; } = new List<MatchType>();
 
@@ -146,7 +180,8 @@ namespace AutoDI.Fody
                             return false;
                     }
                     return true;
-                }, false));
+                }, false),
+                Attrib.OptionalEnum<CodeLanguage>(nameof(DebugCodeGeneration), x => settings.DebugCodeGeneration = x));
 
             foreach (XElement element in rootElement.DescendantNodes().OfType<XElement>())
             {

@@ -120,21 +120,24 @@ namespace AutoDI.AssemblyGenerator
                 var projectId = ProjectId.CreateNewId();
 
                 var document = DocumentInfo.Create(DocumentId.CreateNewId(projectId), "Generated.cs",
-                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents()),
+                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents(), System.Text.Encoding.Unicode),
                         VersionStamp.Create())));
 
                 var project = workspace.AddProject(ProjectInfo.Create(projectId,
                     VersionStamp.Create(), assemblyName, assemblyName, LanguageNames.CSharp,
                     compilationOptions: new CSharpCompilationOptions(assemblyInfo.OutputKind),
+                    parseOptions: new CSharpParseOptions(LanguageVersion.CSharp7_3),
                     documents: new[] { document }, metadataReferences: assemblyInfo.References,
                     filePath: Path.GetFullPath(
                         $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
 
                 Compilation compile = await project.GetCompilationAsync();
-                string filePath = Path.GetFullPath($"{assemblyName}.dll");
-                using (var file = File.Create(filePath))
+                assemblyInfo.FilePath = Path.GetFullPath($"{assemblyName}.dll");
+                string pdbPath = Path.ChangeExtension(assemblyInfo.FilePath, ".pdb");
+                using (var file = File.Create(assemblyInfo.FilePath))
+                using (var pdbFile = File.Create(pdbPath))
                 {
-                    var emitResult = compile.Emit(file);
+                    var emitResult = compile.Emit(file, pdbFile);
                     if (emitResult.Success)
                     {
                         foreach (Weaver weaver in assemblyInfo.Weavers)
@@ -148,7 +151,7 @@ namespace AutoDI.AssemblyGenerator
                         throw new CompileException(emitResult.Diagnostics);
                     }
                 }
-                assemblyInfo.Assembly = Assembly.LoadFile(filePath);
+                assemblyInfo.Assembly = Assembly.LoadFile(assemblyInfo.FilePath);
                 builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
             }
             return builtAssemblies;

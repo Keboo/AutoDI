@@ -1,24 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
-using System;
 using AutoDI;
+using System;
 
-namespace AutoDI
-{
-    public static class ServiceCollectionMixins
-    {
-        public static IServiceCollection AddAutoDIService<TService>(this IServiceCollection services, Func<IServiceProvider, object> factory,
-            Type[] serviceTypes, Lifetime lifetime)
-        {
-            if (services == null) throw new ArgumentNullException(nameof(services));
-            foreach (Type serviceType in serviceTypes)
-            {
-                services.Add(new AutoDIServiceDescriptor(serviceType, typeof(TService), factory, lifetime));
-            }
-            return services;
-        }
-    }
-}
-
+// ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class AutoDIServiceCollectionMixins
@@ -128,7 +111,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddAutoDIScoped(this IServiceCollection services, Type serviceType,
             Type implementationType)
         {
-            return services.AddAutoDIService(serviceType, serviceType, Lifetime.Scoped);
+            return services.AddAutoDIService(serviceType, implementationType, Lifetime.Scoped);
         }
 
         public static IServiceCollection AddAutoDIScoped(this IServiceCollection services, Type serviceType,

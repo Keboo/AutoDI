@@ -5,7 +5,7 @@ Have a question? [![Join the chat at https://gitter.im/AutoDIContainer/Lobby](ht
 [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.Fody.svg?style=flat&label=AutoDI.Fody)](https://www.nuget.org/packages/AutoDI.Fody/)
 [![NuGet Status](http://img.shields.io/nuget/v/AutoDI.AspNetCore.svg?style=flat&label=AutoDI.AspNetCore)](https://www.nuget.org/packages/AutoDI.AspNetCore/)
 
-[![Build status](https://ci.appveyor.com/api/projects/status/ybmv50xxi3lb086o?svg=true)](https://ci.appveyor.com/project/Keboo/autodi)
+[![Build status](https://ci.appveyor.com/api/projects/status/ybmv50xxi3lb086o/branch/master?svg=true)](https://ci.appveyor.com/project/Keboo/autodi)
 
 
 AutoDI is both a dependency injection container and a framework to simplify working with dependency injection (DI). It is built on top of the [Microsoft.Extensions.DependencyInjection.Abstractions](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection.Abstractions/) library, and it works very similar to [the way ASP.NET Core handles dependency injection](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection).
