@@ -6,6 +6,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 // ReSharper disable once CheckNamespace
 partial class ModuleWeaver
@@ -87,7 +88,7 @@ partial class ModuleWeaver
                     if (!factoryMethods.TryGetValue(registration.TargetType.FullName,
                         out MethodDefinition factoryMethod))
                     {
-                        factoryMethod = GenerateFactoryMethod(registration.TargetType, factoryIndex);
+                        factoryMethod = GenerateFactoryMethod(registration.TargetType, factoryIndex, codeGenerator);
                         if (factoryMethod == null)
                         {
                             Logger.Debug($"No acceptable constructor for '{registration.TargetType.FullName}', skipping map",
@@ -217,10 +218,12 @@ partial class ModuleWeaver
 
         processor.Append(@return);
 
+        method.Body.OptimizeMacros();
+
         return method;
     }
 
-    private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index)
+    private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index, ICodeGenerator codeGenerator)
     {
         if (!targetType.CanMapType()) return null;
 
@@ -246,6 +249,14 @@ partial class ModuleWeaver
 
         factoryProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
         factoryProcessor.Emit(OpCodes.Ret);
+
+        IMethodGenerator methodGenerator = codeGenerator?.Method(factory);
+        if (methodGenerator != null)
+        {
+            var parameters = string.Join(", ", targetTypeCtor.Parameters.Select(x => $"serviceProvider.GetService<{x.ParameterType.NameCSharp(true)}>()"));
+            methodGenerator.Append($"return new {targetType.NameCSharp(true)}({parameters});", factoryProcessor.Body.Instructions.First());
+            methodGenerator.Append(Environment.NewLine);
+        }
         return factory;
     }
 

@@ -205,6 +205,8 @@ public partial class ModuleWeaver : BaseModuleWeaver
                     property.Name);
             }
 
+            methodGenerator?.Append("//We now return you to your regularly scheduled method");
+
             method.Body.OptimizeMacros();
 
             void ResolveDependency(TypeReference dependencyType, ICustomAttributeProvider source,
@@ -214,8 +216,11 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 string dependencyName)
             {
                 //Push dependency parameter onto the stack
-                methodGenerator?.Append($"if ({dependencyName} == null)", loadSource.First());
-                methodGenerator?.Append(Environment.NewLine + "{" + Environment.NewLine);
+                if (methodGenerator != null)
+                {
+                    methodGenerator.Append($"if ({dependencyName} == null)", loadSource.First());
+                    methodGenerator.Append(Environment.NewLine + "{" + Environment.NewLine);
+                }
 
                 injector.Insert(loadSource);
                 var afterParam = Instruction.Create(OpCodes.Nop);
@@ -241,8 +246,11 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 //Create array of appropriate length
                 Instruction loadArraySize = injector.Insert(OpCodes.Ldc_I4, values?.Length ?? 0);
 
-                methodGenerator?.Append($"    {dependencyName} = GlobalDI.GetService<{dependencyType.FullNameCSharp()}>();", resolveAssignmentTarget ?? loadArraySize);
-                methodGenerator?.Append(Environment.NewLine);
+                if (methodGenerator != null)
+                {
+                    methodGenerator.Append($"    {dependencyName} = GlobalDI.GetService<{dependencyType.FullNameCSharp()}>();", resolveAssignmentTarget ?? loadArraySize);
+                    methodGenerator.Append(Environment.NewLine);
+                }
 
                 injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
                 if (values?.Length > 0)
@@ -269,8 +277,11 @@ public partial class ModuleWeaver : BaseModuleWeaver
                 injector.Insert(setResult);
                 injector.Insert(afterParam);
 
-                methodGenerator?.Append("}", afterParam);
-                methodGenerator?.Append(Environment.NewLine);
+                if (methodGenerator != null)
+                {
+                    methodGenerator.Append("}", afterParam);
+                    methodGenerator.Append(Environment.NewLine);
+                }
             }
         }
     }
