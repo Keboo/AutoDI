@@ -22,7 +22,7 @@ namespace AutoDI.Tests
             {
                 DI.Init(typeof(IService).Assembly, builder => builder.WithProvider(provider.Object));
 
-                var sut = new ClassWtihNestedType.NestedType();
+                var sut = new ClassWithNestedType.NestedType();
                 Assert.AreEqual(service1, sut.Service);
                 mocker.VerifyAll();
             }

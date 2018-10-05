@@ -3,7 +3,7 @@ using AutoDI;
 
 namespace AssemblyToProcess
 {
-    public class ClassWtihNestedType
+    public class ClassWithNestedType
     {
         public class NestedType
         {
