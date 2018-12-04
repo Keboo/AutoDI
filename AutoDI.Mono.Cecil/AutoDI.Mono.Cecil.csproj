@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build" Version="15.9.20" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.9.20" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\AutoDI\Behaviors.cs" Link="Behaviors.cs" />
+    <Compile Include="..\AutoDI\CodeLanguage.cs" Link="CodeLanguage.cs" />
+    <Compile Include="..\AutoDI\Constants.cs" Link="Constants.cs" />
+    <Compile Include="..\AutoDI\DebugLogLevel.cs" Link="DebugLogLevel.cs" />
+    <Compile Include="..\AutoDI\Lifetime.cs" Link="Lifetime.cs" />
+    <Compile Include="..\AutoDI\MapAttribute.cs" Link="MapAttribute.cs" />
+    <Compile Include="..\AutoDI\SettingsAttribute.cs" Link="SettingsAttribute.cs" />
+  </ItemGroup>
+
+</Project>
