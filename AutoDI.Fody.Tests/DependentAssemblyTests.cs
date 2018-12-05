@@ -71,7 +71,7 @@ namespace AutoDI.Build.Tests
     }
 
     //<assembly:shared />
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     //<ref: AutoDI/>
     namespace SharedAssembly
     {
@@ -96,7 +96,7 @@ namespace AutoDI.Build.Tests
     //<type:consoleApplication />
     //<ref: shared />
     //<ref: AutoDI />
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace MainAssembly
     {
         using AutoDI;

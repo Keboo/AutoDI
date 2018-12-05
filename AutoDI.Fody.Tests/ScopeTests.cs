@@ -20,13 +20,10 @@ namespace AutoDI.Build.Tests
             var gen = new Generator();
             gen.WeaverAdded += (sender, args) =>
             {
-                if (args.Weaver.Name == "AutoDI")
-                {
-                    /*args.Weaver.Instance.Config = XElement.Parse($@"
+                args.Weaver.Config = XElement.Parse($@"
     <AutoDI>
         <type name=""*"" Lifetime=""{Lifetime.Scoped}"" />
-    </AutoDI>");*/
-                }
+    </AutoDI>");
             };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
@@ -114,7 +111,7 @@ namespace AutoDI.Build.Tests
 
     //<assembly>
     //<ref: AutoDI />
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace ScopeTestsNamespace
     {
         public interface IService

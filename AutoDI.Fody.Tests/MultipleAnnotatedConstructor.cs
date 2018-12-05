@@ -17,19 +17,18 @@ namespace AutoDI.Build.Tests
             {
                 await gen.Execute();
             }
-            catch (WeaverErrorException e) 
-            when (e.Errors?.Any(x => x.Contains("More then one constructor on 'MultipleDiAnnotatedManager' annotated with DiConstructorAttribute")) == true)
+            catch (WeaverErrorException e) when (e.Errors?.Any(x => x.Contains("More then one constructor on 'MultipleDiAnnotatedManager' annotated with DiConstructorAttribute")) == true)
             {
                 return;
             }
 
-            Assert.Fail("Excpected compile error");
+            Assert.Fail("Expected compile error");
         }
     }
 
     //<assembly>
     //<ref: AutoDI />
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace MultipleAnnotatedConstructorTestsNamespace
     {
         using AutoDI;

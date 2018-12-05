@@ -31,7 +31,7 @@ namespace AutoDI.Build.Tests
 //<assembly>
 //<type: ConsoleApplication />
 //<ref: AutoDI />
-//<weaver: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
 namespace ContainerDependencyNamespace
 {
     using AutoDI;

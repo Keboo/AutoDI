@@ -78,7 +78,7 @@ namespace AutoDI.Build.Tests
     }
     //<assembly>
     //<ref: AutoDI />
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace PropertyInjectionNamespace
     {
         using System;

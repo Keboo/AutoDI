@@ -20,13 +20,10 @@ namespace AutoDI.Build.Tests
 
             gen.WeaverAdded += (sender, args) =>
             {
-                if (args.Weaver.Name == "AutoDI")
-                {
-                    /*args.Weaver.Instance.Config = XElement.Parse(@"
+                args.Weaver.Config = XElement.Parse(@"
     <AutoDI>
         <map from=""Service+IService1"" to=""Service+MyService2"" />
-    </AutoDI>");*/
-                }
+    </AutoDI>");
             };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
@@ -110,7 +107,7 @@ namespace AutoDI.Build.Tests
 
     //<assembly>
     //<ref: AutoDI />
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace NestedClassesTestsNamespace
     {
         public class Service

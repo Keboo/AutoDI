@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 //<assembly>
 //<ref: AutoDI />
-//<weaver: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
 using AutoDI;
 using System.Reflection;
 using System.Threading.Tasks;

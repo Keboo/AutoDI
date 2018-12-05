@@ -41,7 +41,7 @@ for:
     
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
-      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
+      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
       nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
@@ -63,7 +63,7 @@ for:
     
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
     
-      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
+      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$env:autodi_version"  -Symbols
     
       nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$env:autodi_version"  -Symbols
     

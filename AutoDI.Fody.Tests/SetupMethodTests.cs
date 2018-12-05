@@ -76,7 +76,7 @@ namespace AutoDI.Build.Tests
 //<assembly:public />
 //<type: ConsoleApplication />
 //<ref: AutoDI />
-//<weaver: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
 namespace SetupMethodPublicTests
 {
     using AutoDI;
@@ -105,7 +105,7 @@ namespace SetupMethodPublicTests
 //<assembly:internal />
 //<type: ConsoleApplication />
 //<ref: AutoDI />
-//<weaver: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
 namespace SetupMethodInternalTests
 {
     using AutoDI;
@@ -133,7 +133,7 @@ namespace SetupMethodInternalTests
 
 //<assembly:manual />
 //<ref: AutoDI />
-//<weaver: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
 namespace SetupMethodManualInjectionTests
 {
     using AutoDI;

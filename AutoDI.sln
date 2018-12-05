@@ -11,7 +11,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
 		NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec = NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec
-		NuGet\AutoDI.Fody\AutoDI.Fody.nuspec = NuGet\AutoDI.Fody\AutoDI.Fody.nuspec
+		NuGet\AutoDI.Fody\AutoDI.Build.nuspec = NuGet\AutoDI.Fody\AutoDI.Build.nuspec
 		NuGet\AutoDI.Generator\AutoDI.Generator.nuspec = NuGet\AutoDI.Generator\AutoDI.Generator.nuspec
 		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
 	EndProjectSection

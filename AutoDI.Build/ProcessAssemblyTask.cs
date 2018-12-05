@@ -19,7 +19,7 @@ namespace AutoDI.Build
 {
     public partial class ProcessAssemblyTask : AssemblyRewriteTask
     {
-        protected override bool WriteAssembly()
+        protected override bool WeaveAssembly()
         {
             try
             {

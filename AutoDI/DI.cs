@@ -69,7 +69,7 @@ namespace AutoDI
                 : Type.GetType(typeName);
 
             if (containerType == null)
-                throw new GeneratedClassMissingException("Could not find AutoDI class. Was the fody weaver run on this assembly?");
+                throw new GeneratedClassMissingException("Could not find AutoDI class. Was the AutoDI.Build run on this assembly?");
             return containerType;
         }
 

@@ -23,7 +23,7 @@ namespace AutoDI.Build.Tests
                     <AutoDI>
                         <type name="".*"" lifetime=""Singleton"" />
                     </AutoDI>");
-                //args.Weaver.Instance.Config = xml;
+                args.Weaver.Config = xml;
             };
 
             var testAssemblies = await gen.Execute();
@@ -60,7 +60,7 @@ namespace AutoDI.Build.Tests
 
     //<assembly:singleton />
     //<ref: AutoDI/>
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace SingletonResolutionTest
     {
         using AutoDI;
@@ -91,7 +91,7 @@ namespace AutoDI.Build.Tests
 
     //<assembly:inSetup />
     //<ref: AutoDI/>
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace SingletonResolvedInSetupMethod
     {
         using AutoDI;

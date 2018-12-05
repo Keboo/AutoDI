@@ -21,9 +21,7 @@ namespace AutoDI.Build.Tests
             var gen = new Generator();
             gen.WeaverAdded += (sender, args) =>
             {
-                if (args.Weaver.Name == "AutoDI")
-                {
-                    /*args.Weaver.Instance.Config = XElement.Parse($@"
+                args.Weaver.Config = XElement.Parse($@"
     <AutoDI Behavior=""{Behaviors.None}"">
         <map from=""regex:.*"" to=""$0"" />
         <map from=""regex:(.*)\.I(.+)"" to=""$1.$2"" />
@@ -32,8 +30,7 @@ namespace AutoDI.Build.Tests
 
         <type name=""Service2"" Lifetime=""{Lifetime.None}"" />
         <type name=""My*"" Lifetime=""{Lifetime.Transient}"" />
-    </AutoDI>");*/
-                }
+    </AutoDI>");
             };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
@@ -94,19 +91,19 @@ namespace AutoDI.Build.Tests
         [TestMethod]
         public void WhenClassDoesNotImplementInterfaceItIsNotMapped()
         {
-            var mapings = _map.ToArray();
+            var mappings = _map.ToArray();
 
-            Assert.IsFalse(mapings.Any(m => m.SourceType.Is<IService3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
-            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
+            Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
+            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<Service3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
         }
 
         [TestMethod]
         public void CanForceMappingWhenClassDoesNotImplementInterface()
         {
-            var mapings = _map.ToArray();
+            var mappings = _map.ToArray();
 
-            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<IService4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
-            Assert.IsTrue(mapings.Any(m => m.SourceType.Is<Service4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
+            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<IService4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
+            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<Service4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
             
             Assert.IsTrue(_testAssembly.Resolve<IService4>(typeof(ManualMappingTests)).Is<Service4>(typeof(ManualMappingTests)));
         }
@@ -121,9 +118,9 @@ namespace AutoDI.Build.Tests
         [Description("Issue 59")]
         public void CanDeclareLifetimeInMap()
         {
-            var mapings = _map.ToArray();
+            var mappings = _map.ToArray();
 
-            var map = mapings.Single(m => m.SourceType.Name == nameof(Service5) && m.TargetType.Name == nameof(Service5Extended));
+            var map = mappings.Single(m => m.SourceType.Name == nameof(Service5) && m.TargetType.Name == nameof(Service5Extended));
 
             Assert.AreEqual(Lifetime.Scoped, map.Lifetime);
         }
@@ -131,7 +128,7 @@ namespace AutoDI.Build.Tests
 
     //<assembly />
     //<ref: AutoDI />
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace TestAssembly
     {
         using AutoDI;

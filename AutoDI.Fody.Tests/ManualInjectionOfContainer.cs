@@ -18,10 +18,7 @@ namespace AutoDI.Build.Tests
             var gen = new Generator();
             gen.WeaverAdded += (sender, args) =>
             {
-                if (args.Weaver.Name == "AutoDI")
-                {
-                    //args.Weaver.Instance.Config = XElement.Parse(@"<AutoDI AutoInit=""False"" />");
-                }
+                args.Weaver.Config = XElement.Parse(@"<AutoDI AutoInit=""False"" />");
             };
             
             _testAssembly = (await gen.Execute()).SingleAssembly();
@@ -56,7 +53,7 @@ namespace AutoDI.Build.Tests
 //<assembly />
 //<type:ConsoleApplication/>
 //<ref: AutoDI />
-//<weaver: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
 namespace ManualInjectionNamespace
 {
     using AutoDI;
