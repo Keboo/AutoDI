@@ -1,10 +1,10 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Fody.Tests.ResolutionOrderingTestsNamespace;
+using AutoDI.Build.Tests.ResolutionOrderingTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class ResolutionOrderingTests

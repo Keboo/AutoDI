@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     public static class MapMixins
     {

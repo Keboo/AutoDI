@@ -1,10 +1,10 @@
-﻿extern alias AutoDIFody;
+﻿extern alias AutoDIBuild;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using StringMatcher=AutoDIFody::AutoDI.Fody.Matcher<string>;
+using StringMatcher=AutoDIBuild::AutoDI.Build.Matcher<string>;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class MatcherTests

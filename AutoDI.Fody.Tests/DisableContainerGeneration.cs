@@ -1,4 +1,4 @@
-﻿extern alias AutoDIFody;
+﻿extern alias AutoDIBuild;
 
 using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -6,9 +6,9 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-using Settings=AutoDIFody::AutoDI.Fody.Settings;
+using Settings=AutoDIBuild::AutoDI.Build.Settings;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     using AutoDI;
 
@@ -25,7 +25,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
+                    //args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
                 }
             };
 

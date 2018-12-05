@@ -138,19 +138,16 @@ namespace AutoDI.AssemblyGenerator
                 using (var pdbFile = File.Create(pdbPath))
                 {
                     var emitResult = compile.Emit(file, pdbFile);
-                    if (emitResult.Success)
-                    {
-                        foreach (Weaver weaver in assemblyInfo.Weavers)
-                        {
-                            file.Position = 0;
-                            weaver.ApplyToAssembly(file);
-                        }
-                    }
-                    else
+                    if (!emitResult.Success)
                     {
                         throw new CompileException(emitResult.Diagnostics);
                     }
                 }
+                foreach (Weaver weaver in assemblyInfo.Weavers)
+                {
+                    weaver.ApplyToAssembly(assemblyInfo.FilePath);
+                }
+
                 assemblyInfo.Assembly = Assembly.LoadFile(assemblyInfo.FilePath);
                 builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
             }

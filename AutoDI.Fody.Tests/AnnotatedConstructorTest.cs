@@ -1,10 +1,10 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Fody.Tests.AnnotatedConstructorTestsNamespace;
+using AutoDI.Build.Tests.AnnotatedConstructorTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class AnnotatedConstructorTest
@@ -42,7 +42,7 @@ namespace AutoDI.Fody.Tests
 
     //<assembly>
     //<ref: AutoDI />
-    //<weaver: AutoDI />
+    //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace AnnotatedConstructorTestsNamespace
     {
         using AutoDI;

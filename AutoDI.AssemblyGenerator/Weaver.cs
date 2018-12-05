@@ -1,9 +1,9 @@
-﻿using Fody;
+﻿using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 using Mono.Cecil;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -11,24 +11,22 @@ namespace AutoDI.AssemblyGenerator
 {
     public sealed class Weaver
     {
-        private const string WeaverTypeName = "ModuleWeaver";
-
         public static Weaver FindWeaver(string weaverName)
         {
             object ProcessAssembly(Assembly assembly)
             {
                 //TODO: Check for BaseModuleWeaver type
-                Type weaverType = assembly.GetType(WeaverTypeName);
+                Type weaverType = assembly.GetType(weaverName);
                 
                 if (weaverType == null) return null;
                 return Activator.CreateInstance(weaverType);
             }
 
-            string assemblyName = $"{weaverName}.Fody";
+            string assemblyName = $"AutoDI.Build";
 
             try
             {
-                var weaverInstance = (BaseModuleWeaver)ProcessAssembly(Assembly.Load(assemblyName));
+                var weaverInstance = (Task)ProcessAssembly(Assembly.Load(assemblyName));
                 if (weaverInstance != null)
                     return new Weaver(weaverName, weaverInstance);
             }
@@ -40,118 +38,89 @@ namespace AutoDI.AssemblyGenerator
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => a.FullName == assemblyName))
             {
-                var weaverInstance = (BaseModuleWeaver)ProcessAssembly(assembly);
-                if (weaverInstance != null)
-                    return new Weaver(weaverName, weaverInstance);
+               // var weaverInstance = (BaseModuleWeaver)ProcessAssembly(assembly);
+               // if (weaverInstance != null)
+               //     return new Weaver(weaverName, weaverInstance);
             }
 
             throw new Exception($"Failed to find weaver '{weaverName}'. Could not locate {weaverName}.Fody assembly.");
         }
 
-        public BaseModuleWeaver Instance { get; }
+        public Task Instance { get; }
         public string Name { get; }
 
         private TypeCache TypeResolver { get; } = new TypeCache();
 
 
-        internal Weaver(string name, BaseModuleWeaver weaverInstance)
+        internal Weaver(string name, Task taskInstance)
         {
-            Instance = weaverInstance ?? throw new ArgumentNullException(nameof(weaverInstance));
+            Instance = taskInstance ?? throw new ArgumentNullException(nameof(taskInstance));
             Name = name;
         }
 
-        public void ApplyToAssembly(string assemblyPath)
-        {
-            using (var fileStream = File.Open(assemblyPath, FileMode.Open, FileAccess.ReadWrite))
-            {
-                ApplyToAssembly(fileStream);
-            }
-        }
-
-        public void ApplyToAssembly(Stream assemblyStream)
-        {
-            var assemblyResolver = new DefaultAssemblyResolver();
-            var assemblyDefinitions = new Dictionary<string, AssemblyDefinition>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var assemblyName in Instance.GetAssembliesForScanning())
-            {
-                var assembly = assemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
-                if (assembly == null)
-                {
-                    continue;
-                }
-
-                if (assemblyDefinitions.ContainsKey(assemblyName))
-                {
-                    continue;
-                }
-                assemblyDefinitions.Add(assemblyName, assembly);
-            }
-            TypeResolver.Initialise(assemblyDefinitions.Values);
-
-
-            var module = ModuleDefinition.ReadModule(assemblyStream);
-            Instance.ModuleDefinition = module;
-
-            Instance.FindType = TypeResolver.FindType;
-            Instance.TryFindType = TypeResolver.TryFindType;
-            Instance.ResolveAssembly = assemblyName =>
-                assemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
-            var errors = new List<string>();
-            Instance.LogError = s =>
-            {
-                Debug.WriteLine($" Error: {s}");
-                errors.Add(s);
-            };
-            Instance.LogWarning = s => Debug.WriteLine($" Warning: {s}");
-            Instance.LogInfo = s => Debug.WriteLine($" Info: {s}");
-            Instance.LogDebug = s => Debug.WriteLine($" Debug: {s}");
-            Instance.Execute();
-            if (errors.Any())
-            {
-                throw new WeaverErrorException(errors);
-            }
-            Instance.AfterWeaving();
-
-            assemblyStream.Position = 0;
-            module.Write(assemblyStream);
-
-
-
-        }
-
-        //public override bool TrySetMember(SetMemberBinder binder, object value)
+        //public void ApplyToAssembly(string assemblyPath)
         //{
-        //    var members = _weaverInstance.GetType().GetMember(binder.Name);
-        //    var member = members.SingleOrDefault();
-        //    switch (member)
+        //    using (var fileStream = File.Open(assemblyPath, FileMode.Open, FileAccess.ReadWrite))
         //    {
-        //        case PropertyInfo prop:
-        //            prop.SetValue(_weaverInstance, value);
-        //            return true;
+        //        ApplyToAssembly(fileStream);
         //    }
-        //    return base.TrySetMember(binder, value);
-        //}
-        //
-        //public override bool TryGetMember(GetMemberBinder binder, out object result)
-        //{
-        //    var members = _weaverInstance.GetType().GetMember(binder.Name);
-        //    var member = members.SingleOrDefault();
-        //    switch (member)
-        //    {
-        //        case PropertyInfo prop:
-        //            result = prop.GetValue(_weaverInstance);
-        //            return true;
-        //    }
-        //    return base.TryGetMember(binder, out result);
         //}
 
-        //public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
-        //{
-        //    result = _weaverInstance.GetType().InvokeMember(binder.Name,
-        //        BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, _weaverInstance, args);
-        //    return true;
-        //}
+        public void ApplyToAssembly(string assemblyFilePath)
+        {
+            dynamic task = Instance;
+            task.AssemblyFile = assemblyFilePath;
+            task.BuildEngine = new InMemoryBuildEngine();
+            bool result = task.Execute();
+
+            if (!result)
+            {
+                throw new Exception("Task did not succeed");
+            }
+
+            //foreach (var assemblyName in Instance.GetAssembliesForScanning())
+            //{
+            //    var assembly = assemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
+            //    if (assembly == null)
+            //    {
+            //        continue;
+            //    }
+            //
+            //    if (assemblyDefinitions.ContainsKey(assemblyName))
+            //    {
+            //        continue;
+            //    }
+            //    assemblyDefinitions.Add(assemblyName, assembly);
+            //}
+            //TypeResolver.Initialise(assemblyDefinitions.Values);
+            //
+            //
+            //var module = ModuleDefinition.ReadModule(assemblyStream);
+            //Instance.ModuleDefinition = module;
+            //
+            //Instance.FindType = TypeResolver.FindType;
+            //Instance.TryFindType = TypeResolver.TryFindType;
+            //Instance.ResolveAssembly = assemblyName =>
+            //    assemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
+            //var errors = new List<string>();
+            //Instance.LogError = s =>
+            //{
+            //    Debug.WriteLine($" Error: {s}");
+            //    errors.Add(s);
+            //};
+            //Instance.LogWarning = s => Debug.WriteLine($" Warning: {s}");
+            //Instance.LogInfo = s => Debug.WriteLine($" Info: {s}");
+            //Instance.LogDebug = s => Debug.WriteLine($" Debug: {s}");
+            //Instance.Execute();
+            //if (errors.Any())
+            //{
+            //    throw new WeaverErrorException(errors);
+            //}
+            //Instance.AfterWeaving();
+
+            //assemblyStream.Position = 0;
+            //module.Write(assemblyStream);
+        }
 
         //Copy of https://github.com/Fody/Fody/blob/master/FodyHelpers/TypeCache.cs
         private class TypeCache
@@ -201,7 +170,7 @@ namespace AutoDI.AssemblyGenerator
                     return type;
                 }
 
-                throw new WeavingException($"Could not find '{typeName}'.");
+                throw new Exception($"Could not find '{typeName}'.");
             }
 
             private bool FindFromValues(string typeName, out TypeDefinition type)
@@ -213,7 +182,7 @@ namespace AutoDI.AssemblyGenerator
                         .ToList();
                     if (types.Count > 1)
                     {
-                        throw new WeavingException($"Found multiple types for '{typeName}'.");
+                        throw new Exception($"Found multiple types for '{typeName}'.");
                     }
                     if (types.Count == 0)
                     {
@@ -252,6 +221,40 @@ namespace AutoDI.AssemblyGenerator
 
                 _CachedTypes.Add(type.FullName, type);
             }
+        }
+
+        private class InMemoryBuildEngine : IBuildEngine
+        {
+            public void LogErrorEvent(BuildErrorEventArgs e)
+            {
+                
+            }
+
+            public void LogWarningEvent(BuildWarningEventArgs e)
+            {
+                
+            }
+
+            public void LogMessageEvent(BuildMessageEventArgs e)
+            {
+                
+            }
+
+            public void LogCustomEvent(CustomBuildEventArgs e)
+            {
+                throw new NotImplementedException();
+            }
+
+            public bool BuildProjectFile(string projectFileName, string[] targetNames, IDictionary globalProperties,
+                IDictionary targetOutputs)
+            {
+                throw new NotImplementedException();
+            }
+
+            public bool ContinueOnError { get; } = false;
+            public int LineNumberOfTaskNode { get; } = 0;
+            public int ColumnNumberOfTaskNode { get; } = 0;
+            public string ProjectFileOfTaskNode { get; } = "";
         }
     }
 }

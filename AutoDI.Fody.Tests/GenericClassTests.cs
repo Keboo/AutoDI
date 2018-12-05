@@ -1,10 +1,10 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Fody.Tests.GenericClassesTestsNamespace;
+using AutoDI.Build.Tests.GenericClassesTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class GenericClassTests

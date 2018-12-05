@@ -1,11 +1,11 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Fody.Tests.NormalConstructorTestsNamespace;
+using AutoDI.Build.Tests.NormalConstructorTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class NormalConstructorTests
@@ -20,7 +20,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI DebugCodeGeneration=""CSharp"" />");
+                    //args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI DebugCodeGeneration=""CSharp"" />");
                 }
             };
 

@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Xml.Linq;
-using AutoDI.Fody;
+﻿using AutoDI.Build;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
-using ILogger = AutoDI.Fody.ILogger;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace AutoDI.Generator
 {
@@ -33,10 +32,12 @@ namespace AutoDI.Generator
 
         public override bool Execute()
         {
-
             XElement configElement = GetConfigElement(ProjectPath);
             var settings = Settings.Parse(new Settings(), configElement);
-            var logger = new TaskLogger(BuildEngine, settings.DebugLogLevel);
+            var logger = new TaskLogger(this)
+            {
+                DebugLogLevel = settings.DebugLogLevel
+            };
             if (settings.GenerateRegistrations)
             {
                 var assemblyResolver = new DefaultAssemblyResolver();
@@ -189,42 +190,6 @@ namespace AutoDI.Generator
         public void Cancel()
         {
 
-        }
-
-        private class TaskLogger : ILogger
-        {
-            private const string Sender = "AutoDI";
-            private readonly IBuildEngine _BuildEngine;
-            private readonly DebugLogLevel _DebugLogLevel;
-
-            public TaskLogger(IBuildEngine buildEngine, DebugLogLevel debugLogLevel)
-            {
-                _BuildEngine = buildEngine;
-                _DebugLogLevel = debugLogLevel;
-            }
-
-            public void Debug(string message, DebugLogLevel debugLevel)
-            {
-                if (debugLevel <= _DebugLogLevel)
-                {
-                    _BuildEngine.LogMessageEvent(new BuildMessageEventArgs(message, "", "AutoDI", MessageImportance.Normal));
-                }
-            }
-
-            public void Info(string message)
-            {
-                _BuildEngine.LogMessageEvent(new BuildMessageEventArgs(message, "", "AutoDI", MessageImportance.High));
-            }
-
-            public void Warning(string message)
-            {
-                _BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, message, "", Sender));
-            }
-
-            public void Error(string message)
-            {
-                _BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, message, "", Sender));
-            }
         }
     }
 }

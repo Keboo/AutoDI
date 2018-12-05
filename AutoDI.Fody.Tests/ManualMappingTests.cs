@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     using TestAssembly;
 
@@ -23,7 +23,7 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    args.Weaver.Instance.Config = XElement.Parse($@"
+                    /*args.Weaver.Instance.Config = XElement.Parse($@"
     <AutoDI Behavior=""{Behaviors.None}"">
         <map from=""regex:.*"" to=""$0"" />
         <map from=""regex:(.*)\.I(.+)"" to=""$1.$2"" />
@@ -32,7 +32,7 @@ namespace AutoDI.Fody.Tests
 
         <type name=""Service2"" Lifetime=""{Lifetime.None}"" />
         <type name=""My*"" Lifetime=""{Lifetime.Transient}"" />
-    </AutoDI>");
+    </AutoDI>");*/
                 }
             };
 

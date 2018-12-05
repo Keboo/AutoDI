@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class NestedClassTests
@@ -22,10 +22,10 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    args.Weaver.Instance.Config = XElement.Parse(@"
+                    /*args.Weaver.Instance.Config = XElement.Parse(@"
     <AutoDI>
         <map from=""Service+IService1"" to=""Service+MyService2"" />
-    </AutoDI>");
+    </AutoDI>");*/
                 }
             };
 

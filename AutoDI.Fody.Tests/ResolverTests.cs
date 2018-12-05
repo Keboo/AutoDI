@@ -1,11 +1,11 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Fody.Tests.ResolveTestsNamespace;
+using AutoDI.Build.Tests.ResolveTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class ResolverTests

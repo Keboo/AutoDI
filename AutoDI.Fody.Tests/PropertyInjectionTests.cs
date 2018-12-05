@@ -3,9 +3,9 @@ using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoDI.Fody.Tests.PropertyInjectionNamespace;
+using AutoDI.Build.Tests.PropertyInjectionNamespace;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class PropertyInjectionTests

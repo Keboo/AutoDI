@@ -20,7 +20,7 @@ namespace MapAttributeTestsNamespace
 }
 //</assembly>
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class MapAttributeTests

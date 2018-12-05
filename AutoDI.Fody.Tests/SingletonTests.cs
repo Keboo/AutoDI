@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class SingletonTests
@@ -23,7 +23,7 @@ namespace AutoDI.Fody.Tests
                     <AutoDI>
                         <type name="".*"" lifetime=""Singleton"" />
                     </AutoDI>");
-                args.Weaver.Instance.Config = xml;
+                //args.Weaver.Instance.Config = xml;
             };
 
             var testAssemblies = await gen.Execute();

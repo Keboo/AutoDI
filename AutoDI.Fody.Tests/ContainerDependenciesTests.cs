@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using AutoDI.AssemblyGenerator;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class ContainerDependenciesTests

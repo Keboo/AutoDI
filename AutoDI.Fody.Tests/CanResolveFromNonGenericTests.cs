@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     using CanResolveFromNonGenericNamespace;
 

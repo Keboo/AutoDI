@@ -1,5 +1,5 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Fody.Tests.ScopeTestsNamespace;
+using AutoDI.Build.Tests.ScopeTestsNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Reflection;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class ScopeTests
@@ -22,10 +22,10 @@ namespace AutoDI.Fody.Tests
             {
                 if (args.Weaver.Name == "AutoDI")
                 {
-                    args.Weaver.Instance.Config = XElement.Parse($@"
+                    /*args.Weaver.Instance.Config = XElement.Parse($@"
     <AutoDI>
         <type name=""*"" Lifetime=""{Lifetime.Scoped}"" />
-    </AutoDI>");
+    </AutoDI>");*/
                 }
             };
 

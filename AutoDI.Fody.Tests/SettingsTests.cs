@@ -1,14 +1,14 @@
-﻿extern alias AutoDIFody;
+﻿extern alias AutoDIBuild;
 
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Xml.Linq;
 using Mono.Cecil;
 
-using Settings=AutoDIFody::AutoDI.Fody.Settings;
-using SettingsParseException=AutoDIFody::AutoDI.Fody.SettingsParseException;
+using Settings=AutoDIBuild::AutoDI.Build.Settings;
+using SettingsParseException=AutoDIBuild::AutoDI.Build.SettingsParseException;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     [TestClass]
     public class SettingsTests

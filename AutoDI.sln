@@ -38,7 +38,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{1A6636EB
 		Icons\needle.png = Icons\needle.png
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Fody.Tests", "AutoDI.Fody.Tests\AutoDI.Fody.Tests.csproj", "{BE841CC3-5817-4F04-A776-B1A319E216E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Build.Tests", "AutoDI.Fody.Tests\AutoDI.Build.Tests.csproj", "{BE841CC3-5817-4F04-A776-B1A319E216E1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Tests", "AutoDI.Tests\AutoDI.Tests.csproj", "{5B416AE9-F4F2-4C9F-B941-FF1A5042A21D}"
 EndProject
@@ -46,7 +46,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AspNetCore", "AutoDI
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Generator", "AutoDI.Generator\AutoDI.Generator.csproj", "{931F999C-07DD-4CB7-9DCB-657D795857F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoDI.Mono.Cecil", "AutoDI.Mono.Cecil\AutoDI.Mono.Cecil.csproj", "{BAC90B37-E91D-4E13-BE28-DCB0ACD8FEDE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Build", "AutoDI.Build\AutoDI.Build.csproj", "{BAC90B37-E91D-4E13-BE28-DCB0ACD8FEDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

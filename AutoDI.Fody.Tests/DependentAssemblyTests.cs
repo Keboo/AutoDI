@@ -1,11 +1,11 @@
-﻿extern alias AutoDIFody;
+﻿extern alias AutoDIBuild;
 
 using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace AutoDI.Fody.Tests
+namespace AutoDI.Build.Tests
 {
     using MainAssembly;
     using SharedAssembly;

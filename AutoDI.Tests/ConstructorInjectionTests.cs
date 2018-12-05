@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq.AutoMock;
 using System;
+using System.Reflection;
 
 namespace AutoDI.Tests
 {
