@@ -34,7 +34,7 @@ namespace AutoDI.Tests
         }
 
         [TestMethod]
-        public void WhenDependencyResolverIsSpecifiedItInstance()
+        public void WhenDependencyResolverIsSpecifiedItIsUsed()
         {
             var mocker = new AutoMocker();
             var service1 = mocker.Get<IService>();

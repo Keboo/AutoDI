@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
@@ -10,6 +11,9 @@ namespace AutoDI.Build
     {
         [Required]
         public string AssemblyFile { set; get; }
+
+        [Required]
+        public string References { get; set; }
 
         //[Required]
         //public string IntermediateDirectory { get; set; }
@@ -36,7 +40,7 @@ namespace AutoDI.Build
                 Logger = new TaskLogger(this);
             }
 
-            var assemblyResolver = new AssemblyResolver();
+            var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), Logger);
             if (AssemblyResolver == null)
             {
                 AssemblyResolver = assemblyResolver;
@@ -55,15 +59,20 @@ namespace AutoDI.Build
                 InMemory = true
             };
 
-            foreach (var assemblyName in GetAssembliesToInclude())
-            {
-                AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
-            }
+            //foreach (var assemblyName in GetAssembliesToInclude())
+            //{
+            //    AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
+            //}
+            Logger.Info("Done loading extra assemblies");
 
             using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
             {
+                Logger.Info("Loaded assembly");
+
                 if (WeaveAssembly())
                 {
+                    Logger.Info("Weaved");
+
                     var parameters = new WriterParameters
                     {
                         //StrongNameKeyPair = StrongNameKeyPair,
@@ -73,15 +82,29 @@ namespace AutoDI.Build
 
                     //ModuleDefinition.Assembly.Name.PublicKey = PublicKey;
                     ModuleDefinition.Write(AssemblyFile, parameters);
+                    Logger.Info("Wrote assemble");
+
                 }
             }
+            Logger.Info("Done");
 
             return !Logger.ErrorLogged;
         }
 
         public void Cancel()
         {
-            
+
+        }
+
+        private IEnumerable<string> GetIncludedReferences()
+        {
+            if (!string.IsNullOrWhiteSpace(References))
+            {
+                foreach (var reference in References.Split(';').Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)))
+                {
+                    yield return reference;
+                }
+            }
         }
 
         protected virtual IEnumerable<string> GetAssembliesToInclude()

@@ -2,12 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <CopyNuGetImplementations>true</CopyNuGetImplementations>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Build" Version="15.9.20" />
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="15.9.20" />
-    <PackageReference Include="Mono.Cecil" Version="0.10.1" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.1">
+      <IncludeAssets>All</IncludeAssets>
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -20,4 +24,14 @@
     <Compile Include="..\AutoDI\SettingsAttribute.cs" Link="SettingsAttribute.cs" />
   </ItemGroup>
 
+  <!--<Target Name="CopyOutput" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Release'">-->
+  <Target Name="CopyOutput" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <LibItems Include="$(TargetDir)..\**\$(TargetFileName)" />
+      <LibItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
+      <BuildItems Include="$(ProjectDir)AutoDI.Build.targets" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LibItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
+    <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\%(BuildItems.BuildItems)" />
+  </Target>
 </Project>

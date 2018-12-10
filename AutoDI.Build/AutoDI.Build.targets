@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!--<ShowMeTheXAMLGeneratedFileName Condition="'$(ShowMeTheXAMLGeneratedFileName)' == '' Or $(ShowMeTheXAMLGeneratedFileName) == '*Undefined*'">ShowMeTheXaml_XamlDictionary.g.cs</ShowMeTheXAMLGeneratedFileName>-->
+    <AutoDIBuildAssemblyDirectory Condition="$(AutoDIBuildAssemblyDirectory) == '' Or $(AutoDIBuildAssemblyDirectory) == '*Undefined*'">$(MSBuildThisFileDirectory)..\lib\</AutoDIBuildAssemblyDirectory>
+  </PropertyGroup>
+
+  <UsingTask TaskName="AutoDI.Build.ProcessAssemblyTask"
+             AssemblyFile="$(AutoDIBuildAssemblyDirectory)AutoDI.Build.dll"/>
+
+  <Target
+    Name="AutoDITarget"
+    AfterTargets="AfterCompile"
+    Condition="Exists('@(IntermediateAssembly)') And $(DesignTimeBuild) != true"
+    DependsOnTargets="$(AutoDIDependsOnTargets)"
+    Inputs="@(IntermediateAssembly)"
+    Outputs="$(TargetPath)">
+
+    <AutoDI.Build.ProcessAssemblyTask
+      AssemblyFile="@(IntermediateAssembly)"
+      References="@(ReferencePath)">
+      <!--IntermediateDirectory="$(ProjectDir)$(IntermediateOutputPath)"
+      KeyOriginatorFile="$(KeyOriginatorFile)"
+      AssemblyOriginatorKeyFile="$(AssemblyOriginatorKeyFile)"
+      NuGetPackageRoot="$(NuGetPackageRoot)"
+      ProjectDirectory="$(MSBuildProjectDirectory)"
+      SolutionDirectory="$(SolutionDir)"
+      References="@(ReferencePath)"
+      SignAssembly="$(SignAssembly)"
+      ReferenceCopyLocalFiles="@(ReferenceCopyLocalPaths)"
+      DefineConstants="$(DefineConstants)"
+      DebugType="$(DebugType)"
+      DocumentationFile="@(DocFileItem->'%(FullPath)')"
+      MsBuildThisFileDirectory="$(MSBuildThisFileDirectory)"
+      WeaverFiles="@(WeaverFiles)"
+      NCrunchOriginalSolutionDirectory="$(NCrunchOriginalSolutionDir)"
+      IntermediateCopyLocalFilesCache="$(IntermediateOutputPath)$(FodyCopyLocalFilesCache)"
+      >-->
+
+      <!--<Output
+        TaskParameter="ExecutedWeavers"
+        PropertyName="FodyExecutedWeavers" />-->
+
+    </AutoDI.Build.ProcessAssemblyTask>
+
+  </Target>
+</Project>

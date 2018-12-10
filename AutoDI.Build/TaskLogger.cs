@@ -12,7 +12,7 @@ namespace AutoDI.Build
 
         public DebugLogLevel DebugLogLevel { get; set; }
 
-        private const string MessageSender = "AutoDI";
+        private const string MessageSender = "AutoDI:";
 
         public TaskLogger(Task task)
         {
