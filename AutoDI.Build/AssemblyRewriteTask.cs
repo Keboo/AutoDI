@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -40,6 +41,9 @@ namespace AutoDI.Build
                 Logger = new TaskLogger(this);
             }
 
+            Logger.Info("Starting AutoDI");
+            var sw = Stopwatch.StartNew();
+
             var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), Logger);
             if (AssemblyResolver == null)
             {
@@ -63,16 +67,11 @@ namespace AutoDI.Build
             {
                 AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
             }
-            Logger.Info("Done loading extra assemblies");
 
             using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
             {
-                Logger.Info("Loaded assembly");
-
                 if (WeaveAssembly())
                 {
-                    Logger.Info("Weaved");
-
                     var parameters = new WriterParameters
                     {
                         //StrongNameKeyPair = StrongNameKeyPair,
@@ -82,12 +81,11 @@ namespace AutoDI.Build
 
                     //ModuleDefinition.Assembly.Name.PublicKey = PublicKey;
                     ModuleDefinition.Write(AssemblyFile, parameters);
-                    Logger.Info("Wrote assemble");
-
                 }
             }
-            Logger.Info("Done");
 
+            sw.Stop();
+            Logger.Info("AutoDI Complete");
             return !Logger.ErrorLogged;
         }
 
@@ -111,14 +109,10 @@ namespace AutoDI.Build
         {
             yield return "mscorlib";
             yield return "System";
-            //yield return "System.Runtime";
-            //yield return "System.Core";
             yield return "netstandard";
             yield return "AutoDI";
             yield return "Microsoft.Extensions.DependencyInjection.Abstractions";
             yield return "System.Collections";
-            //yield return "System.ObjectModel";
-            //yield return "System.Threading";
         }
 
         protected abstract bool WeaveAssembly();

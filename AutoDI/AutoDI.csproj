@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-62925-02" PrivateAssets="All" />
   </ItemGroup>
 
-  <Target Name="CopyOutput" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Release'">
+  <Target Name="CopyOutput" AfterTargets="AfterBuild">
     <ItemGroup>
       <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
       <CopyItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
