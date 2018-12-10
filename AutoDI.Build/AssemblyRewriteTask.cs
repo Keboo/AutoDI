@@ -59,10 +59,10 @@ namespace AutoDI.Build
                 InMemory = true
             };
 
-            //foreach (var assemblyName in GetAssembliesToInclude())
-            //{
-            //    AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
-            //}
+            foreach (var assemblyName in GetAssembliesToInclude())
+            {
+                AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
+            }
             Logger.Info("Done loading extra assemblies");
 
             using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
@@ -111,14 +111,14 @@ namespace AutoDI.Build
         {
             yield return "mscorlib";
             yield return "System";
-            yield return "System.Runtime";
-            yield return "System.Core";
+            //yield return "System.Runtime";
+            //yield return "System.Core";
             yield return "netstandard";
             yield return "AutoDI";
             yield return "Microsoft.Extensions.DependencyInjection.Abstractions";
             yield return "System.Collections";
-            yield return "System.ObjectModel";
-            yield return "System.Threading";
+            //yield return "System.ObjectModel";
+            //yield return "System.Threading";
         }
 
         protected abstract bool WeaveAssembly();

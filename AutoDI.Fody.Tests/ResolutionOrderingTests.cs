@@ -41,6 +41,7 @@ namespace AutoDI.Build.Tests
 
     //<assembly>
     //<ref: AutoDI />
+    //<ref: Microsoft.Extensions.DependencyInjection.Abstractions />
     //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace ResolutionOrderingTestsNamespace
     {
