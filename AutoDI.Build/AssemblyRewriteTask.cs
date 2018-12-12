@@ -1,10 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
 using System.Xml.Linq;
+using Mono.Cecil.Cil;
+using Mono.Cecil.Mdb;
+using Mono.Cecil.Pdb;
 
 namespace AutoDI.Build
 {
@@ -15,6 +20,9 @@ namespace AutoDI.Build
 
         [Required]
         public string References { get; set; }
+
+        [Required]
+        public string DebugType { get; set; }
 
         //[Required]
         //public string IntermediateDirectory { get; set; }
@@ -54,33 +62,39 @@ namespace AutoDI.Build
                 TypeResolver = assemblyResolver;
             }
 
-            var readerParameters = new ReaderParameters
+            using (Stream symbolStream = GetSymbolInformation(
+                out ISymbolReaderProvider symbolReaderProvider,
+                out ISymbolWriterProvider symbolWriterProvider))
             {
-                AssemblyResolver = AssemblyResolver,
-                //ReadSymbols = SymbolStream != null || DebugSymbols == DebugSymbolsType.Embedded,
-                //SymbolReaderProvider = debugReaderProvider,
-                //SymbolStream = SymbolStream,
-                InMemory = true
-            };
-
-            foreach (var assemblyName in GetAssembliesToInclude())
-            {
-                AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
-            }
-
-            using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
-            {
-                if (WeaveAssembly())
+                var readerParameters = new ReaderParameters
                 {
-                    var parameters = new WriterParameters
-                    {
-                        //StrongNameKeyPair = StrongNameKeyPair,
-                        //WriteSymbols = debugWriterProvider != null,
-                        //SymbolWriterProvider = debugWriterProvider,
-                    };
+                    AssemblyResolver = AssemblyResolver,
 
-                    //ModuleDefinition.Assembly.Name.PublicKey = PublicKey;
-                    ModuleDefinition.Write(AssemblyFile, parameters);
+                    ReadSymbols = symbolStream != null || symbolReaderProvider is EmbeddedPortablePdbReaderProvider,
+                    SymbolReaderProvider = symbolReaderProvider,
+                    SymbolStream = symbolStream,
+                    InMemory = true
+                };
+
+                foreach (var assemblyName in GetAssembliesToInclude())
+                {
+                    AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
+                }
+
+                using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
+                {
+                    if (WeaveAssembly())
+                    {
+                        var parameters = new WriterParameters
+                        {
+                            //StrongNameKeyPair = StrongNameKeyPair,
+                            WriteSymbols = symbolReaderProvider != null,
+                            SymbolWriterProvider = symbolWriterProvider,
+                        };
+
+                        //ModuleDefinition.Assembly.Name.PublicKey = PublicKey;
+                        ModuleDefinition.Write(AssemblyFile, parameters);
+                    }
                 }
             }
 
@@ -113,6 +127,95 @@ namespace AutoDI.Build
             yield return "AutoDI";
             yield return "Microsoft.Extensions.DependencyInjection.Abstractions";
             yield return "System.Collections";
+        }
+
+        private Stream GetSymbolInformation(out ISymbolReaderProvider symbolReaderProvider,
+            out ISymbolWriterProvider symbolWriterProvider)
+        {
+            if (string.Equals("none", DebugType, StringComparison.OrdinalIgnoreCase))
+            {
+                Logger.Info("No symbols");
+                symbolReaderProvider = null;
+                symbolWriterProvider = null;
+                return null;
+            }
+
+            if (string.Equals("embedded", DebugType, StringComparison.OrdinalIgnoreCase))
+            {
+                Logger.Info("Using embedded symbols");
+                symbolReaderProvider = new EmbeddedPortablePdbReaderProvider();
+                symbolWriterProvider = new EmbeddedPortablePdbWriterProvider();
+                return null;
+            }
+
+            string pdbPath = FindPdbPath();
+            string mdbPath = FindMdbPath();
+
+            if (pdbPath != null && mdbPath != null)
+            {
+                if (File.GetLastWriteTimeUtc(pdbPath) >= File.GetLastWriteTimeUtc(mdbPath))
+                {
+                    mdbPath = null;
+                    Logger.Debug("Found mdb and pdb debug symbols. Selected pdb (newer).", DebugLogLevel.Verbose);
+                }
+                else
+                {
+                    pdbPath = null;
+                    Logger.Debug("Found mdb and pdb debug symbols. Selected mdb (newer).", DebugLogLevel.Verbose);
+                }
+            }
+
+            if (pdbPath != null)
+            {
+                Logger.Info($"Using symbol file {pdbPath}");
+                symbolReaderProvider = new PdbReaderProvider();
+                symbolWriterProvider = new PdbWriterProvider();
+                string tempPath = pdbPath + ".tmp";
+                File.Copy(pdbPath, tempPath, true);
+                return new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            }
+            else if (mdbPath != null)
+            {
+                Logger.Info($"Using symbol file {mdbPath}");
+                symbolReaderProvider = new MdbReaderProvider();
+                symbolWriterProvider = new MdbWriterProvider();
+                string tempPath = mdbPath + ".tmp";
+                File.Copy(mdbPath, tempPath, true);
+                return new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            }
+
+            symbolReaderProvider = null;
+            symbolWriterProvider = null;
+            return null;
+
+            string FindPdbPath()
+            {
+                // because UWP use a wacky convention for symbols
+                string path = Path.ChangeExtension(AssemblyFile, "compile.pdb");
+                if (File.Exists(path))
+                {
+                    Logger.Debug($"Found debug symbols at '{path}'.", DebugLogLevel.Verbose);
+                    return path;
+                }
+                path = Path.ChangeExtension(AssemblyFile, "pdb");
+                if (File.Exists(path))
+                {
+                    Logger.Debug($"Found debug symbols at '{path}'.", DebugLogLevel.Verbose);
+                    return path;
+                }
+                return null;
+            }
+
+            string FindMdbPath()
+            {
+                string path = AssemblyFile + ".mdb";
+                if (File.Exists(path))
+                {
+                    Logger.Debug($"Found debug symbols at '{path}'.", DebugLogLevel.Verbose);
+                    return path;
+                }
+                return null;
+            }
         }
 
         protected abstract bool WeaveAssembly();
