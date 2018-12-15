@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
 	ProjectSection(SolutionItems) = preProject
 		NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec = NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec
@@ -49,10 +47,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{27FC0110-1F2C-402F-812D-D9A65FF3DFC7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8167477F-2716-49C2-AFB5-357E51DF6F9D}.Release|Any CPU.ActiveCfg = Release|Any CPU

@@ -1,0 +1,9 @@
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Compile Include="..\Shared\**\*.cs">
+      <Link>%(Compile.Filename)</Link>
+    </Compile>
+  </ItemGroup>
+
+  <Import Project="..\NuGet\AutoDI.Build\build\AutoDI.Build.targets" />
+</Project>

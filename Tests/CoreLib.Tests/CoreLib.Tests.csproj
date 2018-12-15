@@ -1,7 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,11 +16,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
+    <ProjectReference Include="..\..\TestAssemblies\CoreLib\CoreLib.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+    <Reference Include="AutoDI">
+      <HintPath>..\..\NuGet\AutoDI\lib\netstandard2.0\AutoDI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
