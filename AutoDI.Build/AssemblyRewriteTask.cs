@@ -87,12 +87,10 @@ namespace AutoDI.Build
                     {
                         var parameters = new WriterParameters
                         {
-                            //StrongNameKeyPair = StrongNameKeyPair,
                             WriteSymbols = symbolReaderProvider != null,
                             SymbolWriterProvider = symbolWriterProvider,
                         };
-
-                        //ModuleDefinition.Assembly.Name.PublicKey = PublicKey;
+                        
                         ModuleDefinition.Write(AssemblyFile, parameters);
                     }
                 }
