@@ -26,7 +26,7 @@ before_build:
 - ps: >-
     nuget restore AutoDI.sln
   
-    nuget restore AutoDI.Tests.sln
+    nuget restore AutoDI.Test.sln
 
 build:
   project: AutoDI.sln
