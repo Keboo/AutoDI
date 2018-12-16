@@ -23,7 +23,10 @@ nuget:
   disable_publish_on_pr: true
 
 before_build:
-- ps: nuget restore
+- ps: >-
+    nuget restore AutoDI.sln
+  
+    nuget restore AutoDI.Tests.sln
 
 build:
   project: AutoDI.sln
