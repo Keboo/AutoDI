@@ -5,15 +5,11 @@ using Mono.Cecil;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace AutoDI.Generator
 {
     public class GeneratorTask : Task, ICancelableTask
     {
-        [Required]
-        public string ProjectPath { get; set; }
-
         [Required]
         public string OutputPath { get; set; }
 
@@ -32,24 +28,28 @@ namespace AutoDI.Generator
 
         public override bool Execute()
         {
-            XElement configElement = GetConfigElement(ProjectPath);
-            var settings = Settings.Parse(new Settings(), configElement);
-            var logger = new TaskLogger(this)
-            {
-                DebugLogLevel = settings.DebugLogLevel
-            };
+            var assemblyResolver = new DefaultAssemblyResolver();
+            assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(OutputPath));
+
+            var compiledAssembly = AssemblyDefinition.ReadAssembly(OutputPath);
+
+            var logger = new TaskLogger(this);
+
+            var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, logger);
+
+            var settings = Settings.Load(typeResolver);
+            logger.DebugLogLevel = settings.DebugLogLevel;
+
             if (settings.GenerateRegistrations)
             {
-                var assemblyResolver = new DefaultAssemblyResolver();
-                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(OutputPath));
-
-                var compiledAssembly = AssemblyDefinition.ReadAssembly(OutputPath);
-                var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, logger);
                 ICollection<TypeDefinition> allTypes =
                     typeResolver.GetAllTypes(settings, out AssemblyDefinition _);
                 Mapping mapping = Mapping.GetMapping(settings, allTypes, logger);
 
-                Directory.CreateDirectory(Path.GetDirectoryName(GeneratedFilePath));
+                if (Path.GetDirectoryName(GeneratedFilePath) is string directory)
+                {
+                    Directory.CreateDirectory(directory);
+                }
                 using (var file = File.Open(GeneratedFilePath, FileMode.Create))
                 {
                     WriteClass(mapping, settings, SetupMethod.Find(compiledAssembly.MainModule, logger), file);
@@ -57,19 +57,6 @@ namespace AutoDI.Generator
                 }
             }
             return true;
-        }
-
-        private static XElement GetConfigElement(string projectPath)
-        {
-            var projectDir = Path.GetDirectoryName(projectPath);
-            if (projectDir == null) return null;
-            var configFile = Path.Combine(projectDir, "FodyWeavers.xml");
-            if (File.Exists(configFile))
-            {
-                var xElement = XElement.Load(configFile);
-                return xElement.Elements("AutoDI").FirstOrDefault();
-            }
-            return null;
         }
 
         private static void WriteClass(Mapping mapping, Settings settings, MethodDefinition setupMethod, Stream output)

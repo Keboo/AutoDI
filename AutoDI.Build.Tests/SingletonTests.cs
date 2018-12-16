@@ -2,7 +2,75 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
+
+
+//<assembly:singleton />
+//<ref: AutoDI/>
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
+[assembly:AutoDI.Map(".*", AutoDI.Lifetime.Singleton)]
+namespace SingletonResolutionTest
+{
+    using AutoDI;
+    using System;
+
+    public interface IService { }
+
+    public class Service : IService
+    {
+        public static bool IsCreated { get; set; }
+
+        public Service()
+        {
+            IsCreated = true;
+        }
+    }
+
+    public static class Foo
+    {
+        [SetupMethod]
+        public static void Setup(IApplicationBuilder builder)
+        {
+            if (Service.IsCreated) throw new Exception();
+        }
+    }
+}
+//</assembly>
+
+//<assembly:inSetup />
+//<ref: AutoDI/>
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
+namespace SingletonResolvedInSetupMethod
+{
+    using AutoDI;
+    using System;
+
+    public interface IService { }
+
+    public class Service : IService
+    {
+        public static bool IsCreated { get; set; }
+
+        public Service()
+        {
+            IsCreated = true;
+        }
+    }
+
+    public static class Foo
+    {
+        [SetupMethod]
+        public static void Setup(IApplicationBuilder builder)
+        {
+            if (Service.IsCreated) throw new Exception();
+            builder.ConfigureContainer<IContainer>(map =>
+            {
+                var service = map.Get<IService>(null);
+                if (!(service is Service)) throw new Exception();
+            });
+        }
+    }
+}
+//</assembly>
 
 namespace AutoDI.Build.Tests
 {
@@ -16,15 +84,6 @@ namespace AutoDI.Build.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
-
-            gen.WeaverAdded += (sender, args) =>
-            {
-                var xml = XElement.Parse(@"
-                    <AutoDI>
-                        <type name="".*"" lifetime=""Singleton"" />
-                    </AutoDI>");
-                args.Weaver.Config = xml;
-            };
 
             var testAssemblies = await gen.Execute();
             _singleton = testAssemblies["singleton"].Assembly;
@@ -57,71 +116,4 @@ namespace AutoDI.Build.Tests
             DI.Init(_inSetup);
         }
     }
-
-    //<assembly:singleton />
-    //<ref: AutoDI/>
-    //<weaver: AutoDI.Build.ProcessAssemblyTask />
-    namespace SingletonResolutionTest
-    {
-        using AutoDI;
-        using System;
-
-        public interface IService { }
-
-        public class Service : IService
-        {
-            public static bool IsCreated { get; set; }
-
-            public Service()
-            {
-                IsCreated = true;
-            }
-        }
-
-        public static class Foo
-        {
-            [SetupMethod]
-            public static void Setup(IApplicationBuilder builder)
-            {
-                if (Service.IsCreated) throw new Exception();
-            }
-        }
-    }
-    //</assembly>
-
-    //<assembly:inSetup />
-    //<ref: AutoDI/>
-    //<weaver: AutoDI.Build.ProcessAssemblyTask />
-    namespace SingletonResolvedInSetupMethod
-    {
-        using AutoDI;
-        using System;
-
-        public interface IService { }
-
-        public class Service : IService
-        {
-            public static bool IsCreated { get; set; }
-
-            public Service()
-            {
-                IsCreated = true;
-            }
-        }
-
-        public static class Foo
-        {
-            [SetupMethod]
-            public static void Setup(IApplicationBuilder builder)
-            {
-                if (Service.IsCreated) throw new Exception();
-                builder.ConfigureContainer<IContainer>(map =>
-                {
-                    var service = map.Get<IService>(null);
-                    if (!(service is Service)) throw new Exception();
-                });
-            }
-        }
-    }
-    //</assembly>
 }

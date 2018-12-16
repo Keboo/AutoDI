@@ -3,7 +3,6 @@ using ManualInjectionNamespace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace AutoDI.Build.Tests
 {
@@ -16,11 +15,6 @@ namespace AutoDI.Build.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
-            gen.WeaverAdded += (sender, args) =>
-            {
-                args.Weaver.Config = XElement.Parse(@"<AutoDI AutoInit=""False"" />");
-            };
-            
             _testAssembly = (await gen.Execute()).SingleAssembly();
         }
 
@@ -54,6 +48,7 @@ namespace AutoDI.Build.Tests
 //<type:ConsoleApplication/>
 //<ref: AutoDI />
 //<weaver: AutoDI.Build.ProcessAssemblyTask />
+//<raw:[assembly:AutoDI.Settings(AutoInit = false)] />
 namespace ManualInjectionNamespace
 {
     using AutoDI;

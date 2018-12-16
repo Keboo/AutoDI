@@ -1,15 +1,14 @@
-﻿using System;
+﻿using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Mono.Cecil.Mdb;
+using Mono.Cecil.Pdb;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using Mono.Cecil;
-using System.Xml.Linq;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Mdb;
-using Mono.Cecil.Pdb;
 
 namespace AutoDI.Build
 {
@@ -40,7 +39,7 @@ namespace AutoDI.Build
             return AssemblyResolver.Resolve(AssemblyNameReference.Parse(assemblyName));
         }
 
-        public XElement Config { get; set; }
+        //public XElement Config { get; set; }
 
         public override bool Execute()
         {

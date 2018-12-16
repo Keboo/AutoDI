@@ -8,11 +8,10 @@ using AutoDI;
 using System.Reflection;
 using System.Threading.Tasks;
 
-[assembly: Map(Lifetime.Singleton, typeof(MapAttributeTestsNamespace.AssemblySingletonClass))]
+[assembly: Map(typeof(MapAttributeTestsNamespace.AssemblySingletonClass), Lifetime.Singleton)]
 
 namespace MapAttributeTestsNamespace
 {
-
     [Map(Lifetime.Singleton)]
     public class SingletonClass { }
 

@@ -17,7 +17,6 @@
 
   <Target Name="AutoDITask" AfterTargets="AfterCompile" Condition="$(RunAutoDI) == 'True'">
     <GeneratorTask
-      ProjectPath="$(ProjectPath)"
       OutputPath="@(IntermediateAssembly)"
       GeneratedFilePath="$(AutoDIOutputPath)$(AutoDIGeneratedFileName)">
       

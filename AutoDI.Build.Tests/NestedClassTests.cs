@@ -1,10 +1,115 @@
-﻿using System;
-using System.Linq;
-using AutoDI.AssemblyGenerator;
+﻿using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
+
+//<assembly>
+//<ref: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
+[assembly: AutoDI.Map("Service+IService1", "Service+MyService2")]
+
+namespace NestedClassesTestsNamespace
+{
+    public class Service
+    {
+        private class PrivateNested
+        {
+            private class PrivateNestedNested
+            { }
+
+            protected class ProtectedNestedNested
+            { }
+
+            internal class InternalNestedNested
+            { }
+
+            protected internal class ProtectedInternalNestedNested
+            { }
+
+            public class PublicNestedNested
+            { }
+        }
+
+        protected class ProtectedNested
+        {
+            private class PrivateNestedNested
+            { }
+
+            protected class ProtectedNestedNested
+            { }
+
+            internal class InternalNestedNested
+            { }
+
+            protected internal class ProtectedInternalNestedNested
+            { }
+
+            public class PublicNestedNested
+            { }
+        }
+
+        internal class InternalNested
+        {
+            private class PrivateNestedNested
+            { }
+
+            protected class ProtectedNestedNested
+            { }
+
+            internal class InternalNestedNested
+            { }
+
+            protected internal class ProtectedInternalNestedNested
+            { }
+
+            public class PublicNestedNested
+            { }
+        }
+
+        protected internal class ProtectedInternalNested
+        {
+            private class PrivateNestedNested
+            { }
+
+            protected class ProtectedNestedNested
+            { }
+
+            internal class InternalNestedNested
+            { }
+
+            protected internal class ProtectedInternalNestedNested
+            { }
+
+            public class PublicNestedNested
+            { }
+        }
+
+        public class PublicNested
+        {
+            private class PrivateNestedNested
+            { }
+
+            protected class ProtectedNestedNested
+            { }
+
+            internal class InternalNestedNested
+            { }
+
+            protected internal class ProtectedInternalNestedNested
+            { }
+
+            public class PublicNestedNested
+            { }
+        }
+
+        public interface IService1 { }
+        public class MyService1 : IService1 { }
+        public class MyService2 : IService1 { }
+    }
+}
+//</assembly>
 
 namespace AutoDI.Build.Tests
 {
@@ -17,14 +122,6 @@ namespace AutoDI.Build.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
-
-            gen.WeaverAdded += (sender, args) =>
-            {
-                args.Weaver.Config = XElement.Parse(@"
-    <AutoDI>
-        <map from=""Service+IService1"" to=""Service+MyService2"" />
-    </AutoDI>");
-            };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
@@ -104,108 +201,4 @@ namespace AutoDI.Build.Tests
             Assert.IsTrue(mappings.Any(m => m.SourceType.Name == "IService1" && m.TargetType.Name == "MyService2"));
         }
     }
-
-    //<assembly>
-    //<ref: AutoDI />
-    //<weaver: AutoDI.Build.ProcessAssemblyTask />
-    namespace NestedClassesTestsNamespace
-    {
-        public class Service
-        {
-            private class PrivateNested
-            {
-                private class PrivateNestedNested
-                { }
-
-                protected class ProtectedNestedNested
-                { }
-
-                internal class InternalNestedNested
-                { }
-
-                protected internal class ProtectedInternalNestedNested
-                { }
-
-                public class PublicNestedNested
-                { }
-            }
-
-            protected class ProtectedNested
-            {
-                private class PrivateNestedNested
-                { }
-
-                protected class ProtectedNestedNested
-                { }
-
-                internal class InternalNestedNested
-                { }
-
-                protected internal class ProtectedInternalNestedNested
-                { }
-
-                public class PublicNestedNested
-                { }
-            }
-
-            internal class InternalNested
-            {
-                private class PrivateNestedNested
-                { }
-
-                protected class ProtectedNestedNested
-                { }
-
-                internal class InternalNestedNested
-                { }
-
-                protected internal class ProtectedInternalNestedNested
-                { }
-
-                public class PublicNestedNested
-                { }
-            }
-
-            protected internal class ProtectedInternalNested
-            {
-                private class PrivateNestedNested
-                { }
-
-                protected class ProtectedNestedNested
-                { }
-
-                internal class InternalNestedNested
-                { }
-
-                protected internal class ProtectedInternalNestedNested
-                { }
-
-                public class PublicNestedNested
-                { }
-            }
-
-            public class PublicNested
-            {
-                private class PrivateNestedNested
-                { }
-
-                protected class ProtectedNestedNested
-                { }
-
-                internal class InternalNestedNested
-                { }
-
-                protected internal class ProtectedInternalNestedNested
-                { }
-
-                public class PublicNestedNested
-                { }
-            }
-
-            public interface IService1 { }
-            public class MyService1 : IService1 { }
-            public class MyService2 : IService1 { }
-        }
-    }
-    //</assembly>
 }

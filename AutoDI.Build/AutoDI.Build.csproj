@@ -16,6 +16,7 @@
     <Compile Include="..\AutoDI\CodeLanguage.cs" Link="CodeLanguage.cs" />
     <Compile Include="..\AutoDI\Constants.cs" Link="Constants.cs" />
     <Compile Include="..\AutoDI\DebugLogLevel.cs" Link="DebugLogLevel.cs" />
+    <Compile Include="..\AutoDI\IncludeAssemblyAttribute.cs" Link="IncludeAssemblyAttribute.cs" />
     <Compile Include="..\AutoDI\Lifetime.cs" Link="Lifetime.cs" />
     <Compile Include="..\AutoDI\MapAttribute.cs" Link="MapAttribute.cs" />
     <Compile Include="..\AutoDI\SettingsAttribute.cs" Link="SettingsAttribute.cs" />

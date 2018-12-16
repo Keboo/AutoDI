@@ -3,7 +3,62 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
+
+// ReSharper disable RedundantNameQualifier
+//<assembly />
+//<ref: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
+//<raw:[assembly:AutoDI.Settings(Behavior = AutoDI.Behaviors.None)] />
+[assembly: AutoDI.Map("regex:.*", "$0")]
+[assembly: AutoDI.Map(@"regex:(.*)\.I(.+)", "$1.$2")]
+[assembly: AutoDI.Map(@"IService4", "Service4", Force = true)]
+[assembly: AutoDI.Map(@"Service5", "Service5Extended", AutoDI.Lifetime.Scoped)]
+[assembly: AutoDI.Map(@"Service2", AutoDI.Lifetime.None)]
+[assembly: AutoDI.Map(@"My*", AutoDI.Lifetime.Transient)]
+// ReSharper restore RedundantNameQualifier
+namespace TestAssembly
+{
+    using AutoDI;
+
+    public interface IService
+    { }
+
+    public class Service : IService
+    { }
+
+    public interface IService2 { }
+
+    public class Service2 : IService2
+    { }
+
+    public interface IService3 { }
+
+    public class Service3 { }
+
+    public interface IService4 { }
+
+    public class Service4 { }
+
+    public class Service5 { }
+
+    public class Service5Extended : Service5 { }
+
+    public class MyDog { }
+
+    public class Manager
+    {
+        public Manager([Dependency] IService service = null, [Dependency] IService2 service2 = null)
+        {
+            Service = service;
+            Service2 = service2;
+        }
+
+        public IService Service { get; }
+
+        public IService2 Service2 { get; }
+    }
+}
+//</assembly>
 
 namespace AutoDI.Build.Tests
 {
@@ -19,19 +74,6 @@ namespace AutoDI.Build.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
-            gen.WeaverAdded += (sender, args) =>
-            {
-                args.Weaver.Config = XElement.Parse($@"
-    <AutoDI Behavior=""{Behaviors.None}"">
-        <map from=""regex:.*"" to=""$0"" />
-        <map from=""regex:(.*)\.I(.+)"" to=""$1.$2"" />
-        <map from=""IService4"" to=""Service4"" force=""true"" />
-        <map from=""Service5"" to=""Service5Extended"" Lifetime=""{Lifetime.Scoped}"" />
-
-        <type name=""Service2"" Lifetime=""{Lifetime.None}"" />
-        <type name=""My*"" Lifetime=""{Lifetime.Transient}"" />
-    </AutoDI>");
-            };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
         }
@@ -125,53 +167,6 @@ namespace AutoDI.Build.Tests
             Assert.AreEqual(Lifetime.Scoped, map.Lifetime);
         }
     }
-
-    //<assembly />
-    //<ref: AutoDI />
-    //<weaver: AutoDI.Build.ProcessAssemblyTask />
-    namespace TestAssembly
-    {
-        using AutoDI;
-
-        public interface IService
-        { }
-
-        public class Service : IService
-        { }
-
-        public interface IService2 { }
-
-        public class Service2 : IService2
-        { }
-
-        public interface IService3 { }
-
-        public class Service3 { }
-
-        public interface IService4 { }
-
-        public class Service4 { }
-
-        public class Service5 { }
-
-        public class Service5Extended : Service5 { }
-
-        public class MyDog { }
-
-        public class Manager
-        {
-            public Manager([Dependency] IService service = null, [Dependency] IService2 service2 = null)
-            {
-                Service = service;
-                Service2 = service2;
-            }
-
-            public IService Service { get; }
-
-            public IService2 Service2 { get; }
-        }
-    }
-    //</assembly>
 }
 
 

@@ -1,11 +1,34 @@
 ﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Build.Tests.ScopeTestsNamespace;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using Microsoft.Extensions.DependencyInjection;
+using ScopeTestsNamespace;
+
+//<assembly>
+//<ref: AutoDI />
+//<weaver: AutoDI.Build.ProcessAssemblyTask />
+[assembly:AutoDI.MapAttribute("*", AutoDI.Lifetime.Scoped)]
+namespace ScopeTestsNamespace
+{
+    public interface IService
+    { }
+
+    public interface IService2
+    { }
+
+    public class Service : IService, IService2
+    { }
+
+    public interface ILogger<T> { }
+
+    public class Logger<T> : ILogger<T> { }
+
+    public class MyClass { }
+    public class MyOtherClass { }
+}
+//</assembly>
 
 namespace AutoDI.Build.Tests
 {
@@ -18,13 +41,6 @@ namespace AutoDI.Build.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
-            gen.WeaverAdded += (sender, args) =>
-            {
-                args.Weaver.Config = XElement.Parse($@"
-    <AutoDI>
-        <type name=""*"" Lifetime=""{Lifetime.Scoped}"" />
-    </AutoDI>");
-            };
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
@@ -46,7 +62,7 @@ namespace AutoDI.Build.Tests
             return _testAssembly.GetType(assemblyTypeName);
         }
 
-        private object Resolve<T>(IServiceScope scope = null)
+        private static object Resolve<T>(IServiceScope scope = null)
         {
             Type resolveType = ResolveType(typeof(T));
             return (scope?.ServiceProvider ?? DI.GetGlobalServiceProvider(_testAssembly)).GetService(resolveType, new object[0]);
@@ -108,27 +124,4 @@ namespace AutoDI.Build.Tests
             }
         }
     }
-
-    //<assembly>
-    //<ref: AutoDI />
-    //<weaver: AutoDI.Build.ProcessAssemblyTask />
-    namespace ScopeTestsNamespace
-    {
-        public interface IService
-        { }
-
-        public interface IService2
-        { }
-
-        public class Service : IService, IService2
-        { }
-
-        public interface ILogger<T> { }
-
-        public class Logger<T> : ILogger<T> { }
-
-        public class MyClass { }
-        public class MyOtherClass { }
-    }
-    //</assembly>
 }

@@ -63,7 +63,7 @@ namespace AutoDI.Build.Tests
             var @class = Resolve<Service>();
             Assert.IsNotNull(@interface);
             Assert.IsNotNull(@class);
-            //NB: The class registration is transient while the single interfance registration is lazy singleton.
+            //NB: The class registration is transient while the single interface registration is lazy singleton.
             //These are different registrations.
             Assert.IsFalse(ReferenceEquals(@interface, @class));
         }

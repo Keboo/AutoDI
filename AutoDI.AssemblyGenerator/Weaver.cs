@@ -56,7 +56,7 @@ namespace AutoDI.AssemblyGenerator
             task.BuildEngine = buildEngine;
             if (Config != null)
             {
-                task.Config = Config;
+                //task.Config = Config;
             }
             bool result = task.Execute();
 

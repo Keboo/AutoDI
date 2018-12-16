@@ -94,7 +94,8 @@ namespace AutoDI.Build
 
         internal static string ProtectionModifierCSharp(this TypeAttributes typeAttributes)
         {
-            if (typeAttributes.HasFlag(TypeAttributes.NestedFamORAssem)) //Must come before NestedFamANDAssem
+            //Must come before NestedFamANDAssem
+            if (typeAttributes.HasFlag(TypeAttributes.NestedFamORAssem)) 
             {
                 return "protected internal";
             }
