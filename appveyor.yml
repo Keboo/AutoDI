@@ -28,9 +28,16 @@ before_build:
   
     nuget restore AutoDI.Test.sln
 
-build:
-  project: AutoDI.sln
-  verbosity: minimal
+build_script:
+- ps: >-
+    msbuild AutoDI.sln /property:Configuration=Release /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+    msbuild AutoDI.Test.sln /property:Configuration=Release /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+test:
+  assemblies:
+    only:
+    - '*.Tests.dll'
 
 
 for:
