@@ -25,7 +25,7 @@ nuget:
 before_build:
 - ps: >-
     nuget restore AutoDI.sln
-  
+
     nuget restore AutoDI.Test.sln
 
 build_script:
