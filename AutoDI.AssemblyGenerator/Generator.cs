@@ -30,6 +30,7 @@ namespace AutoDI.AssemblyGenerator
                 var typeRegex = new Regex(@"<\s*type:\s*(?<Name>\w+)\s*/>");
                 var referenceRegex = new Regex(@"<\s*ref:\s*(?<Name>[\w_\.]+)\s*/>");
                 var weaverRegex = new Regex(@"<\s*weaver:\s*(?<Name>[\w_\.]+)\s*/>");
+                var rawRegex = new Regex(@"<\s*raw:\s*(?<Value>.*?)\s*/>");
 
                 using (var sr = new StreamReader(sourceFile))
                 {
@@ -42,7 +43,7 @@ namespace AutoDI.AssemblyGenerator
                         if (trimmed.StartsWith("//") || trimmed.StartsWith("/*"))
                         {
                             // ReSharper disable TooWideLocalVariableScope
-                            Match assemblyStartMatch, typeMatch, referenceMatch, weaverMatch;
+                            Match assemblyStartMatch, typeMatch, referenceMatch, weaverMatch, rawMatch;
                             // ReSharper restore TooWideLocalVariableScope
                             if ((assemblyStartMatch = assemblyRegex.Match(trimmed)).Success)
                             {
@@ -102,6 +103,10 @@ namespace AutoDI.AssemblyGenerator
                                     }
                                     //TODO: Else
                                 }
+                                else if ((rawMatch = rawRegex.Match(trimmed)).Success)
+                                {
+                                    currentAssembly?.AppendLine(rawMatch.Groups["Value"].Value);
+                                }
                             }
                         }
                         currentAssembly?.AppendLine(line);
@@ -120,7 +125,7 @@ namespace AutoDI.AssemblyGenerator
                 var projectId = ProjectId.CreateNewId();
 
                 var document = DocumentInfo.Create(DocumentId.CreateNewId(projectId), "Generated.cs",
-                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents()),
+                    loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents(), System.Text.Encoding.Unicode),
                         VersionStamp.Create())));
 
                 var project = workspace.AddProject(ProjectInfo.Create(projectId,
@@ -130,25 +135,24 @@ namespace AutoDI.AssemblyGenerator
                     documents: new[] { document }, metadataReferences: assemblyInfo.References,
                     filePath: Path.GetFullPath(
                         $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
-                
+
                 Compilation compile = await project.GetCompilationAsync();
                 assemblyInfo.FilePath = Path.GetFullPath($"{assemblyName}.dll");
+                string pdbPath = Path.ChangeExtension(assemblyInfo.FilePath, ".pdb");
                 using (var file = File.Create(assemblyInfo.FilePath))
+                using (var pdbFile = File.Create(pdbPath))
                 {
-                    var emitResult = compile.Emit(file);
-                    if (emitResult.Success)
-                    {
-                        foreach (Weaver weaver in assemblyInfo.Weavers)
-                        {
-                            file.Position = 0;
-                            weaver.ApplyToAssembly(file);
-                        }
-                    }
-                    else
+                    var emitResult = compile.Emit(file, pdbFile);
+                    if (!emitResult.Success)
                     {
                         throw new CompileException(emitResult.Diagnostics);
                     }
                 }
+                foreach (Weaver weaver in assemblyInfo.Weavers)
+                {
+                    weaver.ApplyToAssembly(assemblyInfo.FilePath);
+                }
+
                 assemblyInfo.Assembly = Assembly.LoadFile(assemblyInfo.FilePath);
                 builtAssemblies.Add(assemblyInfo.Name ?? assemblyName, assemblyInfo);
             }

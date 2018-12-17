@@ -1,0 +1,90 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2036
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}"
+	ProjectSection(SolutionItems) = preProject
+		appveyor.yml = appveyor.yml
+		BuildLocalNugets.ps1 = BuildLocalNugets.ps1
+		local.testsettings = local.testsettings
+		README.md = README.md
+		testing.runsettings = testing.runsettings
+		NuGet\UpdateNuspecFiles.ps1 = NuGet\UpdateNuspecFiles.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{1A6636EB-C26C-4F4D-9644-EC1BD8A725C0}"
+	ProjectSection(SolutionItems) = preProject
+		Icons\needle.ico = Icons\needle.ico
+		Icons\needle.png = Icons\needle.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestAssemblies", "TestAssemblies", "{B4CA1BCE-FBE2-4BC3-B1A8-C1398496B86E}"
+	ProjectSection(SolutionItems) = preProject
+		TestAssemblies\Directory.Build.targets = TestAssemblies\Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FullFrameworkLib", "TestAssemblies\FullFrameworkLib\FullFrameworkLib.csproj", "{347D0821-B594-4DCC-99FF-52F600C2A8B2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLib", "TestAssemblies\CoreLib\CoreLib.csproj", "{2C5F8278-4A2E-4535-8313-E020F9B46FF5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8B27C398-C3F3-4156-A3B4-4163EB3BB85A}"
+	ProjectSection(SolutionItems) = preProject
+		Tests\Directory.Build.targets = Tests\Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLib.Tests", "Tests\CoreLib.Tests\CoreLib.Tests.csproj", "{DB64B655-7AEB-4778-A65E-0C4A38ACF2E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FullFrameworkLib.Tests", "Tests\FullFrameworkLib.Tests\FullFrameworkLib.Tests.csproj", "{941253A2-105A-471B-A8A7-EADD60123E84}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLibSigned", "TestAssemblies\CoreLibSigned\CoreLibSigned.csproj", "{F1CFAE20-167C-490D-B1AA-D61FC75AC55B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLibSigned.Tests", "Tests\CoreLibSigned.Tests\CoreLibSigned.Tests.csproj", "{4A48AB88-3922-4C8E-870D-A0FB8B4C74DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{347D0821-B594-4DCC-99FF-52F600C2A8B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{347D0821-B594-4DCC-99FF-52F600C2A8B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{347D0821-B594-4DCC-99FF-52F600C2A8B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{347D0821-B594-4DCC-99FF-52F600C2A8B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C5F8278-4A2E-4535-8313-E020F9B46FF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C5F8278-4A2E-4535-8313-E020F9B46FF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C5F8278-4A2E-4535-8313-E020F9B46FF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C5F8278-4A2E-4535-8313-E020F9B46FF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB64B655-7AEB-4778-A65E-0C4A38ACF2E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB64B655-7AEB-4778-A65E-0C4A38ACF2E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB64B655-7AEB-4778-A65E-0C4A38ACF2E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB64B655-7AEB-4778-A65E-0C4A38ACF2E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{941253A2-105A-471B-A8A7-EADD60123E84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{941253A2-105A-471B-A8A7-EADD60123E84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{941253A2-105A-471B-A8A7-EADD60123E84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{941253A2-105A-471B-A8A7-EADD60123E84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1CFAE20-167C-490D-B1AA-D61FC75AC55B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1CFAE20-167C-490D-B1AA-D61FC75AC55B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1CFAE20-167C-490D-B1AA-D61FC75AC55B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1CFAE20-167C-490D-B1AA-D61FC75AC55B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A48AB88-3922-4C8E-870D-A0FB8B4C74DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A48AB88-3922-4C8E-870D-A0FB8B4C74DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A48AB88-3922-4C8E-870D-A0FB8B4C74DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A48AB88-3922-4C8E-870D-A0FB8B4C74DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1A6636EB-C26C-4F4D-9644-EC1BD8A725C0} = {D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}
+		{347D0821-B594-4DCC-99FF-52F600C2A8B2} = {B4CA1BCE-FBE2-4BC3-B1A8-C1398496B86E}
+		{2C5F8278-4A2E-4535-8313-E020F9B46FF5} = {B4CA1BCE-FBE2-4BC3-B1A8-C1398496B86E}
+		{DB64B655-7AEB-4778-A65E-0C4A38ACF2E0} = {8B27C398-C3F3-4156-A3B4-4163EB3BB85A}
+		{941253A2-105A-471B-A8A7-EADD60123E84} = {8B27C398-C3F3-4156-A3B4-4163EB3BB85A}
+		{F1CFAE20-167C-490D-B1AA-D61FC75AC55B} = {B4CA1BCE-FBE2-4BC3-B1A8-C1398496B86E}
+		{4A48AB88-3922-4C8E-870D-A0FB8B4C74DA} = {8B27C398-C3F3-4156-A3B4-4163EB3BB85A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4E3F596C-3D1B-4F27-9F3F-D9D892CF6DE6}
+	EndGlobalSection
+EndGlobal

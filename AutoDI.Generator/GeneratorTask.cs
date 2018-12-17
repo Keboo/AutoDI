@@ -1,20 +1,15 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Xml.Linq;
-using AutoDI.Fody;
+﻿using AutoDI.Build;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
-using ILogger = AutoDI.Fody.ILogger;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace AutoDI.Generator
 {
     public class GeneratorTask : Task, ICancelableTask
     {
-        [Required]
-        public string ProjectPath { get; set; }
-
         [Required]
         public string OutputPath { get; set; }
 
@@ -33,22 +28,28 @@ namespace AutoDI.Generator
 
         public override bool Execute()
         {
+            var assemblyResolver = new DefaultAssemblyResolver();
+            assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(OutputPath));
 
-            XElement configElement = GetConfigElement(ProjectPath);
-            var settings = Settings.Parse(new Settings(), configElement);
-            var logger = new TaskLogger(BuildEngine, settings.DebugLogLevel);
+            var compiledAssembly = AssemblyDefinition.ReadAssembly(OutputPath);
+
+            var logger = new TaskLogger(this);
+
+            var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, logger);
+
+            var settings = Settings.Load(typeResolver);
+            logger.DebugLogLevel = settings.DebugLogLevel;
+
             if (settings.GenerateRegistrations)
             {
-                var assemblyResolver = new DefaultAssemblyResolver();
-                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(OutputPath));
-
-                var compiledAssembly = AssemblyDefinition.ReadAssembly(OutputPath);
-                var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, logger);
                 ICollection<TypeDefinition> allTypes =
                     typeResolver.GetAllTypes(settings, out AssemblyDefinition _);
                 Mapping mapping = Mapping.GetMapping(settings, allTypes, logger);
 
-                Directory.CreateDirectory(Path.GetDirectoryName(GeneratedFilePath));
+                if (Path.GetDirectoryName(GeneratedFilePath) is string directory)
+                {
+                    Directory.CreateDirectory(directory);
+                }
                 using (var file = File.Open(GeneratedFilePath, FileMode.Create))
                 {
                     WriteClass(mapping, settings, SetupMethod.Find(compiledAssembly.MainModule, logger), file);
@@ -56,19 +57,6 @@ namespace AutoDI.Generator
                 }
             }
             return true;
-        }
-
-        private static XElement GetConfigElement(string projectPath)
-        {
-            var projectDir = Path.GetDirectoryName(projectPath);
-            if (projectDir == null) return null;
-            var configFile = Path.Combine(projectDir, "FodyWeavers.xml");
-            if (File.Exists(configFile))
-            {
-                var xElement = XElement.Load(configFile);
-                return xElement.Elements("AutoDI").FirstOrDefault();
-            }
-            return null;
         }
 
         private static void WriteClass(Mapping mapping, Settings settings, MethodDefinition setupMethod, Stream output)
@@ -189,42 +177,6 @@ namespace AutoDI.Generator
         public void Cancel()
         {
 
-        }
-
-        private class TaskLogger : ILogger
-        {
-            private const string Sender = "AutoDI";
-            private readonly IBuildEngine _BuildEngine;
-            private readonly DebugLogLevel _DebugLogLevel;
-
-            public TaskLogger(IBuildEngine buildEngine, DebugLogLevel debugLogLevel)
-            {
-                _BuildEngine = buildEngine;
-                _DebugLogLevel = debugLogLevel;
-            }
-
-            public void Debug(string message, DebugLogLevel debugLevel)
-            {
-                if (debugLevel <= _DebugLogLevel)
-                {
-                    _BuildEngine.LogMessageEvent(new BuildMessageEventArgs(message, "", "AutoDI", MessageImportance.Normal));
-                }
-            }
-
-            public void Info(string message)
-            {
-                _BuildEngine.LogMessageEvent(new BuildMessageEventArgs(message, "", "AutoDI", MessageImportance.High));
-            }
-
-            public void Warning(string message)
-            {
-                _BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, message, "", Sender));
-            }
-
-            public void Error(string message)
-            {
-                _BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, message, "", Sender));
-            }
         }
     }
 }

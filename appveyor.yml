@@ -5,8 +5,7 @@ platform: Any CPU
 skip_tags: true
 
 environment:
-  autodi_version: 3.3.0
-  APPVEYOR_BLOCK_DOTNETCORE_TESTS_AUTORUN: true
+  autodi_version: 4.0.0
 
 init:
 - ps: >-
@@ -23,11 +22,20 @@ nuget:
   disable_publish_on_pr: true
 
 before_build:
-- ps: nuget restore
+- ps: >-
+    nuget restore AutoDI.sln
 
-build:
-  project: AutoDI.sln
-  verbosity: minimal
+    nuget restore AutoDI.Test.sln
+
+build_script:
+- ps: >-
+    msbuild AutoDI.sln /property:Configuration=Release /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+    msbuild AutoDI.Test.sln /property:Configuration=Release /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
+test_script:
+- vstest.console /logger:Appveyor "AutoDI.Build.Tests\bin\Release\net471\AutoDI.Build.Tests.dll" "AutoDI.Tests\bin\Release\net471\AutoDI.Tests.dll" "Tests\FullFrameworkLib.Tests\bin\Release\FullFrameworkLib.Tests.dll"
+- dotnet test --no-build --no-restore AutoDI.Test.sln
 
 
 for:
@@ -41,7 +49,7 @@ for:
     
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
-      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
+      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
       nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$env:autodi_version-ci$env:appveyor_build_number" -Symbols
     
@@ -63,7 +71,7 @@ for:
     
       nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$env:autodi_version" -Symbols
     
-      nuget pack Nuget\AutoDI.Fody\AutoDI.Fody.nuspec -Version "$env:autodi_version"  -Symbols
+      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$env:autodi_version"  -Symbols
     
       nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$env:autodi_version"  -Symbols
     

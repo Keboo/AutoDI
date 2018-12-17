@@ -8,7 +8,7 @@ namespace AutoDI.AssemblyGenerator
     {
         public string[] Errors { get; }
 
-        public WeaverErrorException(ICollection<string> errors)
+        public WeaverErrorException(IReadOnlyCollection<string> errors)
             : base(string.Join(Environment.NewLine, errors))
         {
             Errors = errors.ToArray();
