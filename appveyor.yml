@@ -37,6 +37,7 @@ test:
   assemblies:
     only:
     - '**\*.Tests.dll'
+    - '**\*.Tests.csproj'
 
 
 for:
