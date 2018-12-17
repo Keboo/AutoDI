@@ -35,7 +35,7 @@ build_script:
 
 test_script:
 - ps: >- 
-    vstest.console /logger:Appveyor "AutoDI.Build.Tests\bin\Release\net462\AutoDI.Build.Tests.dll" "AutoDI.Tests\bin\Release\net462\AutoDI.Tests.dll" "Tests\FullFrameworkLib.Tests\bin\Release\FullFrameworkLib.Tests.dll"
+    vstest.console /logger:Appveyor "AutoDI.Build.Tests\bin\Release\*\AutoDI.Build.Tests.dll" "AutoDI.Tests\bin\Release\*\AutoDI.Tests.dll" "Tests\FullFrameworkLib.Tests\bin\Release\FullFrameworkLib.Tests.dll"
     
     dotnet test --no-build --no-restore AutoDI.Test.sln
 
