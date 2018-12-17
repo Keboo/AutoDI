@@ -33,6 +33,12 @@ build_script:
 
     msbuild AutoDI.Test.sln /property:Configuration=Release /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
+test_script:
+- ps: >- 
+    vstest.console /logger:Appveyor "AutoDI.Build.Tests\bin\Release\net462\AutoDI.Build.Tests.dll" "AutoDI.Tests\bin\Release\net462\AutoDI.Tests.dll" "Tests\FullFrameworkLib.Tests\bin\Release\FullFrameworkLib.Tests.dll"
+    
+    dotnet test --no-build --no-restore --test-adapter-path:. --logger:Appveyor AutoDI.Test.sln
+
 
 for:
 -
