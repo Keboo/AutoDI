@@ -33,12 +33,6 @@ build_script:
 
     msbuild AutoDI.Test.sln /property:Configuration=Release /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
-test:
-  assemblies:
-    only:
-    - '**\*.Tests.dll'
-    - '**\*.Tests.csproj'
-
 
 for:
 -
