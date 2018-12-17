@@ -37,7 +37,7 @@ build_script:
 test:
   assemblies:
     only:
-    - '*.Tests.dll'
+    - '**\*.Tests.dll'
 
 
 for:
