@@ -9,7 +9,7 @@ namespace AutoDI.Build
             Settings settings;
             try
             {
-                settings = Settings.Load(typeResolver, Config);
+                settings = Settings.Load(typeResolver);
             }
             catch (SettingsParseException e)
             {

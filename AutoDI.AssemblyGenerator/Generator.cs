@@ -30,6 +30,7 @@ namespace AutoDI.AssemblyGenerator
                 var typeRegex = new Regex(@"<\s*type:\s*(?<Name>\w+)\s*/>");
                 var referenceRegex = new Regex(@"<\s*ref:\s*(?<Name>[\w_\.]+)\s*/>");
                 var weaverRegex = new Regex(@"<\s*weaver:\s*(?<Name>[\w_\.]+)\s*/>");
+                var rawRegex = new Regex(@"<\s*raw:\s*(?<Value>.*?)\s*/>");
 
                 using (var sr = new StreamReader(sourceFile))
                 {
@@ -42,7 +43,7 @@ namespace AutoDI.AssemblyGenerator
                         if (trimmed.StartsWith("//") || trimmed.StartsWith("/*"))
                         {
                             // ReSharper disable TooWideLocalVariableScope
-                            Match assemblyStartMatch, typeMatch, referenceMatch, weaverMatch;
+                            Match assemblyStartMatch, typeMatch, referenceMatch, weaverMatch, rawMatch;
                             // ReSharper restore TooWideLocalVariableScope
                             if ((assemblyStartMatch = assemblyRegex.Match(trimmed)).Success)
                             {
@@ -101,6 +102,10 @@ namespace AutoDI.AssemblyGenerator
                                         currentAssembly.AddWeaver(weaver);
                                     }
                                     //TODO: Else
+                                }
+                                else if ((rawMatch = rawRegex.Match(trimmed)).Success)
+                                {
+                                    currentAssembly?.AppendLine(rawMatch.Groups["Value"].Value);
                                 }
                             }
                         }

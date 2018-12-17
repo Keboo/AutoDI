@@ -19,12 +19,10 @@ namespace AutoDI.Build
 {
     public partial class ProcessAssemblyTask : AssemblyRewriteTask
     {
-        protected override bool WriteAssembly()
+        protected override bool WeaveAssembly()
         {
             try
             {
-                AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
-
                 Logger.Debug($"Starting AutoDI Weaver v{GetType().Assembly.GetCustomAttribute<AssemblyVersionAttribute>()?.Version}", DebugLogLevel.Default);
 
                 var typeResolver = new TypeResolver(ModuleDefinition, ModuleDefinition.AssemblyResolver, Logger);
@@ -87,27 +85,6 @@ namespace AutoDI.Build
                     sb.AppendLine(e.ToString());
                 Logger.Error(sb.ToString());
                 return false;
-            }
-            finally
-            {
-                AppDomain.CurrentDomain.AssemblyResolve -= CurrentDomainOnAssemblyResolve;
-            }
-        }
-
-        private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            var assembly = ResolveAssembly(args.Name);
-            if (assembly == null)
-            {
-                Logger.Warning($"Failed to resolve assembly '{args.Name}'");
-                return null;
-            }
-            Logger.Debug($"Resolved assembly '{assembly.FullName}'", DebugLogLevel.Verbose);
-            using (var memoryStream = new MemoryStream())
-            {
-                assembly.Write(memoryStream);
-                memoryStream.Position = 0;
-                return Assembly.Load(memoryStream.ToArray());
             }
         }
 

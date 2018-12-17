@@ -20,6 +20,7 @@ Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     <dependencies>
       <dependency id="AutoDI" version="[0.0.0,0.1.0)" />
       <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="[2.0.0,3.0.0)" />
+      <dependency id="Microsoft.AspNetCore.Hosting.Abstractions" version="[2.2.0,3.0.0)" />
     </dependencies>
   </metadata>
 </package>

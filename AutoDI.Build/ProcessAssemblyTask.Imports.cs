@@ -13,7 +13,7 @@ namespace AutoDI.Build
         {
             if (Import == null)
             {
-                Import = new Imports(FindType, ModuleDefinition, this);
+                Import = new Imports(TypeResolver.ResolveType, ModuleDefinition, this);
             }
         }
 

@@ -11,7 +11,7 @@
     <iconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>
-AutoDI classes. These are expected to be used with the AutoDI.Fody extension.
+AutoDI classes. These are expected to be used with the AutoDI.Build package.
 
 Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     </description>
