@@ -18,7 +18,6 @@ Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     <copyright>Copyright 2018</copyright>
     <tags>AutoDI</tags>
     <dependencies>
-      <dependency id="Mono.Cecil" version="0.10.1" />
       <dependency id="AutoDI" version="[0.0.0,0.1.0)" />
       <dependency id="Microsoft.Extensions.DependencyInjection.Abstractions" version="[2.0.0,3.0.0)" />
     </dependencies>
