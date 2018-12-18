@@ -100,7 +100,7 @@ namespace AutoDI.Build
             return !Logger.ErrorLogged;
         }
 
-        public void Cancel()
+        public virtual void Cancel()
         {
 
         }
