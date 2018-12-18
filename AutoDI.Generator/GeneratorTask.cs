@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace AutoDI.Generator
 {
-    public class GeneratorTask : Task, ICancelableTask
+    public class GeneratorTask : AssemblyRewriteTask
     {
         [Required]
         public string OutputPath { get; set; }
@@ -26,11 +26,9 @@ namespace AutoDI.Generator
             set => _generatedCodeFiles = value;
         }
 
-        public override bool Execute()
+        protected override bool WeaveAssembly()
         {
-            var compiledAssembly = AssemblyDefinition.ReadAssembly(OutputPath);
-            
-            var settings = Settings.Load(compiledAssembly.MainModule);
+            var settings = Settings.Load(ModuleDefinition);
 
             if (settings.GenerateRegistrations)
             {
@@ -39,7 +37,7 @@ namespace AutoDI.Generator
 
                 var logger = new TaskLogger(this) { DebugLogLevel = settings.DebugLogLevel };
 
-                var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, logger);
+                var typeResolver = new TypeResolver(ModuleDefinition, assemblyResolver, logger);
 
                 ICollection<TypeDefinition> allTypes =
                     typeResolver.GetAllTypes(settings, out AssemblyDefinition _);
@@ -51,11 +49,12 @@ namespace AutoDI.Generator
                 }
                 using (var file = File.Open(GeneratedFilePath, FileMode.Create))
                 {
-                    WriteClass(mapping, settings, SetupMethod.Find(compiledAssembly.MainModule, logger), file);
+                    WriteClass(mapping, settings, SetupMethod.Find(ModuleDefinition, logger), file);
                     GeneratedCodeFiles = new ITaskItem[] { new TaskItem(GeneratedFilePath) };
                 }
             }
-            return true;
+            //Returning false ensures that the original module is not re-written with any changes
+            return false;
         }
 
         private static void WriteClass(Mapping mapping, Settings settings, MethodDefinition setupMethod, Stream output)
@@ -173,9 +172,6 @@ namespace AutoDI.Generator
             }
         }
 
-        public void Cancel()
-        {
 
-        }
     }
 }
