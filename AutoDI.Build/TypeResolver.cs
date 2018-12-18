@@ -36,9 +36,9 @@ namespace AutoDI.Build
                     continue;
                 }
                 bool isMainModule = ReferenceEquals(module, _module);
-                bool useAutoDiAssebmlies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
+                bool useAutoDiAssemblies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
                 bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(module.Assembly));
-                if (isMainModule || useAutoDiAssebmlies || matchesAssembly)
+                if (isMainModule || useAutoDiAssemblies || matchesAssembly)
                 {
                     //Check if it references AutoDI. If it doesn't we will skip
                     //We also always process the main module since the weaver was directly added to it

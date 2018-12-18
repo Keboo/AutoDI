@@ -28,20 +28,19 @@ namespace AutoDI.Generator
 
         public override bool Execute()
         {
-            var assemblyResolver = new DefaultAssemblyResolver();
-            assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(OutputPath));
-
             var compiledAssembly = AssemblyDefinition.ReadAssembly(OutputPath);
-
-            var logger = new TaskLogger(this);
-
-            var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, logger);
-
-            var settings = Settings.Load(typeResolver);
-            logger.DebugLogLevel = settings.DebugLogLevel;
+            
+            var settings = Settings.Load(compiledAssembly.MainModule);
 
             if (settings.GenerateRegistrations)
             {
+                var assemblyResolver = new DefaultAssemblyResolver();
+                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(OutputPath));
+
+                var logger = new TaskLogger(this) { DebugLogLevel = settings.DebugLogLevel };
+
+                var typeResolver = new TypeResolver(compiledAssembly.MainModule, assemblyResolver, logger);
+
                 ICollection<TypeDefinition> allTypes =
                     typeResolver.GetAllTypes(settings, out AssemblyDefinition _);
                 Mapping mapping = Mapping.GetMapping(settings, allTypes, logger);
