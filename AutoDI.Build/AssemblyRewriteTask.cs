@@ -60,6 +60,11 @@ namespace AutoDI.Build
             {
                 TypeResolver = assemblyResolver;
             }
+            foreach (var assemblyName in GetAssembliesToInclude())
+            {
+                AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
+            }
+
 
             using (Stream symbolStream = GetSymbolInformation(
                 out ISymbolReaderProvider symbolReaderProvider,
@@ -75,15 +80,12 @@ namespace AutoDI.Build
                     InMemory = true
                 };
 
-                foreach (var assemblyName in GetAssembliesToInclude())
-                {
-                    AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
-                }
-
                 using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
                 {
+                    Logger.Info($"Loaded '{AssemblyFile}'");
                     if (WeaveAssembly())
                     {
+                        Logger.Info("Weaving complete - updating assembly");
                         var parameters = new WriterParameters
                         {
                             WriteSymbols = symbolReaderProvider != null,
@@ -92,11 +94,15 @@ namespace AutoDI.Build
                         
                         ModuleDefinition.Write(AssemblyFile, parameters);
                     }
+                    else
+                    {
+                        Logger.Info("Weaving complete - no update");
+                    }
                 }
             }
 
             sw.Stop();
-            Logger.Info("AutoDI Complete");
+            Logger.Info($"AutoDI Complete {sw.Elapsed}");
             return !Logger.ErrorLogged;
         }
 

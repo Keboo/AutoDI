@@ -22,25 +22,25 @@ namespace AutoDI.Build
         public void Error(string message)
         {
             ErrorLogged = true;
-            _task.BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, message, "", MessageSender));
+            _task.BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender));
         }
 
         public void Debug(string message, DebugLogLevel debugLevel)
         {
             if (debugLevel >= DebugLogLevel)
             {
-                _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs(message, "", MessageSender, MessageImportance.Low));
+                _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Low));
             }
         }
 
         public void Info(string message)
         {
-            _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs(message, "", MessageSender, MessageImportance.Normal));
+            _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Normal));
         }
 
         public void Warning(string message)
         {
-            _task.BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, message, "", MessageSender));
+            _task.BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender));
         }
     }
 }

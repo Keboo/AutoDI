@@ -25,7 +25,6 @@ namespace AutoDI.Build
                 AssemblyDefinition assembly = GetFromPath(assemblyPath);
                 if (assembly != null)
                 {
-                    logger.Info($"Loaded '{assemblyPath}'");
                     _assemblyCache[assembly.Name.Name] = assembly;
                 }
             }
@@ -38,14 +37,17 @@ namespace AutoDI.Build
 
             if (_assemblyCache.TryGetValue(name.Name, out AssemblyDefinition assemblyDefinition))
             {
-                _logger.Info($"Resolved {name.Name} from cache");
                 return assemblyDefinition;
             }
             assemblyDefinition = base.Resolve(name, readParameters);
-            _logger.Info(assemblyDefinition != null ? $"Resolved {name.Name}" : $"Could not find {name.Name}");
+            
             if (assemblyDefinition != null)
             {
                 _assemblyCache[name.Name] = assemblyDefinition;
+            }
+            else
+            {
+                _logger.Info($"Could not find {name.Name}");
             }
             return assemblyDefinition;
         }
