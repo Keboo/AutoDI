@@ -4,12 +4,12 @@ namespace AutoDI.Build
 {
     public partial class ProcessAssemblyTask
     {
-        private Settings LoadSettings(TypeResolver typeResolver)
+        private Settings LoadSettings()
         {
             Settings settings;
             try
             {
-                settings = Settings.Load(typeResolver);
+                settings = Settings.Load(ModuleDefinition);
             }
             catch (SettingsParseException e)
             {

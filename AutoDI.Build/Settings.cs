@@ -8,11 +8,10 @@ namespace AutoDI.Build
 {
     internal class Settings
     {
-        public static Settings Load(TypeResolver typeResolver)
+        public static Settings Load(ModuleDefinition module)
         {
             var settings = new Settings();
-            foreach (CustomAttribute attribute in typeResolver.GetAllModules()
-                .SelectMany(m => m.Assembly.CustomAttributes))
+            foreach (CustomAttribute attribute in module.Assembly.CustomAttributes)
             {
                 if (attribute.AttributeType.IsType<SettingsAttribute>())
                 {
@@ -23,27 +22,26 @@ namespace AutoDI.Build
                             switch (property.Name)
                             {
                                 case nameof(SettingsAttribute.AutoInit):
-                                    settings.AutoInit = (bool) property.Argument.Value;
+                                    settings.AutoInit = (bool)property.Argument.Value;
                                     break;
                                 case nameof(SettingsAttribute.Behavior):
-                                    settings.Behavior = (Behaviors) property.Argument.Value;
+                                    settings.Behavior = (Behaviors)property.Argument.Value;
                                     break;
                                 case nameof(SettingsAttribute.DebugLogLevel):
-                                    settings.DebugLogLevel = (DebugLogLevel) property.Argument.Value;
+                                    settings.DebugLogLevel = (DebugLogLevel)property.Argument.Value;
                                     break;
                                 case nameof(SettingsAttribute.GenerateRegistrations):
-                                    settings.GenerateRegistrations = (bool) property.Argument.Value;
+                                    settings.GenerateRegistrations = (bool)property.Argument.Value;
                                     break;
                                 case nameof(SettingsAttribute.DebugCodeGeneration):
-                                    settings.DebugCodeGeneration = (CodeLanguage) property.Argument.Value;
+                                    settings.DebugCodeGeneration = (CodeLanguage)property.Argument.Value;
                                     break;
                             }
                         }
                     }
                 }
                 else if (attribute.AttributeType.IsType<MapAttribute>())
-                
-{
+                {
                     Lifetime? lifetime = null;
                     string targetTypePattern = null;
                     string sourceTypePattern = null;
@@ -89,7 +87,7 @@ namespace AutoDI.Build
                             case nameof(MapAttribute.SourceTypePattern):
                                 if (argument.Type.IsType<string>())
                                 {
-                                    sourceTypePattern = (string) argument.Value;
+                                    sourceTypePattern = (string)argument.Value;
                                 }
                                 else if (argument.Type.IsType<Type>())
                                 {
@@ -99,7 +97,7 @@ namespace AutoDI.Build
                             case nameof(MapAttribute.TargetTypePattern):
                                 if (argument.Type.IsType<string>())
                                 {
-                                    targetTypePattern = (string) argument.Value;
+                                    targetTypePattern = (string)argument.Value;
                                 }
                                 else if (argument.Type.IsType<Type>())
                                 {
@@ -109,7 +107,7 @@ namespace AutoDI.Build
                             case nameof(MapAttribute.Force):
                                 if (argument.Type.IsType<bool>())
                                 {
-                                    force = (bool) argument.Value;
+                                    force = (bool)argument.Value;
                                 }
                                 break;
                         }
@@ -287,94 +285,5 @@ namespace AutoDI.Build
 
             return sb.ToString();
         }
-
-        //public static Settings Parse(Settings settings, XElement rootElement)
-        //{
-        //    if (rootElement == null) return settings;
-        //
-        //    ParseAttributes(rootElement, 
-        //        Attrib.OptionalBool(nameof(AutoInit), x => settings.AutoInit = x),
-        //        Attrib.OptionalBool(nameof(GenerateRegistrations), x => settings.GenerateRegistrations = x),
-        //        Attrib.OptionalEnum<DebugLogLevel>(nameof(DebugLogLevel), x => settings.DebugLogLevel = x),
-        //        Attrib.OptionalBool(nameof(DebugExceptions), x => settings.DebugExceptions = x),
-        //        Attrib.Create(nameof(Behavior), x => settings.Behavior = x, (string x, out Behaviors behavior) =>
-        //        {
-        //            behavior = Behaviors.None;
-        //
-        //            if (string.IsNullOrWhiteSpace(x))
-        //                return false;
-        //
-        //            foreach (string value in x.Split(','))
-        //            {
-        //                if (Enum.TryParse(value, out Behaviors @enum))
-        //                    behavior |= @enum;
-        //                else
-        //                    return false;
-        //            }
-        //            return true;
-        //        }, false),
-        //        Attrib.OptionalEnum<CodeLanguage>(nameof(DebugCodeGeneration), x => settings.DebugCodeGeneration = x));
-        //
-        //    foreach (XElement element in rootElement.DescendantNodes().OfType<XElement>())
-        //    {
-        //        if (element.Name.LocalName.Equals("Assembly", StringComparison.OrdinalIgnoreCase))
-        //        {
-        //            string assemblyName = "";
-        //            ParseAttributes(element, Attrib.RequiredString("Name", x => assemblyName = x));
-        //            settings.Assemblies.Add(new MatchAssembly(assemblyName));
-        //        }
-        //        else if (element.Name.LocalName.Equals("Type", StringComparison.OrdinalIgnoreCase))
-        //        {
-        //            string typePattern = "";
-        //            Lifetime lifetime = DefaultLifetime;
-        //            ParseAttributes(element, Attrib.RequiredString("Name", x => typePattern = x),
-        //                Attrib.RequiredEnum<Lifetime>("Lifetime", x => lifetime = x));
-        //            settings.Types.Add(new MatchType(typePattern, lifetime));
-        //        }
-        //        else if (element.Name.LocalName.Equals("Map", StringComparison.OrdinalIgnoreCase))
-        //        {
-        //            string from = "";//GetRequiredString(element, "From");
-        //            string to = "";//GetRequiredString(element, "To");
-        //            bool force = false;
-        //            Lifetime? lifetime = null;
-        //            ParseAttributes(element, Attrib.RequiredString("From", x => from = x),
-        //                Attrib.RequiredString("To", x => to = x),
-        //                Attrib.OptionalBool("Force", x => force = x),
-        //                Attrib.OptionalEnum<Lifetime>("Lifetime", x => lifetime = x));
-        //
-        //            settings.Maps.Add(new Map(from, to, force, lifetime));
-        //        }
-        //        else
-        //        {
-        //            throw new SettingsParseException($"'{element.Name.LocalName}' is not a valid child node of AutoDI");
-        //        }
-        //    }
-        //
-        //    return settings;
-        //
-        //    void ParseAttributes(XElement element, params IAttribute[] attributes)
-        //    {
-        //        Dictionary<string, IAttribute> attributesByName =
-        //            attributes.ToDictionary(x => x.Name, StringComparer.OrdinalIgnoreCase);
-        //
-        //        foreach (XAttribute attribute in element.Attributes())
-        //        {
-        //            if (attributesByName.TryGetValue(attribute.Name.LocalName, out IAttribute attrib))
-        //            {
-        //                attrib.Set(attribute.Value);
-        //                attributesByName.Remove(attribute.Name.LocalName);
-        //            }
-        //            else
-        //            {
-        //                throw new SettingsParseException($"'{attribute.Name.LocalName}' is not a valid attribute for {element.Name.LocalName}");
-        //            }
-        //        }
-        //
-        //        foreach (IAttribute attribute in attributesByName.Values.Where(x => x.IsRequired))
-        //        {
-        //            throw new SettingsParseException($"'{element.Name.LocalName}' requires a value for '{attribute.Name}'");
-        //        }
-        //    }
-        //}
     }
 }

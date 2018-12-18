@@ -27,7 +27,7 @@ namespace AutoDI.Build
 
                 var typeResolver = new TypeResolver(ModuleDefinition, ModuleDefinition.AssemblyResolver, Logger);
 
-                Settings settings = LoadSettings(typeResolver);
+                Settings settings = LoadSettings();
                 if (settings == null) return false;
 
                 ICollection<TypeDefinition> allTypes = typeResolver.GetAllTypes(settings, out AssemblyDefinition autoDIAssembly);
