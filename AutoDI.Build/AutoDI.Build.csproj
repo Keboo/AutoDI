@@ -25,14 +25,14 @@
   <!--<Target Name="CopyOutput" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Release'">-->
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
     <ItemGroup>
-      <LibItems Include="$(TargetDir)..\**\$(TargetFileName)" />
-      <LibItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
-      <LibItems Include="$(TargetDir)..\**\Mono.Cecil.*" />
-      <LibItems Include="$(SolutionDir)NuGet\AutoDI\lib\netstandard2.0\*" />
+      <RootItems Include="$(TargetDir)..\**\$(TargetFileName)" />
+      <RootItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
+      <RootItems Include="$(TargetDir)..\**\Mono.Cecil.*" />
+      <RootItems Include="$(SolutionDir)NuGet\AutoDI\lib\netstandard2.0\*" />
 
       <BuildItems Include="$(ProjectDir)AutoDI.Build.targets" />
     </ItemGroup>
-    <Copy SourceFiles="@(LibItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib" />
+    <Copy SourceFiles="@(RootItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)" />
     <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build" />
   </Target>
 </Project>
