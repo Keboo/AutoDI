@@ -46,7 +46,7 @@ namespace AutoDI.Build
                 Logger = new TaskLogger(this);
             }
 
-            Logger.Info("Starting AutoDI");
+            Logger.Info($"Starting AutoDI on '{AssemblyFile}'");
             var sw = Stopwatch.StartNew();
 
             using (var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), Logger))

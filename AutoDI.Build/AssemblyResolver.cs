@@ -25,7 +25,8 @@ namespace AutoDI.Build
                 AssemblyDefinition assembly = GetFromPath(assemblyPath);
                 if (assembly != null)
                 {
-                    _assemblyCache[assembly.Name.FullName] = assembly;
+                    logger.Info($"Caching ref '{assembly.Name.FullName}' from '{assembly.MainModule.FileName}'");
+                    _assemblyCache[assembly.Name.Name] = assembly;
                 }
             }
             
@@ -36,7 +37,7 @@ namespace AutoDI.Build
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
 
-            if (_assemblyCache.TryGetValue(name.FullName, out AssemblyDefinition assemblyDefinition))
+            if (_assemblyCache.TryGetValue(name.Name, out AssemblyDefinition assemblyDefinition))
             {
                 _logger.Info($"Loaded {name.FullName} from cache");
                 return assemblyDefinition;
@@ -45,8 +46,8 @@ namespace AutoDI.Build
             
             if (assemblyDefinition != null)
             {
-                _logger.Info($"Resolved {name.FullName}");
-                _assemblyCache[name.FullName] = assemblyDefinition;
+                _logger.Info($"Resolved {name.FullName} from '{assemblyDefinition.MainModule.FileName}'");
+                _assemblyCache[name.Name] = assemblyDefinition;
             }
             else
             {
@@ -89,6 +90,12 @@ namespace AutoDI.Build
             Assembly assembly;
             try
             {
+                _logger.Info($"failed to resolve {reference.FullName}");
+                if (_assemblyCache.TryGetValue(reference.Name, out AssemblyDefinition cached))
+                {
+                    _logger.Info("Using cache");
+                    return cached;
+                }
 #pragma warning disable 618
                 assembly = Assembly.LoadWithPartialName(reference.Name);
 #pragma warning restore 618
@@ -121,7 +128,7 @@ namespace AutoDI.Build
                 ReadSymbols = false,
                 AssemblyResolver = this
             };
-            _logger.Debug($"Loading '{filePath}'", DebugLogLevel.Verbose);
+            _logger.Info($"Loading '{filePath}'");
             return AssemblyDefinition.ReadAssembly(filePath, readerParameters);
         }
     }
