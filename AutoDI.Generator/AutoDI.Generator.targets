@@ -18,6 +18,8 @@
   <Target Name="AutoDITask" AfterTargets="AfterCompile" Condition="$(RunAutoDI) == 'True'">
     <GeneratorTask
       AssemblyFile="@(IntermediateAssembly)"
+      References="@(ReferencePath)"
+      DebugType="$(DebugType)"
       GeneratedFilePath="$(AutoDIOutputPath)$(AutoDIGeneratedFileName)">
       
       <Output ItemName="Compile" TaskParameter="GeneratedCodeFiles" />
