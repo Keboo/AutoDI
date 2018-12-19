@@ -11,9 +11,6 @@ namespace AutoDI.Generator
     public class GeneratorTask : AssemblyRewriteTask
     {
         [Required]
-        public string OutputPath { get; set; }
-
-        [Required]
         public string GeneratedFilePath { get; set; }
 
         private ITaskItem[] _generatedCodeFiles;
@@ -33,7 +30,7 @@ namespace AutoDI.Generator
             if (settings.GenerateRegistrations)
             {
                 var assemblyResolver = new DefaultAssemblyResolver();
-                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(OutputPath));
+                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(AssemblyFile));
 
                 var logger = new TaskLogger(this) { DebugLogLevel = settings.DebugLogLevel };
 
