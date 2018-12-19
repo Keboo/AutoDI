@@ -25,9 +25,10 @@ namespace AutoDI.Build
                 AssemblyDefinition assembly = GetFromPath(assemblyPath);
                 if (assembly != null)
                 {
-                    _assemblyCache[assembly.Name.Name] = assembly;
+                    _assemblyCache[assembly.Name.FullName] = assembly;
                 }
             }
+            
             logger.Info("Done loading referenced assemblies");
         }
 
@@ -35,19 +36,21 @@ namespace AutoDI.Build
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
 
-            if (_assemblyCache.TryGetValue(name.Name, out AssemblyDefinition assemblyDefinition))
+            if (_assemblyCache.TryGetValue(name.FullName, out AssemblyDefinition assemblyDefinition))
             {
+                _logger.Info($"Loaded {name.FullName} from cache");
                 return assemblyDefinition;
             }
             assemblyDefinition = base.Resolve(name, readParameters);
             
             if (assemblyDefinition != null)
             {
-                _assemblyCache[name.Name] = assemblyDefinition;
+                _logger.Info($"Resolved {name.FullName}");
+                _assemblyCache[name.FullName] = assemblyDefinition;
             }
             else
             {
-                _logger.Info($"Could not find {name.Name}");
+                _logger.Info($"Could not find {name.FullName}");
             }
             return assemblyDefinition;
         }
@@ -92,6 +95,7 @@ namespace AutoDI.Build
             }
             catch (FileNotFoundException)
             {
+                _logger.Warning($"Failed to location '{reference.Name}'");
                 assembly = null;
             }
 
@@ -108,6 +112,7 @@ namespace AutoDI.Build
         {
             if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             {
+                _logger.Warning($"Could not find assembly '{filePath}'");
                 return null;
             }
             var readerParameters = new ReaderParameters(ReadingMode.Deferred)
@@ -116,6 +121,7 @@ namespace AutoDI.Build
                 ReadSymbols = false,
                 AssemblyResolver = this
             };
+            _logger.Debug($"Loading '{filePath}'", DebugLogLevel.Verbose);
             return AssemblyDefinition.ReadAssembly(filePath, readerParameters);
         }
     }

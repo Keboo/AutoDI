@@ -329,5 +329,16 @@ namespace AutoDI.Build
             }
             Logger.Warning($"Unknown constant type {constant.GetType().FullName}");
         }
+
+        protected override IEnumerable<string> GetAssembliesToInclude()
+        {
+            return base.GetAssembliesToInclude().Concat(GetAssembliesToInclude());
+
+            IEnumerable<string> GetAssembliesToInclude()
+            {
+                yield return "AutoDI";
+                yield return "Microsoft.Extensions.DependencyInjection.Abstractions";
+            }
+        }
     }
 }

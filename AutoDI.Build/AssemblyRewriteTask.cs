@@ -36,10 +36,8 @@ namespace AutoDI.Build
 
         protected AssemblyDefinition ResolveAssembly(string assemblyName)
         {
-            return AssemblyResolver.Resolve(AssemblyNameReference.Parse(assemblyName));
+            return AssemblyResolver?.Resolve(AssemblyNameReference.Parse(assemblyName));
         }
-
-        //public XElement Config { get; set; }
 
         public override bool Execute()
         {
@@ -51,52 +49,55 @@ namespace AutoDI.Build
             Logger.Info("Starting AutoDI");
             var sw = Stopwatch.StartNew();
 
-            var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), Logger);
-            if (AssemblyResolver == null)
+            using (var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), Logger))
             {
-                AssemblyResolver = assemblyResolver;
-            }
-            if (TypeResolver == null)
-            {
-                TypeResolver = assemblyResolver;
-            }
-            foreach (var assemblyName in GetAssembliesToInclude())
-            {
-                AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
-            }
-
-
-            using (Stream symbolStream = GetSymbolInformation(
-                out ISymbolReaderProvider symbolReaderProvider,
-                out ISymbolWriterProvider symbolWriterProvider))
-            {
-                var readerParameters = new ReaderParameters
+                if (AssemblyResolver == null)
                 {
-                    AssemblyResolver = AssemblyResolver,
+                    AssemblyResolver = assemblyResolver;
+                }
 
-                    ReadSymbols = symbolStream != null || symbolReaderProvider is EmbeddedPortablePdbReaderProvider,
-                    SymbolReaderProvider = symbolReaderProvider,
-                    SymbolStream = symbolStream,
-                    InMemory = true
-                };
-
-                using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
+                if (TypeResolver == null)
                 {
-                    Logger.Info($"Loaded '{AssemblyFile}'");
-                    if (WeaveAssembly())
+                    TypeResolver = assemblyResolver;
+                }
+
+                foreach (var assemblyName in GetAssembliesToInclude())
+                {
+                    AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
+                }
+
+                using (Stream symbolStream = GetSymbolInformation(
+                    out ISymbolReaderProvider symbolReaderProvider,
+                    out ISymbolWriterProvider symbolWriterProvider))
+                {
+                    var readerParameters = new ReaderParameters
                     {
-                        Logger.Info("Weaving complete - updating assembly");
-                        var parameters = new WriterParameters
+                        AssemblyResolver = AssemblyResolver,
+
+                        ReadSymbols = symbolStream != null || symbolReaderProvider is EmbeddedPortablePdbReaderProvider,
+                        SymbolReaderProvider = symbolReaderProvider,
+                        SymbolStream = symbolStream,
+                        InMemory = true
+                    };
+                    
+                    using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
+                    {
+                        Logger.Info($"Loaded '{AssemblyFile}'");
+                        if (WeaveAssembly())
                         {
-                            WriteSymbols = symbolReaderProvider != null,
-                            SymbolWriterProvider = symbolWriterProvider,
-                        };
-                        
-                        ModuleDefinition.Write(AssemblyFile, parameters);
-                    }
-                    else
-                    {
-                        Logger.Info("Weaving complete - no update");
+                            Logger.Info("Weaving complete - updating assembly");
+                            var parameters = new WriterParameters
+                            {
+                                WriteSymbols = symbolReaderProvider != null,
+                                SymbolWriterProvider = symbolWriterProvider,
+                            };
+
+                            ModuleDefinition.Write(AssemblyFile, parameters);
+                        }
+                        else
+                        {
+                            Logger.Info("Weaving complete - no update");
+                        }
                     }
                 }
             }
@@ -127,8 +128,6 @@ namespace AutoDI.Build
             yield return "mscorlib";
             yield return "System";
             yield return "netstandard";
-            yield return "AutoDI";
-            yield return "Microsoft.Extensions.DependencyInjection.Abstractions";
             yield return "System.Collections";
         }
 
