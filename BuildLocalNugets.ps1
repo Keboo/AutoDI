@@ -12,7 +12,7 @@ if (!(Test-Path "nuget.exe")) {
 .\nuget\UpdateNuspecFiles.ps1 -Version $Version
 
 .\nuget pack NuGet\AutoDI\AutoDI.nuspec -Version $Version -Symbols
-.\nuget pack NuGet\AutoDI.Fody\AutoDI.Fody.nuspec -Version $Version -Symbols
+.\nuget pack NuGet\AutoDI.Build\AutoDI.Build.nuspec -Version $Version -Symbols
 .\nuget pack NuGet\AutoDI.Generator\AutoDI.Generator.nuspec -Version $Version -Symbols
 
 if ($TargetDir){

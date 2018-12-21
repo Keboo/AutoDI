@@ -4,7 +4,7 @@
   <PropertyGroup>
     <RunAutoDI Condition="'$(RunAutoDI)' == '' Or $(RunAutoDI) == '*Undefined*'">True</RunAutoDI>
     <AutoDIOutputPath Condition="'$(AutoDIOutputPath)' == '' Or $(AutoDIOutputPath) == '*Undefined*'">$(ProjectDir)$(IntermediateOutputPath)AutoDI.Generated\</AutoDIOutputPath>
-    <AutoDIGeneratorAssembly Condition="'$(AutoDIGeneratorAssembly)' == '' Or $(AutoDIGeneratorAssembly) == '*Undefined*'">$(MSBuildThisFileDirectory)..\lib\net461\AutoDI.Generator.dll</AutoDIGeneratorAssembly>
+    <AutoDIGeneratorAssembly Condition="'$(AutoDIGeneratorAssembly)' == '' Or $(AutoDIGeneratorAssembly) == '*Undefined*'">$(MSBuildThisFileDirectory)..\AutoDI.Generator.dll</AutoDIGeneratorAssembly>
     <AutoDIGeneratedFileName>AutoDI.cs</AutoDIGeneratedFileName>
   </PropertyGroup>
   
@@ -17,8 +17,9 @@
 
   <Target Name="AutoDITask" AfterTargets="AfterCompile" Condition="$(RunAutoDI) == 'True'">
     <GeneratorTask
-      ProjectPath="$(ProjectPath)"
-      OutputPath="@(IntermediateAssembly)"
+      AssemblyFile="@(IntermediateAssembly)"
+      References="@(ReferencePath)"
+      DebugType="$(DebugType)"
       GeneratedFilePath="$(AutoDIOutputPath)$(AutoDIGeneratedFileName)">
       
       <Output ItemName="Compile" TaskParameter="GeneratedCodeFiles" />

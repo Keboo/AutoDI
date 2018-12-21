@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,12 +16,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build" Version="15.8.166" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.8.166" />
+    <PackageReference Include="Microsoft.Build" Version="15.9.20" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.9.20" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AutoDI.Fody\AutoDI.Fody.csproj" />
+    <ProjectReference Include="..\AutoDI.Build\AutoDI.Build.csproj">
+      <Private>true</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
@@ -31,7 +34,7 @@
       <ContentItems Include="$(ProjectDir)AutoDI.cs" />
       <BuildItems Include="$(ProjectDir)AutoDI.Generator.targets" />
     </ItemGroup>
-    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\content\" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\contentFiles\cs\any\" />
     <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\" />

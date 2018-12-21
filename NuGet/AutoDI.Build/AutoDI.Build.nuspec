@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>AutoDI.Build</id>
+    <version>0.0.0</version>
+    <title>AutoDI.Build</title>
+    <authors>Keboo</authors>
+    <owners>Keboo</owners>
+    <licenseUrl>https://github.com/Keboo/AutoDI/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
+    <iconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>
+Provides MSBuild integration for AutoDI to simplify the creation of objects from your favorite DI container
+
+Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
+    </description>
+    <copyright>Copyright 2018</copyright>
+    <tags>AutoDI</tags>
+    <dependencies>
+      <dependency id="AutoDI" version="[0.0.0,0.1.0)" />
+    </dependencies>
+  </metadata>
+</package>

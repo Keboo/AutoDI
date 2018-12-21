@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "AutoDI.Build": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\MSBuild\\15.0\\Bin\\MSBuild.exe",
+      "commandLineArgs": "C:\\Dev\\AutoDI\\AssemblyToProcess\\AssemblyToProcess.csproj"
+    }
+  }
+}

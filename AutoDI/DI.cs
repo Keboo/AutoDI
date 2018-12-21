@@ -7,7 +7,6 @@ namespace AutoDI
 {
     public static class DI
     {
-
         public static void Init(Assembly containerAssembly = null, Action<IApplicationBuilder> configureMethod = null)
         {
             Type autoDI = GetAutoDIType(containerAssembly);
@@ -69,7 +68,7 @@ namespace AutoDI
                 : Type.GetType(typeName);
 
             if (containerType == null)
-                throw new GeneratedClassMissingException("Could not find AutoDI class. Was the fody weaver run on this assembly?");
+                throw new GeneratedClassMissingException("Could not find generated AutoDI class. Was the AutoDI.Build run on this assembly?");
             return containerType;
         }
 
