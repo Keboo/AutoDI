@@ -47,18 +47,34 @@ namespace AutoDI.Build
                     {
                         continue;
                     }
-                    _logger.Debug($"Including types from '{module.Assembly.FullName}'", DebugLogLevel.Default);
+                    _logger.Debug($"Including types from '{module.Assembly.FullName}' ({GetIncludeReason()})", DebugLogLevel.Default);
                     //Either references AutoDI, or was a config assembly match, include the types.
                     foreach (TypeDefinition type in FilterTypes(module.GetAllTypes()))
                     {
                         allTypes.Add(type);
+                    }
+
+                    string GetIncludeReason()
+                    {
+                        if (isMainModule) return "Main Module";
+                        if (matchesAssembly)
+                        {
+                            var match = settings.Assemblies.FirstOrDefault(a => a.Matches(module.Assembly));
+                            return $"Matches included assembly: {match}";
+                        }
+
+                        if (useAutoDiAssemblies)
+                        {
+                            return $"References {autoDIFullName}";
+                        }
+                        return "Unknown";
                     }
                 }
             }
             return allTypes;
         }
 
-        public IEnumerable<ModuleDefinition> GetAllModules()
+        private IEnumerable<ModuleDefinition> GetAllModules()
         {
             var seen = new HashSet<string>();
             var queue = new Queue<ModuleDefinition>();
@@ -72,6 +88,7 @@ namespace AutoDI.Build
                 foreach (AssemblyNameReference assemblyReference in module.AssemblyReferences)
                 {
                     if (seen.Contains(assemblyReference.FullName)) continue;
+
                     AssemblyDefinition assembly;
                     try
                     {
@@ -85,7 +102,10 @@ namespace AutoDI.Build
                     {
                         continue;
                     }
-                    seen.Add(assembly.FullName);
+                    if (!seen.Add(assembly.FullName))
+                    {
+                        continue;
+                    }
                     queue.Enqueue(assembly.MainModule);
                 }
             }

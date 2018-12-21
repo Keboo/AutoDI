@@ -25,7 +25,7 @@ namespace AutoDI.Build
                 AssemblyDefinition assembly = GetFromPath(assemblyPath);
                 if (assembly != null)
                 {
-                    logger.Info($"Caching ref '{assembly.Name.FullName}' from '{assembly.MainModule.FileName}'");
+                    logger.Debug($"Caching ref '{assembly.Name.FullName}' from '{assembly.MainModule.FileName}'", DebugLogLevel.Verbose);
                     _assemblyCache[assembly.Name.Name] = assembly;
                 }
             }
@@ -39,14 +39,14 @@ namespace AutoDI.Build
 
             if (_assemblyCache.TryGetValue(name.Name, out AssemblyDefinition assemblyDefinition))
             {
-                _logger.Info($"Loaded {name.FullName} from cache");
+                _logger.Debug($"Loaded assembly {name.FullName} from cache", DebugLogLevel.Verbose);
                 return assemblyDefinition;
             }
             assemblyDefinition = base.Resolve(name, readParameters);
             
             if (assemblyDefinition != null)
             {
-                _logger.Info($"Resolved {name.FullName} from '{assemblyDefinition.MainModule.FileName}'");
+                _logger.Debug($"Resolved assembly {name.FullName} from '{assemblyDefinition.MainModule.FileName}'", DebugLogLevel.Verbose);
                 _assemblyCache[name.Name] = assemblyDefinition;
             }
             else
@@ -90,10 +90,8 @@ namespace AutoDI.Build
             Assembly assembly;
             try
             {
-                _logger.Info($"failed to resolve {reference.FullName}");
                 if (_assemblyCache.TryGetValue(reference.Name, out AssemblyDefinition cached))
                 {
-                    _logger.Info("Using cache");
                     return cached;
                 }
 #pragma warning disable 618
@@ -102,7 +100,7 @@ namespace AutoDI.Build
             }
             catch (FileNotFoundException)
             {
-                _logger.Warning($"Failed to location '{reference.Name}'");
+                _logger.Warning($"Failed to resolve '{reference.Name}'");
                 assembly = null;
             }
 
@@ -128,7 +126,7 @@ namespace AutoDI.Build
                 ReadSymbols = false,
                 AssemblyResolver = this
             };
-            _logger.Info($"Loading '{filePath}'");
+            _logger.Debug($"Loading '{filePath}'", DebugLogLevel.Verbose);
             return AssemblyDefinition.ReadAssembly(filePath, readerParameters);
         }
     }
