@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net471</TargetFramework>
-    <LangVersion>7.2</LangVersion>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   
   <ItemGroup>
