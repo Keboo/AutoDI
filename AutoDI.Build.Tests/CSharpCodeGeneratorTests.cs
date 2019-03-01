@@ -326,7 +326,7 @@ namespace AutoDI.Build.Tests
         public void GeneratedSequencePointReferenceAbsoluteFilePath()
         {
             TypeDefinition type = _testModule.GetType(
-                $"{nameof(CSharpCodeGenerationTestsNamespace)}.{nameof(CSharpCodeGenerationTestsNamespace.Class1)}");
+                $"{nameof(CSharpCodeGenerationTestsNamespace)}.{nameof(CSharpCodeGenerationTestsNamespace.Class5)}");
             MethodDefinition ctor = type.GetConstructors().Single();
 
             var generator = new AutoDIBuild::AutoDI.Build.CodeGen.CSharpCodeGenerator(_outputDirectory);
@@ -339,7 +339,7 @@ namespace AutoDI.Build.Tests
             Assert.AreEqual(1, ctor.DebugInformation.SequencePoints.Count);
             
             SequencePoint first = ctor.DebugInformation.SequencePoints[0];
-            string expectedFilePath = Path.Combine(Path.GetFullPath(_outputDirectory), $"{nameof(CSharpCodeGenerationTestsNamespace)}.{nameof(CSharpCodeGenerationTestsNamespace.Class1)}.g.cs");
+            string expectedFilePath = Path.Combine(Path.GetFullPath(_outputDirectory), $"{nameof(CSharpCodeGenerationTestsNamespace)}.{nameof(CSharpCodeGenerationTestsNamespace.Class5)}.g.cs");
             Assert.AreEqual(expectedFilePath, first.Document.Url);
         }
 
@@ -383,6 +383,11 @@ namespace AutoDI.Build.Tests
             {
                 return 0;
             }
+        }
+
+        public class Class5
+        {
+
         }
 
         public class Outer
