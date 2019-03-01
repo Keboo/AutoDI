@@ -236,6 +236,7 @@ namespace AutoDI.Build.CodeGen
                 {
                     filePath = Path.Combine(outputDirectory, name);
                     filePath += $"{index}.g.cs";
+                    filePath = Path.GetFullPath(filePath);
                     index = index.GetValueOrDefault() + 1;
                 } while (File.Exists(filePath));
 

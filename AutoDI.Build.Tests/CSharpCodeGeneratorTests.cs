@@ -321,6 +321,28 @@ namespace AutoDI.Build.Tests
             }
         }
 
+        [TestMethod]
+        [Description("Issue 150")]
+        public void GeneratedSequencePointReferenceAbsoluteFilePath()
+        {
+            TypeDefinition type = _testModule.GetType(
+                $"{nameof(CSharpCodeGenerationTestsNamespace)}.{nameof(CSharpCodeGenerationTestsNamespace.Class5)}");
+            MethodDefinition ctor = type.GetConstructors().Single();
+
+            var generator = new AutoDIBuild::AutoDI.Build.CodeGen.CSharpCodeGenerator(_outputDirectory);
+            var ctorGenerator = generator.Method(ctor);
+
+            ctorGenerator.Append("object foo == null;", Instruction.Create(OpCodes.Nop));
+            
+            generator.Save();
+
+            Assert.AreEqual(1, ctor.DebugInformation.SequencePoints.Count);
+            
+            SequencePoint first = ctor.DebugInformation.SequencePoints[0];
+            string expectedFilePath = Path.Combine(Path.GetFullPath(_outputDirectory), $"{nameof(CSharpCodeGenerationTestsNamespace)}.{nameof(CSharpCodeGenerationTestsNamespace.Class5)}.g.cs");
+            Assert.AreEqual(expectedFilePath, first.Document.Url);
+        }
+
     }
 
     //<assembly>
@@ -361,6 +383,11 @@ namespace AutoDI.Build.Tests
             {
                 return 0;
             }
+        }
+
+        public class Class5
+        {
+
         }
 
         public class Outer

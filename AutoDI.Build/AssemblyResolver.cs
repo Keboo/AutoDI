@@ -117,8 +117,15 @@ namespace AutoDI.Build
         {
             if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             {
-                _logger.Warning($"Could not find assembly '{filePath}'");
-                return null;
+                if (!string.IsNullOrWhiteSpace(filePath) && File.Exists(Uri.UnescapeDataString(filePath)))
+                {
+                    filePath = Uri.UnescapeDataString(filePath);
+                }
+                else
+                {
+                    _logger.Warning($"Could not find assembly '{filePath}'");
+                    return null;
+                }
             }
             var readerParameters = new ReaderParameters(ReadingMode.Deferred)
             {
