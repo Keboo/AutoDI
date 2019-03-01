@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -59,7 +60,7 @@ namespace AutoDI.Build.CodeGen
 
             public CSharpMethodGenerator(MethodDefinition method)
             {
-                _method = method;
+                _method = method ?? throw new ArgumentNullException(nameof(method));
                 _document = new Document("") { Language = DocumentLanguage.CSharp };
             }
 
