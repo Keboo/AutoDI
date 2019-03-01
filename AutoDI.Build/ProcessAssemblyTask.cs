@@ -178,7 +178,7 @@ namespace AutoDI.Build
                         property.Name);
                 }
 
-                methodGenerator?.Append("//We now return you to your regularly scheduled method");
+                methodGenerator?.Append($"//We now return you to your regularly scheduled method{Environment.NewLine}");
 
                 method.Body.OptimizeMacros();
 
