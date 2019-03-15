@@ -5,7 +5,7 @@ platform: Any CPU
 skip_tags: true
 
 environment:
-  autodi_version: 4.0.0
+  autodi_version: 4.0.1
 
 assembly_info:
   patch: false
@@ -28,7 +28,7 @@ build_script:
     msbuild AutoDI.Test.sln /property:Configuration=Release /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
 test_script:
-- vstest.console /logger:Appveyor "AutoDI.Build.Tests\bin\Release\net471\AutoDI.Build.Tests.dll" "AutoDI.Tests\bin\Release\net471\AutoDI.Tests.dll" "Tests\FullFrameworkLib.Tests\bin\Release\FullFrameworkLib.Tests.dll"
+- vstest.console /logger:Appveyor "AutoDI.Build.Tests\bin\Release\net472\AutoDI.Build.Tests.dll" "AutoDI.Tests\bin\Release\net472\AutoDI.Tests.dll" "Tests\FullFrameworkLib.Tests\bin\Release\FullFrameworkLib.Tests.dll"
 - dotnet test --no-build --no-restore AutoDI.Test.sln
 
 
