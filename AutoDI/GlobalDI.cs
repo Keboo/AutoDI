@@ -6,16 +6,18 @@ namespace AutoDI
 {
     public static class GlobalDI
     {
-        private static readonly List<IServiceProvider> Providers = new List<IServiceProvider>();
+        private static readonly List<IServiceProvider> _providers = new List<IServiceProvider>();
+
+        public static IReadOnlyList<IServiceProvider> Providers => _providers.AsReadOnly();
 
         public static T GetService<T>(object[] parameters)
         {
-            lock (Providers)
+            lock (_providers)
             {
-                if (Providers.Count == 0)
+                if (_providers.Count == 0)
                     throw new NotInitializedException();
 
-                return Providers.Select(provider => provider.GetService<T>(parameters))
+                return _providers.Select(provider => provider.GetService<T>(parameters))
                     .FirstOrDefault(service => service != null);
             }
         }
@@ -27,12 +29,12 @@ namespace AutoDI
 
         public static object GetService(Type serviceType, object[] parameters)
         {
-            lock(Providers)
+            lock(_providers)
             {
-                if (Providers.Count == 0)
+                if (_providers.Count == 0)
                     throw new NotInitializedException();
 
-                return Providers.Select(provider => provider.GetService(serviceType, parameters))
+                return _providers.Select(provider => provider.GetService(serviceType, parameters))
                     .FirstOrDefault(service => service != null);
             }
         }
@@ -44,17 +46,17 @@ namespace AutoDI
 
         public static void Register(IServiceProvider provider)
         {
-            lock (Providers)
+            lock (_providers)
             {
-                Providers.Add(provider);
+                _providers.Insert(0, provider);
             }
         }
 
         public static bool Unregister(IServiceProvider provider)
         {
-            lock (Providers)
+            lock (_providers)
             {
-                return Providers.Remove(provider);
+                return _providers.Remove(provider);
             }
         }
     }
