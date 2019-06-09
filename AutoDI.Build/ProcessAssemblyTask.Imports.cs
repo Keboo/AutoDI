@@ -40,9 +40,12 @@ namespace AutoDI.Build
                     Action = new ActionImport(findType, moduleDefinition);
                     Type = new TypeImport(findType, moduleDefinition);
                     Collections = new CollectionsImport(findType, moduleDefinition);
+                    IDisposable = new DisposableImport(findType, moduleDefinition);
 
                     IServiceProvider = moduleDefinition.ImportReference(findType("System.IServiceProvider"));
                     Exception = moduleDefinition.ImportReference(findType("System.Exception"));
+                    Object = moduleDefinition.ImportReference(findType("System.Object"));
+                    Void = moduleDefinition.ImportReference(findType("System.Void"));
 
                     var aggregateExceptionType = findType("System.AggregateException");
                     var enumerableException = Collections.Enumerable.MakeGenericInstanceType(Exception);
@@ -59,9 +62,15 @@ namespace AutoDI.Build
 
                 public TypeReference Exception { get; }
 
+                public TypeReference Object { get; }
+
+                public TypeReference Void { get; }
+
                 public TypeReference IServiceProvider { get; }
 
                 public ActionImport Action { get; }
+
+                public DisposableImport IDisposable { get; }
 
                 public TypeImport Type { get; }
 
@@ -146,6 +155,22 @@ namespace AutoDI.Build
                         public MethodReference Count { get; }
                     }
 
+                }
+
+                public class DisposableImport
+                {
+                    public TypeReference Type { get; }
+
+                    public MethodReference Dispose { get; }
+
+                    public DisposableImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
+                    {
+                        Type = moduleDefinition.ImportReference(findType("System.IDisposable"));
+
+                        var resolved = Type.Resolve();
+
+                        Dispose = moduleDefinition.ImportReference(resolved.GetMethods().Single(x => x.Name == "Dispose"));
+                    }
                 }
             }
 

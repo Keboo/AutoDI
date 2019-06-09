@@ -1,4 +1,4 @@
-﻿using Microsoft.Build.Framework;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -41,6 +41,7 @@ namespace AutoDI.Build
 
         public override bool Execute()
         {
+            //Debugger.Launch();
             if (Logger == null)
             {
                 Logger = new TaskLogger(this);

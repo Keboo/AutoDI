@@ -8,6 +8,9 @@ namespace AutoDI.Build
 {
     internal class TypeResolver
     {
+        private const string AutoDIAssemblyName = "AutoDI";
+
+
         private readonly ModuleDefinition _module;
         private readonly IAssemblyResolver _assemblyResolver;
         private readonly ILogger _logger;
@@ -27,54 +30,47 @@ namespace AutoDI.Build
             IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) =>
                 types.Where(t => !t.IsCompilerGenerated() && !allTypes.Remove(t));
 
-            const string autoDIFullName = "AutoDI";
-            foreach (ModuleDefinition module in GetAllModules())
+            foreach (ModuleDefinition module in GetAllModules(settings))
             {
-                if (module.Assembly.Name.Name == autoDIFullName)
+                _logger.Debug($"Processing module for {module.FileName}", DebugLogLevel.Verbose);
+                if (module.Assembly.Name.Name == AutoDIAssemblyName)
                 {
                     autoDIAssembly = _assemblyResolver.Resolve(module.Assembly.Name);
                     continue;
                 }
-                bool isMainModule = ReferenceEquals(module, _module);
-                bool useAutoDiAssemblies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
-                bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(module.Assembly));
-                if (isMainModule || useAutoDiAssemblies || matchesAssembly)
+                
+                _logger.Debug($"Including types from '{module.Assembly.FullName}' ({GetIncludeReason()})", DebugLogLevel.Default);
+                //Either references AutoDI, or was a config assembly match, include the types.
+                foreach (TypeDefinition type in FilterTypes(module.GetAllTypes()))
                 {
-                    //Check if it references AutoDI. If it doesn't we will skip
-                    //We also always process the main module since the weaver was directly added to it
-                    if (!isMainModule && !matchesAssembly &&
-                        module.AssemblyReferences.All(a => a.Name != autoDIFullName))
+                    allTypes.Add(type);
+                }
+
+                string GetIncludeReason()
+                {
+                    bool isMainModule = ReferenceEquals(module, _module);
+
+                    if (isMainModule) return "Main Module";
+
+                    bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(module.Assembly));
+                    if (matchesAssembly)
                     {
-                        continue;
-                    }
-                    _logger.Debug($"Including types from '{module.Assembly.FullName}' ({GetIncludeReason()})", DebugLogLevel.Default);
-                    //Either references AutoDI, or was a config assembly match, include the types.
-                    foreach (TypeDefinition type in FilterTypes(module.GetAllTypes()))
-                    {
-                        allTypes.Add(type);
+                        var match = settings.Assemblies.FirstOrDefault(a => a.Matches(module.Assembly));
+                        return $"Matches included assembly: {match}";
                     }
 
-                    string GetIncludeReason()
+                    bool useAutoDiAssemblies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
+                    if (useAutoDiAssemblies)
                     {
-                        if (isMainModule) return "Main Module";
-                        if (matchesAssembly)
-                        {
-                            var match = settings.Assemblies.FirstOrDefault(a => a.Matches(module.Assembly));
-                            return $"Matches included assembly: {match}";
-                        }
-
-                        if (useAutoDiAssemblies)
-                        {
-                            return $"References {autoDIFullName}";
-                        }
-                        return "Unknown";
+                        return $"References {AutoDIAssemblyName}";
                     }
+                    return "Unknown";
                 }
             }
             return allTypes;
         }
 
-        private IEnumerable<ModuleDefinition> GetAllModules()
+        private IEnumerable<ModuleDefinition> GetAllModules(Settings settings)
         {
             var seen = new HashSet<string>();
             var queue = new Queue<ModuleDefinition>();
@@ -87,22 +83,29 @@ namespace AutoDI.Build
 
                 foreach (AssemblyNameReference assemblyReference in module.AssemblyReferences)
                 {
-                    if (seen.Contains(assemblyReference.FullName)) continue;
+                    if (!seen.Add(assemblyReference.FullName)) continue;
+
+                    bool matchesAssembly = settings.Assemblies.Any(a => a.Matches(assemblyReference));
+                    bool useAutoDiAssemblies = settings.Behavior.HasFlag(Behaviors.IncludeDependentAutoDIAssemblies);
+
+                    if (!matchesAssembly && !useAutoDiAssemblies) continue;
 
                     AssemblyDefinition assembly;
                     try
                     {
                         assembly = _assemblyResolver.Resolve(assemblyReference);
+
+                        if (assembly?.MainModule == null)
+                        {
+                            continue;
+                        }
+
+                        if (!matchesAssembly && assembly.MainModule.AssemblyReferences.All(x => x.Name != AutoDIAssemblyName))
+                        {
+                            continue;
+                        }
                     }
                     catch (AssemblyResolutionException)
-                    {
-                        continue;
-                    }
-                    if (assembly?.MainModule == null)
-                    {
-                        continue;
-                    }
-                    if (!seen.Add(assembly.FullName))
                     {
                         continue;
                     }

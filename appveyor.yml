@@ -5,7 +5,7 @@ platform: Any CPU
 skip_tags: true
 
 environment:
-  autodi_version: 4.0.1
+  autodi_version: 4.0.2
 
 assembly_info:
   patch: false
