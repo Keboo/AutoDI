@@ -17,23 +17,16 @@ namespace AutoDI.AssemblyGenerator
             {
                 //TODO: Check for BaseModuleWeaver type
                 Type weaverType = assembly.GetType(weaverTypeName);
-                
+
                 if (weaverType == null) return null;
                 return Activator.CreateInstance(weaverType);
             }
 
-            string assemblyName = "AutoDI.Build";
+            const string assemblyName = "AutoDI.Build";
 
-            try
-            {
-                var weaverInstance = (Task)ProcessAssembly(Assembly.Load(assemblyName));
-                if (weaverInstance != null)
-                    return new Weaver(weaverTypeName, weaverInstance);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+            var weaverInstance = (Task)ProcessAssembly(Assembly.Load(assemblyName));
+            if (weaverInstance != null)
+                return new Weaver(weaverTypeName, weaverInstance);
 
             throw new Exception($"Failed to find weaver task '{weaverTypeName}'. Could not locate {weaverTypeName} in {assemblyName}.");
         }
@@ -69,7 +62,7 @@ namespace AutoDI.AssemblyGenerator
                 throw new Exception("Task did not succeed");
             }
         }
-        
+
         private class InMemoryBuildEngine : IBuildEngine
         {
             private readonly List<string> _LoggedErrors = new List<string>();
@@ -81,12 +74,12 @@ namespace AutoDI.AssemblyGenerator
 
             public void LogWarningEvent(BuildWarningEventArgs e)
             {
-                
+
             }
 
             public void LogMessageEvent(BuildMessageEventArgs e)
             {
-                
+
             }
 
             public void LogCustomEvent(CustomBuildEventArgs e)

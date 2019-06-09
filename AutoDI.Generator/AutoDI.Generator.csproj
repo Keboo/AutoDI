@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -16,8 +16,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build" Version="15.9.20" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.9.20" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.4" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework) == 'net472'">
+    <Reference Include="Microsoft.Build" />
+    <Reference Include="Microsoft.Build.Framework" />
+    <Reference Include="Microsoft.Build.Tasks.v4.0" />
+    <Reference Include="Microsoft.Build.Utilities.v4.0" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="16.0.461" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +43,13 @@
       <ContentItems Include="$(ProjectDir)AutoDI.cs" />
       <BuildItems Include="$(ProjectDir)AutoDI.Generator.targets" />
     </ItemGroup>
-    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\" />
+
+    <PropertyGroup>
+      <TaskOutputDirectory Condition="$(TargetFramework) == 'net472'">netframework</TaskOutputDirectory>
+      <TaskOutputDirectory Condition="$(TargetFramework) == 'netstandard2.0'">netcore</TaskOutputDirectory>
+    </PropertyGroup>
+
+    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\$(TaskOutputDirectory)" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\content\" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\contentFiles\cs\any\" />
     <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\" />

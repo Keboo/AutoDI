@@ -18,7 +18,7 @@ namespace AutoDI.Build
                 TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
                 | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit)
             {
-                BaseType = ModuleDefinition.Get<object>()
+                BaseType = Import.System.Object
             };
 
             FieldDefinition globalServiceProvider =
@@ -41,7 +41,7 @@ namespace AutoDI.Build
         {
             var method = new MethodDefinition("AddServices",
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
-                ModuleDefinition.ImportReference(typeof(void)));
+                Import.System.Void);
 
             var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.DependencyInjection.IServiceCollection);
             method.Parameters.Add(serviceCollection);
@@ -153,8 +153,7 @@ namespace AutoDI.Build
                                     TryStart = tryStart,
                                     TryEnd = handlerStart,
                                     HandlerStart = handlerStart,
-                                    HandlerEnd = afterCatch,
-
+                                    HandlerEnd = afterCatch
                                 };
 
                             method.Body.ExceptionHandlers.Add(exceptionHandler);
@@ -263,7 +262,7 @@ namespace AutoDI.Build
         {
             var initMethod = new MethodDefinition(Constants.InitMethodName,
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
-                ModuleDefinition.ImportReference(typeof(void)));
+                Import.System.Void);
             var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, Import.System.Action.Type.MakeGenericInstanceType(Import.AutoDI.IApplicationBuilder.Type));
             initMethod.Parameters.Add(configureAction);
 
@@ -328,21 +327,21 @@ namespace AutoDI.Build
         {
             var disposeMethod = new MethodDefinition("Dispose",
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
-                ModuleDefinition.ImportReference(typeof(void)));
+                Import.System.Void);
 
-            VariableDefinition disposable = new VariableDefinition(ModuleDefinition.Get<IDisposable>());
+            VariableDefinition disposable = new VariableDefinition(Import.System.IDisposable.Type);
             disposeMethod.Body.Variables.Add(disposable);
 
             ILProcessor processor = disposeMethod.Body.GetILProcessor();
             Instruction afterDispose = Instruction.Create(OpCodes.Nop);
 
             processor.Emit(OpCodes.Ldsfld, globalServiceProvider);
-            processor.Emit(OpCodes.Isinst, ModuleDefinition.Get<IDisposable>());
+            processor.Emit(OpCodes.Isinst, Import.System.IDisposable.Type);
             processor.Emit(OpCodes.Dup);
             processor.Emit(OpCodes.Stloc_0); //disposable
             processor.Emit(OpCodes.Brfalse_S, afterDispose);
             processor.Emit(OpCodes.Ldloc_0); //disposable
-            processor.Emit(OpCodes.Callvirt, ModuleDefinition.GetMethod<IDisposable>(nameof(IDisposable.Dispose)));
+            processor.Emit(OpCodes.Callvirt, Import.System.IDisposable.Dispose);
 
             processor.Append(afterDispose);
 

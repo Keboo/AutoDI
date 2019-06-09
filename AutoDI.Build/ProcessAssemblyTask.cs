@@ -225,7 +225,7 @@ namespace AutoDI.Build
                         methodGenerator.Append(Environment.NewLine);
                     }
 
-                    injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(typeof(object)));
+                    injector.Insert(OpCodes.Newarr, ModuleDefinition.ImportReference(Import.System.Object));
                     if (values?.Length > 0)
                     {
                         for (int i = 0; i < values.Length; ++i)
