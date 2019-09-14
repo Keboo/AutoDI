@@ -6,14 +6,43 @@
 trigger:
 - master
 
+variables:
+  autodi_version: 4.0.2
+
 pool:
   vmImage: 'windows-latest'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- task: VSBuild@1
+  inputs:
+    solution: 'AutoDI.sln'
+    configuration: 'Release'
+    restoreNugetPackages: true
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- task: VSTest@2
+  inputs:
+    testSelector: 'testAssemblies'
+    testAssemblyVer2: |
+      **\*test*.dll
+      !**\*TestAdapter.dll
+      !**\obj\**
+    searchFolder: '$(System.DefaultWorkingDirectory)'
+
+- task: PowerShell@2
+  displayName: Update Nuspecs
+  inputs:
+    filePath: 'Nuget\\UpdateNuspecFiles.ps1'
+    arguments: '-Version "$(autodi_version)-ci$(Build.BuildNumber)"'
+
+- task: PowerShell@2
+  displayName: NuGet Pack
+  inputs:
+    targetType: 'inline'
+    script: |
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$(autodi_version)-ci$(Build.BuildNumber)" -Symbols
+          
+      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$(autodi_version)-ci$(Build.BuildNumber)" -Symbols
+          
+      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$(autodi_version)-ci$(Build.BuildNumber)" -Symbols
+          
+      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$(autodi_version)-ci$(Build.BuildNumber)" -Symbols
