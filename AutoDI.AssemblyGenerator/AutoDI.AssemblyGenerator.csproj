@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.10.4" />
-    <PackageReference Include="Microsoft.CodeAnalysis" Version="2.10.0" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="3.2.1" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net472'">
