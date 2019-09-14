@@ -13,11 +13,16 @@ pool:
   vmImage: 'windows-latest'
 
 steps:
+- task: NuGetCommand@2
+  inputs:
+    command: 'restore'
+    restoreSolution: 'AutoDI.sln'
+    feedsToUse: 'select'
+
 - task: VSBuild@1
   inputs:
     solution: 'AutoDI.sln'
     configuration: 'Release'
-    restoreNugetPackages: true
 
 - task: VSTest@2
   inputs:
