@@ -7,6 +7,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AutoDI.AssemblyGenerator
@@ -120,7 +121,7 @@ namespace AutoDI.AssemblyGenerator
 
             foreach (AssemblyInfo assemblyInfo in GetAssemblies())
             {
-                string assemblyName = $"AssemblyToTest{_instanceCount++}";
+                string assemblyName = $"AssemblyToTest{Interlocked.Increment(ref _instanceCount)}";
 
                 var projectId = ProjectId.CreateNewId();
 
