@@ -18,17 +18,13 @@ namespace AutoDI.Build.Tests
         private static ModuleDefinition _testModule;
         private string _outputDirectory;
 
-        [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        [TestInitialize]
+        public async Task TestSetup()
         {
             var gen = new Generator();
 
             _testModule = (await gen.Execute()).SingleModule();
-        }
-        
-        [TestInitialize]
-        public void TestSetup()
-        {
+
             _outputDirectory = Path.Combine(".", Path.GetRandomFileName());
         }
 
