@@ -170,9 +170,18 @@ namespace AutoDI.Build
 
             if (pdbPath != null)
             {
-                Logger.Info($"Using symbol file {pdbPath}");
-                symbolReaderProvider = new PdbReaderProvider();
-                symbolWriterProvider = new PdbWriterProvider();
+                if (IsPortablePdb(pdbPath))
+                {
+                    Logger.Info($"Using portable symbol file {pdbPath}");
+                    symbolReaderProvider = new PortablePdbReaderProvider();
+                    symbolWriterProvider = new PortablePdbWriterProvider();
+                }
+                else
+                {
+                    Logger.Info($"Using symbol file {pdbPath}");
+                    symbolReaderProvider = new PdbReaderProvider();
+                    symbolWriterProvider = new PdbWriterProvider();
+                }
                 string tempPath = pdbPath + ".tmp";
                 File.Copy(pdbPath, tempPath, true);
                 return new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -207,6 +216,15 @@ namespace AutoDI.Build
                     return path;
                 }
                 return null;
+            }
+
+            bool IsPortablePdb(string symbolsPath)
+            {
+                using (var fileStream = File.OpenRead(symbolsPath))
+                using(var reader = new BinaryReader(fileStream))
+                {
+                    return reader.ReadBytes(4).SequenceEqual(new byte[] {0x42, 0x4a, 0x53, 0x42});
+                }
             }
 
             string FindMdbPath()
