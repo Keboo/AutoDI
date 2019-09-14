@@ -175,7 +175,7 @@ namespace AutoDI
 
         private static bool TryCreate(Type desiredType, IServiceProvider provider, out object result)
         {
-            if (desiredType.IsClass && !desiredType.IsAbstract)
+            if (desiredType.IsClass && !desiredType.IsAbstract && !desiredType.IsArray)
             {
                 foreach (ConstructorInfo constructor in desiredType.GetConstructors().OrderByDescending(c => c.GetParameters().Length))
                 {
@@ -184,11 +184,23 @@ namespace AutoDI
                     bool found = true;
                     for (int i = 0; i < parameters.Length; i++)
                     {
-                        parameterValues[i] = provider.GetService(parameters[i].ParameterType);
-                        if (parameterValues[i] == null)
+                        if (parameters[i].ParameterType.IsPointer)
                         {
                             found = false;
                             break;
+                        }
+                        parameterValues[i] = provider.GetService(parameters[i].ParameterType);
+                        if (parameterValues[i] == null)
+                        {
+                            if (parameters[i].HasDefaultValue)
+                            {
+                                parameterValues[i] = parameters[i].DefaultValue;
+                            }
+                            else
+                            {
+                                found = false;
+                                break;
+                            }
                         }
                     }
 
