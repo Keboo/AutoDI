@@ -264,8 +264,8 @@ namespace AutoDI.Tests
             services.AddAutoDITransient<IInterface, Class>();
             map.Add(services);
 
-            ClassWtihParameters @class = map.Get<ClassWtihParameters>(null);
-            Assert.IsInstanceOfType(@class, typeof(ClassWtihParameters));
+            ClassWithParameters @class = map.Get<ClassWithParameters>(null);
+            Assert.IsInstanceOfType(@class, typeof(ClassWithParameters));
             Assert.IsInstanceOfType(@class.Service, typeof(Class));
         }
 
@@ -278,11 +278,11 @@ namespace AutoDI.Tests
             services.AddAutoDITransient<IInterface, Class>();
             map.Add(services);
 
-            ClassWtihParameters class1 = map.Get<ClassWtihParameters>(null);
-            Assert.IsInstanceOfType(class1, typeof(ClassWtihParameters));
+            ClassWithParameters class1 = map.Get<ClassWithParameters>(null);
+            Assert.IsInstanceOfType(class1, typeof(ClassWithParameters));
 
-            ClassWtihParameters class2 = map.Get<ClassWtihParameters>(null);
-            Assert.IsInstanceOfType(class2, typeof(ClassWtihParameters));
+            ClassWithParameters class2 = map.Get<ClassWithParameters>(null);
+            Assert.IsInstanceOfType(class2, typeof(ClassWithParameters));
 
             Assert.IsFalse(ReferenceEquals(class1, class2));
         }
@@ -421,6 +421,21 @@ namespace AutoDI.Tests
             
             Assert.IsTrue(@class is Derived2);
         }
+
+        [TestMethod]
+        [Description("Issue 156")]
+        public void WhenConstructorHasOptionalStringParameterItResolves()
+        {
+            var map = new ContainerMap();
+            var services = new AutoDIServiceCollection();
+            services.AddAutoDISingleton<ClassWithOptionalStringParameter>();
+            map.Add(services);
+
+            var @class = map.Get<ClassWithOptionalStringParameter>(null);
+
+            Assert.IsNotNull(@class);
+            Assert.IsNull(@class.Foo);
+        }
         
         private interface IInterface { }
 
@@ -465,12 +480,21 @@ namespace AutoDI.Tests
             public T Parameter { get; }
         }
 
-        private class ClassWtihParameters
+        private class ClassWithParameters
         {
             public  IInterface Service { get; }
-            public ClassWtihParameters(IInterface service)
+            public ClassWithParameters(IInterface service)
             {
                 Service = service ?? throw new ArgumentNullException(nameof(service));
+            }
+        }
+
+        private class ClassWithOptionalStringParameter
+        {
+            public string Foo { get; }
+            public ClassWithOptionalStringParameter(string foo = null)
+            {
+                Foo = foo;
             }
         }
     }
