@@ -1,13 +1,8 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - master
 
 variables:
-  autodi_version: 4.0.2
+  AutoDIVersion: 4.0.2
 
 pool:
   vmImage: 'windows-latest'
@@ -41,20 +36,20 @@ steps:
   displayName: Update Nuspecs
   inputs:
     filePath: 'Nuget\\UpdateNuspecFiles.ps1'
-    arguments: '-Version "$(autodi_version)-ci$(Build.BuildId)"'
+    arguments: '-Version "$(AutoDIVersion)-ci$(Build.BuildId)"'
 
 - task: PowerShell@2
   displayName: NuGet Pack
   inputs:
     targetType: 'inline'
     script: |
-      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$(autodi_version)-ci$(Build.BuildId)" -Symbols
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols
           
-      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$(autodi_version)-ci$(Build.BuildId)" -Symbols
+      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols
           
-      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$(autodi_version)-ci$(Build.BuildId)" -Symbols
+      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols
           
-      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$(autodi_version)-ci$(Build.BuildId)" -Symbols
+      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols
 
 - task: PowerShell@2
   displayName: Move NuGets into their own directories
@@ -62,13 +57,13 @@ steps:
     targetType: 'inline'
     script: |
       mkdir "Publish\AutoDI"
-      mv "AutoDI.$(autodi_version)*.nupkg" "Publish\AutoDI"
+      mv "AutoDI.$(AutoDIVersion)*.nupkg" "Publish\AutoDI"
       mkdir "Publish\AutoDI.Build"
-      mv "AutoDI.Build.$(autodi_version)*.nupkg" "Publish\AutoDI.Build"
+      mv "AutoDI.Build.$(AutoDIVersion)*.nupkg" "Publish\AutoDI.Build"
       mkdir "Publish\AutoDI.AspNetCore"
-      mv "AutoDI.AspNetCore.$(autodi_version)*.nupkg" "Publish\AutoDI.AspNetCore"
+      mv "AutoDI.AspNetCore.$(AutoDIVersion)*.nupkg" "Publish\AutoDI.AspNetCore"
       mkdir "Publish\AutoDI.Generator"
-      mv "AutoDI.Generator.$(autodi_version)*.nupkg" "Publish\AutoDI.Generator"
+      mv "AutoDI.Generator.$(AutoDIVersion)*.nupkg" "Publish\AutoDI.Generator"
 
 - task: PublishBuildArtifacts@1
   inputs:
