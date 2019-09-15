@@ -13,6 +13,10 @@ pool:
   vmImage: 'windows-latest'
 
 steps:
+- task: NuGetToolInstaller@1
+  inputs:
+    checkLatest: true
+
 - task: NuGetCommand@2
   inputs:
     command: 'restore'
