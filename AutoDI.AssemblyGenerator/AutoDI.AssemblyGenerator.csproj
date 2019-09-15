@@ -24,10 +24,4 @@
     <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Microsoft.CSharp">
-      <HintPath>..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Microsoft.CSharp.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>

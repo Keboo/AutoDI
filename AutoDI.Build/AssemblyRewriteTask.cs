@@ -23,9 +23,6 @@ namespace AutoDI.Build
         [Required]
         public string DebugType { get; set; }
 
-        //[Required]
-        //public string IntermediateDirectory { get; set; }
-
         protected ILogger Logger { get; set; }
 
         protected IAssemblyResolver AssemblyResolver { get; set; }

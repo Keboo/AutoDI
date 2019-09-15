@@ -5,7 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Xml.Linq;
 
 namespace AutoDI.AssemblyGenerator
 {
@@ -33,7 +32,6 @@ namespace AutoDI.AssemblyGenerator
 
         public Task Instance { get; }
         public string Name { get; }
-        public XElement Config { get; set; }
 
         internal Weaver(string name, Task taskInstance)
         {
@@ -43,14 +41,11 @@ namespace AutoDI.AssemblyGenerator
 
         public void ApplyToAssembly(string assemblyFilePath)
         {
-            dynamic task = Instance;
+            Task task = Instance;
             var buildEngine = new InMemoryBuildEngine();
-            task.AssemblyFile = assemblyFilePath;
+            SetProperty("AssemblyFile", assemblyFilePath);
             task.BuildEngine = buildEngine;
-            if (Config != null)
-            {
-                //task.Config = Config;
-            }
+
             bool result = task.Execute();
 
             if (buildEngine.LoggedErrors.Any())
@@ -60,6 +55,11 @@ namespace AutoDI.AssemblyGenerator
             if (!result)
             {
                 throw new Exception("Task did not succeed");
+            }
+
+            void SetProperty<T>(string propertyName, T value)
+            {
+                task.GetType().GetProperty(propertyName)?.SetValue(task, value);
             }
         }
 
