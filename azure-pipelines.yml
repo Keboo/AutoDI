@@ -41,17 +41,55 @@ steps:
   displayName: Update Nuspecs
   inputs:
     filePath: 'Nuget\\UpdateNuspecFiles.ps1'
-    arguments: '-Version "$(autodi_version)-ci$(Build.BuildNumber)"'
+    arguments: '-Version "$(autodi_version)-ci$(Build.BuildId)"'
 
 - task: PowerShell@2
   displayName: NuGet Pack
   inputs:
     targetType: 'inline'
     script: |
-      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$(autodi_version)-ci$(Build.BuildNumber)" -Symbols
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$(autodi_version)-ci$(Build.BuildId)" -Symbols
           
-      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$(autodi_version)-ci$(Build.BuildNumber)" -Symbols
+      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$(autodi_version)-ci$(Build.BuildId)" -Symbols
           
-      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$(autodi_version)-ci$(Build.BuildNumber)" -Symbols
+      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$(autodi_version)-ci$(Build.BuildId)" -Symbols
           
-      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$(autodi_version)-ci$(Build.BuildNumber)" -Symbols
+      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$(autodi_version)-ci$(Build.BuildId)" -Symbols
+
+- task: PowerShell@2
+  displayName: Move NuGets into their own directories
+  inputs:
+    targetType: 'inline'
+    script: |
+      mkdir "Publish\AutoDI"
+      mv "AutoDI.$(autodi_version)*.nupkg" "Publish\AutoDI"
+      mkdir "Publish\AutoDI.Build"
+      mv "AutoDI.Build.$(autodi_version)*.nupkg" "Publish\AutoDI.Build"
+      mkdir "Publish\AutoDI.AspNetCore"
+      mv "AutoDI.AspNetCore.$(autodi_version)*.nupkg" "Publish\AutoDI.AspNetCore"
+      mkdir "Publish\AutoDI.Generator"
+      mv "AutoDI.Generator.$(autodi_version)*.nupkg" "Publish\AutoDI.Generator"
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'Publish\\AutoDI'
+    ArtifactName: 'AutoDI'
+    publishLocation: 'Container'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'Publish\\AutoDI.Build'
+    ArtifactName: 'AutoDI.Build'
+    publishLocation: 'Container'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'Publish\\AutoDI.AspNetCore'
+    ArtifactName: 'AutoDI.AspNetCore'
+    publishLocation: 'Container'
+  
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'Publish\\AutoDI.Generator'
+    ArtifactName: 'AutoDI.Generator'
+    publishLocation: 'Container'
