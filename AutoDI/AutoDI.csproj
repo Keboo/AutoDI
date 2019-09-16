@@ -5,7 +5,7 @@
     <ApplicationIcon>..\needle.ico</ApplicationIcon>
     <DebugSymbols>True</DebugSymbols>
     <Version Condition="'$(AUTODI_VERSION_FULL)' != ''">$(AUTODI_VERSION_FULL)</Version>
-    <DebugType>embedded</DebugType>
+    <DebugType>portable</DebugType>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
