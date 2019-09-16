@@ -43,13 +43,10 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols
-          
-      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols
-          
-      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols
-          
-      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols
+      nuget pack Nuget\AutoDI\AutoDI.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols -SymbolPackageFormat snupkg
+      nuget pack Nuget\AutoDI.Build\AutoDI.Build.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols -SymbolPackageFormat snupkg
+      nuget pack Nuget\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols -SymbolPackageFormat snupkg
+      nuget pack Nuget\AutoDI.Generator\AutoDI.Generator.nuspec -Version "$(AutoDIVersion)-ci$(Build.BuildId)" -Symbols -SymbolPackageFormat snupkg
 
 - task: PowerShell@2
   displayName: Move NuGets into their own directories
