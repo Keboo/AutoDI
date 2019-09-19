@@ -61,8 +61,8 @@ namespace AutoDI.Tests
             
             map.Add(services);
 
-            IInterface retriecedService = map.Get<IInterface>(null);
-            Assert.AreEqual(@class, retriecedService);
+            IInterface retrievedService = map.Get<IInterface>(null);
+            Assert.AreEqual(@class, retrievedService);
         }
 
         [TestMethod]
@@ -323,7 +323,7 @@ namespace AutoDI.Tests
 
         [TestMethod]
         [Description("Issue 127")]
-        public void CanResolveSingleIEnumerableContructoreParameter()
+        public void CanResolveSingleIEnumerableConstructorParameter()
         {
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
@@ -340,7 +340,7 @@ namespace AutoDI.Tests
 
         [TestMethod]
         [Description("Issue 127")]
-        public void CanResolveMultipleIEnumerableContructoreParameter()
+        public void CanResolveMultipleIEnumerableConstructorParameter()
         {
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
@@ -358,7 +358,7 @@ namespace AutoDI.Tests
 
         [TestMethod]
         [Description("Issue 127")]
-        public void CanResolveSingleArrayContructoreParameter()
+        public void CanResolveSingleArrayConstructorParameter()
         {
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
@@ -376,7 +376,7 @@ namespace AutoDI.Tests
 
         [TestMethod]
         [Description("Issue 127")]
-        public void CanResolveMultipleArrayContructoreParameter()
+        public void CanResolveMultipleArrayConstructorParameter()
         {
             var map = new ContainerMap();
             var services = new AutoDIServiceCollection();
@@ -436,7 +436,7 @@ namespace AutoDI.Tests
             Assert.IsNotNull(@class);
             Assert.IsNull(@class.Foo);
         }
-        
+
         private interface IInterface { }
 
         private interface IInterface2 { }
