@@ -49,8 +49,8 @@ namespace AutoDI.Build.Tests
 
             var method = typeof(ServiceProviderServiceExtensions)
                 .GetMethod(nameof(ServiceProviderServiceExtensions.GetService))
-                .MakeGenericMethod(serviceType);
-            Assert.IsTrue(method.Invoke(null, new object[]{provider}).Is<Service>(GetType()));
+                ?.MakeGenericMethod(serviceType);
+            Assert.IsTrue(method != null && method.Invoke(null, new object[]{provider}).Is<Service>(GetType()));
         }
     }
 

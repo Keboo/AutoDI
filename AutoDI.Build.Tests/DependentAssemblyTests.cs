@@ -20,17 +20,9 @@ namespace AutoDI.Build.Tests
         public static async Task Initialize(TestContext context)
         {
             var gen = new Generator();
-            //gen.WeaverAdded += (sender, args) =>
-            //{
-            //    if (args.Weaver.Name == "AutoDI")
-            //    {
-            //        args.Weaver.Instance.Config = XElement.Parse($@"<AutoDI {nameof(Settings.GenerateRegistrations)}=""False"" />");
-            //    }
-            //};
 
             var testAssemblies = await gen.Execute();
             
-            //_sharedAssembly = testAssemblies["shared"].Assembly;
             _mainAssembly = testAssemblies["main"].Assembly;
 
         }

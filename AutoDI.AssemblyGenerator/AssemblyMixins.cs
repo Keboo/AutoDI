@@ -38,14 +38,14 @@ namespace AutoDI.AssemblyGenerator
 
             Type type = assembly.GetType(typeof(TContainingType).FullName);
             if (type == null)
-                throw new AssemblyInvocationExcetion($"Could not find '{typeof(TContainingType).FullName}' in '{assembly.FullName}'");
+                throw new AssemblyInvocationException($"Could not find '{typeof(TContainingType).FullName}' in '{assembly.FullName}'");
 
             MethodInfo method = type.GetMethod(methodName);
             if (method == null)
-                throw new AssemblyInvocationExcetion($"Could not find method '{methodName}' on type '{type.FullName}'");
+                throw new AssemblyInvocationException($"Could not find method '{methodName}' on type '{type.FullName}'");
 
             if (!method.IsStatic)
-                throw new AssemblyInvocationExcetion($"Method '{type.FullName}.{methodName}' is not static");
+                throw new AssemblyInvocationException($"Method '{type.FullName}.{methodName}' is not static");
 
             return method.Invoke(null, parameters);
         }
@@ -61,7 +61,7 @@ namespace AutoDI.AssemblyGenerator
         {
             Type genericType = assembly.GetType(typeof(TGeneric).FullName);
             if (genericType == null)
-                throw new AssemblyInvocationExcetion($"Could not find generic parameter type '{typeof(TGeneric).FullName}' in '{assembly.FullName}'");
+                throw new AssemblyInvocationException($"Could not find generic parameter type '{typeof(TGeneric).FullName}' in '{assembly.FullName}'");
 
             return InvokeGeneric(assembly, genericType, target, methodName, parameters);
         }
@@ -81,7 +81,7 @@ namespace AutoDI.AssemblyGenerator
 
             MethodInfo method = methods.FirstOrDefault(m => !m.IsStatic && m.IsGenericMethodDefinition);
             if (method == null)
-                throw new AssemblyInvocationExcetion($"Could not find method '{methodName}' on type '{targetType.FullName}'");
+                throw new AssemblyInvocationException($"Could not find method '{methodName}' on type '{targetType.FullName}'");
             
             MethodInfo genericMethod = method.MakeGenericMethod(genericType);
 
@@ -123,7 +123,7 @@ namespace AutoDI.AssemblyGenerator
             if (provider == null)
             {
                 //TODO: Better exception
-                throw new AssemblyInvocationExcetion($"Could not find service provider for '{assembly.FullName}'");
+                throw new AssemblyInvocationException($"Could not find service provider for '{assembly.FullName}'");
             }
 
             return provider.GetService(type);

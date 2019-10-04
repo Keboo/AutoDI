@@ -79,11 +79,6 @@ namespace AutoDI.AssemblyGenerator
                                         {
                                             return MetadataReference.CreateFromFile(filePath);
                                         }
-                                        //Assembly loadedAssembly = Assembly.Load(new AssemblyName(name));
-                                        //if (loadedAssembly != null)
-                                        //{
-                                        //    return MetadataReference.CreateFromFile(loadedAssembly.Location);
-                                        //}
                                         return null;
                                     }
 
