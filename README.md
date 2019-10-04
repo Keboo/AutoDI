@@ -43,3 +43,4 @@ Take a look at the [AutoDI.Examples](https://github.com/Keboo/AutoDI.Examples) r
 <img src="https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png" width="64">
 
 [Needle](https://materialdesignicons.com/icon/needle) designed by [Austin Andrews](https://thenounproject.com/prosymbols/) from [Material Design Icons](https://materialdesignicons.com/)
+
