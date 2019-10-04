@@ -71,7 +71,7 @@ namespace AutoDI.Build
                 methodGenerator?.Append(Environment.NewLine);
             }
 
-            MethodReference funcCtor = Import.System.Func2_Ctor;
+            MethodReference funcCtor = Import.System.Func2Ctor;
 
             if (mapping != null)
             {
@@ -137,7 +137,7 @@ namespace AutoDI.Build
                             processor.Emit(OpCodes.Ldstr, $"Error adding type '{registration.TargetType.FullName}' with key '{registration.Key.FullName}'");
                             processor.Emit(OpCodes.Ldloc, exception);
 
-                            processor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AutoDIException_Ctor);
+                            processor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AutoDIExceptionCtor);
                             var listAdd = Import.System.Collections.List.Add;
                             listAdd = listAdd.MakeGenericDeclaringType(Import.System.Exception);
 
@@ -164,7 +164,7 @@ namespace AutoDI.Build
                                 methodGenerator.Append("try" + Environment.NewLine + "{" + Environment.NewLine);
                                 methodGenerator.Append($"    {serviceCollection.Name}.{Import.AutoDI.ServiceCollectionMixins.AddAutoDIService.Name}(typeof({importedKey.FullNameCSharp()}), typeof({registration.TargetType.FullNameCSharp()}), new Func<{Import.System.IServiceProvider.NameCSharp()}, {registration.TargetType.FullNameCSharp()}>({factoryMethod.Name}), Lifetime.{registration.Lifetime});", tryStart);
                                 methodGenerator.Append(Environment.NewLine + "}" + Environment.NewLine + "catch(Exception innerException)" + Environment.NewLine + "{" + Environment.NewLine);
-                                methodGenerator.Append($"    list.{listAdd.Name}(new {Import.AutoDI.Exceptions.AutoDIException_Ctor.DeclaringType.Name}(\"Error adding type '{registration.TargetType.FullName}' with key '{registration.Key.FullName}'\", innerException));", handlerStart);
+                                methodGenerator.Append($"    list.{listAdd.Name}(new {Import.AutoDI.Exceptions.AutoDIExceptionCtor.DeclaringType.Name}(\"Error adding type '{registration.TargetType.FullName}' with key '{registration.Key.FullName}'\", innerException));", handlerStart);
                                 methodGenerator.Append(Environment.NewLine + "}" + Environment.NewLine);
                             }
                         }
@@ -202,14 +202,14 @@ namespace AutoDI.Build
                 processor.Append(ldStr);
                 processor.Emit(OpCodes.Ldloc, exceptionList);
 
-                processor.Emit(OpCodes.Newobj, Import.System.AggregateException_Ctor);
+                processor.Emit(OpCodes.Newobj, Import.System.AggregateExceptionCtor);
                 processor.Emit(OpCodes.Throw);
 
                 if (methodGenerator != null)
                 {
                     methodGenerator.Append("if (list.Count > 0)", loadList);
                     methodGenerator.Append(Environment.NewLine + "{" + Environment.NewLine);
-                    methodGenerator.Append($"    throw new {Import.System.AggregateException_Ctor.DeclaringType.Name}(\"Error in {Constants.TypeName}.{method.Name}() generated method\", list);", ldStr);
+                    methodGenerator.Append($"    throw new {Import.System.AggregateExceptionCtor.DeclaringType.Name}(\"Error in {Constants.TypeName}.{method.Name}() generated method\", list);", ldStr);
                     methodGenerator.Append(Environment.NewLine + "}" + Environment.NewLine);
                 }
             }
@@ -235,7 +235,7 @@ namespace AutoDI.Build
 
             ILProcessor factoryProcessor = factory.Body.GetILProcessor();
 
-            MethodReference getServiceMethod = Import.DependencyInjection.ServiceProviderServiceExtensions_GetService;
+            MethodReference getServiceMethod = Import.DependencyInjection.ServiceProviderServiceExtensionsGetService;
 
             foreach (ParameterDefinition parameter in targetTypeCtor.Parameters)
             {
@@ -275,7 +275,7 @@ namespace AutoDI.Build
             initProcessor.Emit(OpCodes.Ldsfld, globalServiceProvider);
             initProcessor.Emit(OpCodes.Brfalse_S, createApplicationbuilder);
             //Compare
-            initProcessor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AlreadyInitializedException_Ctor);
+            initProcessor.Emit(OpCodes.Newobj, Import.AutoDI.Exceptions.AlreadyInitializedExceptionCtor);
             initProcessor.Emit(OpCodes.Throw);
 
             initProcessor.Append(createApplicationbuilder);

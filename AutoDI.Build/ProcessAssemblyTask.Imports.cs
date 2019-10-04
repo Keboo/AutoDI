@@ -50,13 +50,13 @@ namespace AutoDI.Build
                     var aggregateExceptionType = findType("System.AggregateException");
                     var enumerableException = Collections.Enumerable.MakeGenericInstanceType(Exception);
 
-                    AggregateException_Ctor = moduleDefinition.ImportReference(aggregateExceptionType
+                    AggregateExceptionCtor = moduleDefinition.ImportReference(aggregateExceptionType
                         .GetConstructors().Single(c =>
                             c.Parameters.Count == 2 &&
                             c.Parameters[0].ParameterType.IsType<string>() &&
                             c.Parameters[1].ParameterType.IsType(enumerableException)));
 
-                    Func2_Ctor =
+                    Func2Ctor =
                         moduleDefinition.ImportReference(findType("System.Func`2")).Resolve().GetConstructors().Single();
                 }
 
@@ -76,9 +76,9 @@ namespace AutoDI.Build
 
                 public CollectionsImport Collections { get; }
 
-                public MethodReference AggregateException_Ctor { get; }
+                public MethodReference AggregateExceptionCtor { get; }
 
-                public MethodReference Func2_Ctor { get; }
+                public MethodReference Func2Ctor { get; }
 
                 public class ActionImport
                 {
@@ -205,17 +205,17 @@ namespace AutoDI.Build
                     public AutoDIExceptionsImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
                     {
                         TypeDefinition alreadyInitialized = findType("AutoDI.AlreadyInitializedException");
-                        AlreadyInitializedException_Ctor = moduleDefinition.ImportReference(alreadyInitialized.GetConstructors().Single(x => !x.HasParameters));
+                        AlreadyInitializedExceptionCtor = moduleDefinition.ImportReference(alreadyInitialized.GetConstructors().Single(x => !x.HasParameters));
 
                         var autoDIExceptionType = findType("AutoDI.AutoDIException");
-                        AutoDIException_Ctor = moduleDefinition.ImportReference(autoDIExceptionType.GetConstructors().Single(c =>
+                        AutoDIExceptionCtor = moduleDefinition.ImportReference(autoDIExceptionType.GetConstructors().Single(c =>
                             c.Parameters.Count == 2 && c.Parameters[0].ParameterType.IsType<string>() &&
                             c.Parameters[1].ParameterType.IsType<Exception>()));
                     }
 
-                    public MethodReference AlreadyInitializedException_Ctor { get; }
+                    public MethodReference AlreadyInitializedExceptionCtor { get; }
 
-                    public MethodReference AutoDIException_Ctor { get; }
+                    public MethodReference AutoDIExceptionCtor { get; }
                 }
 
                 public class IApplicationBuilderImport
@@ -306,12 +306,12 @@ namespace AutoDI.Build
                     IServiceCollection = moduleDefinition.ImportReference(findType("Microsoft.Extensions.DependencyInjection.IServiceCollection"));
 
                     var serviceProviderExtensions = findType("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
-                    ServiceProviderServiceExtensions_GetService = moduleDefinition.ImportReference(serviceProviderExtensions.Methods.Single(x => x.Name == "GetService"));
+                    ServiceProviderServiceExtensionsGetService = moduleDefinition.ImportReference(serviceProviderExtensions.Methods.Single(x => x.Name == "GetService"));
                 }
 
                 public TypeReference IServiceCollection { get; }
 
-                public MethodReference ServiceProviderServiceExtensions_GetService { get; }
+                public MethodReference ServiceProviderServiceExtensionsGetService { get; }
 
             }
         }
