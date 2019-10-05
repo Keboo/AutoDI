@@ -21,8 +21,8 @@ namespace AutoDI.Build
                         {
                             switch (property.Name)
                             {
-                                case nameof(SettingsAttribute.AutoInit):
-                                    settings.AutoInit = (bool)property.Argument.Value;
+                                case nameof(SettingsAttribute.InitMode):
+                                    settings.InitMode = (InitMode)property.Argument.Value;
                                     break;
                                 case nameof(SettingsAttribute.Behavior):
                                     settings.Behavior = (Behaviors)property.Argument.Value;
@@ -209,12 +209,12 @@ namespace AutoDI.Build
         public Behaviors Behavior { get; set; } = Behaviors.Default;
 
         /// <summary>
-        /// Automatically initialize AutoDI in assembly entry point (if available)
+        /// Specifies if and when AutoDI initializes during assembly loading.
         /// </summary>
-        public bool AutoInit { get; set; } = true;
+        public InitMode InitMode { get; set; } = InitMode.EntryPoint;
 
         /// <summary>
-        /// Generate registration calls no the container. Setting to false will negate AutoInit.
+        /// Generate registration calls no the container. Setting to false will negate InitMode.
         /// </summary>
         public bool GenerateRegistrations { get; set; } = true;
 
@@ -236,7 +236,7 @@ namespace AutoDI.Build
 
             sb.AppendLine("AutoDI Settings:");
             sb.AppendLine($"  Behavior(s): {Behavior}");
-            sb.AppendLine($"  AutoInit: {AutoInit}");
+            sb.AppendLine($"  InitMode: {InitMode}");
             sb.AppendLine($"  GenerateRegistrations: {GenerateRegistrations}");
             sb.AppendLine($"  DebugLogLevel: {DebugLogLevel}");
             sb.AppendLine($"  DebugExceptions: {DebugExceptions}");

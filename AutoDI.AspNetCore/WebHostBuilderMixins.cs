@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using Microsoft.AspNetCore.Hosting;
-[assembly:AutoDI.Settings(AutoInit = false)]
+[assembly:AutoDI.Settings(InitMode = AutoDI.InitMode.None)]
 namespace AutoDI.AspNetCore
 {
     public static class WebHostBuilderMixins

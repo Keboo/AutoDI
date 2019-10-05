@@ -20,5 +20,13 @@ namespace AutoDI.Build.Tests
 
             Assert.AreEqual((int)CodeLanguage.None, (int)settings.DebugCodeGeneration);
         }
+
+        [TestMethod]
+        public void InitModeDefaultsEntryPoint()
+        {
+            var settings = new Settings();
+
+            Assert.AreEqual((int)InitMode.EntryPoint, (int)settings.InitMode);
+        }
     }
 }

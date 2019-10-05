@@ -60,9 +60,20 @@ namespace AutoDI.Build
 
                     ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, gen, out MethodDefinition initMethod));
 
-                    if (settings.AutoInit)
+                    switch (settings.InitMode)
                     {
-                        InjectInitCall(initMethod);
+                        case InitMode.None:
+                            Logger.Debug("Skipping injections of Init method", DebugLogLevel.Verbose);
+                            break;
+                        case InitMode.EntryPoint:
+                            InjectInitCall(initMethod);
+                            break;
+                        case InitMode.ModuleLoad:
+                            InjectModuleCctorInitCall(initMethod);
+                            break;
+                        default:
+                            Logger.Warning($"Unsupported InitMode: {settings.InitMode}");
+                            break;
                     }
                 }
                 else
