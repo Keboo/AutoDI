@@ -24,6 +24,9 @@ namespace AutoDI.Build
                                 case nameof(SettingsAttribute.AutoInit):
                                     settings.AutoInit = (bool)property.Argument.Value;
                                     break;
+                                case nameof(SettingsAttribute.AutoLibraryInit):
+                                    settings.AutoLibraryInit = (bool)property.Argument.Value;
+                                    break;
                                 case nameof(SettingsAttribute.Behavior):
                                     settings.Behavior = (Behaviors)property.Argument.Value;
                                     break;
@@ -212,6 +215,15 @@ namespace AutoDI.Build
         /// Automatically initialize AutoDI in assembly entry point (if available)
         /// </summary>
         public bool AutoInit { get; set; } = true;
+
+        /// <summary>
+        /// Automatically initialize AutoDI in assembly's module initializer.
+        /// This means that AutoDI will initialize after loading the module (not necessarily when loading assembly).
+        /// Recommended when you are producing a library that you expect to be consumed
+        /// by others.
+        /// Setting to true will override AutoInit.
+        /// </summary>
+        public bool AutoLibraryInit { get; set; }
 
         /// <summary>
         /// Generate registration calls no the container. Setting to false will negate AutoInit.

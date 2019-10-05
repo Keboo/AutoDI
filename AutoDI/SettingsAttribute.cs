@@ -7,6 +7,7 @@ namespace AutoDI
     {
         public Behaviors Behavior { get; set; }
         public bool AutoInit { get; set; }
+        public bool AutoLibraryInit { get; set; }
         public bool GenerateRegistrations { get; set; }
         public bool DebugExceptions { get; set; }
         public DebugLogLevel DebugLogLevel { get; set; }

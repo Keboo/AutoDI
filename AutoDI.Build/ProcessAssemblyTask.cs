@@ -60,7 +60,12 @@ namespace AutoDI.Build
 
                     ModuleDefinition.Types.Add(GenerateAutoDIClass(mapping, settings, gen, out MethodDefinition initMethod));
 
-                    if (settings.AutoInit)
+                    // AutoLibraryInit overrides AutoInit setting
+                    if (settings.AutoLibraryInit)
+                    {
+                        InjectModuleCtorInitCall(initMethod);
+                    }
+                    else if (settings.AutoInit)
                     {
                         InjectInitCall(initMethod);
                     }
