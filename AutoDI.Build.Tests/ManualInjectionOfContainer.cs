@@ -48,7 +48,7 @@ namespace AutoDI.Build.Tests
 //<type:ConsoleApplication/>
 //<ref: AutoDI />
 //<weaver: AutoDI.Build.ProcessAssemblyTask />
-//<raw:[assembly:AutoDI.Settings(AutoInit = false)] />
+//<raw:[assembly:AutoDI.Settings(InitMode = AutoDI.InitMode.None)] />
 namespace ManualInjectionNamespace
 {
     using AutoDI;

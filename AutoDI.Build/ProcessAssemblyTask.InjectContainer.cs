@@ -22,7 +22,7 @@ namespace AutoDI.Build
             }
         }
 
-        private void InjectModuleCtorInitCall(MethodReference initMethod)
+        private void InjectModuleCctorInitCall(MethodReference initMethod)
         {
             var moduleClass = ModuleDefinition.Types.FirstOrDefault(t => t.Name == "<Module>");
             if (moduleClass == null)
