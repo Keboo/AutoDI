@@ -7,7 +7,7 @@
 
         void Debug(string message, DebugLogLevel debugLevel);
         void Info(string message);
-        void Warning(string message);
-        void Error(string message);
+        void Warning(string message,AdditionalInformation additionalInformation=null);
+        void Error(string message,AdditionalInformation additionalInformation);
     }
 }

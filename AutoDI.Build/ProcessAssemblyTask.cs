@@ -94,7 +94,8 @@ namespace AutoDI.Build
                 var sb = new StringBuilder();
                 for (Exception e = ex; e != null; e = e.InnerException)
                     sb.AppendLine(e.ToString());
-                Logger.Error(sb.ToString());
+                var additionalInformation = StackTracer.GetStackTrace(ex);
+                Logger.Error(sb.ToString(),additionalInformation);
                 return false;
             }
         }
