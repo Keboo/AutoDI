@@ -177,6 +177,16 @@ namespace AutoDI.Build
                     catch (MultipleConstructorException e)
                     {
                         var additionalInformation = StackTracer.GetStackTrace(e);
+                        if (e.DuplicateConstructor?.DebugInformation?.HasSequencePoints == true)
+                        {
+                            SequencePoint sequencePoint = e.DuplicateConstructor.DebugInformation.SequencePoints.First();
+                            additionalInformation = new AdditionalInformation
+                            {
+                                File = sequencePoint.Document.Url,
+                                Column = sequencePoint.StartColumn,
+                                Line = sequencePoint.StartLine
+                            };
+                        }
                         Logger.Error($"Failed to create map for {registration}\r\n{e}", additionalInformation);
                     }
                     catch (Exception e)

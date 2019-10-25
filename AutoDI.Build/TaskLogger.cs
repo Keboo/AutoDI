@@ -22,7 +22,8 @@ namespace AutoDI.Build
         public void Error(string message, AdditionalInformation additionalInformation)
         {
             ErrorLogged = true;
-            _task.BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", additionalInformation.File, additionalInformation.Line, additionalInformation.Column, 0, 0, $"{MessageSender} {message}", "", MessageSender));
+            _task.BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", additionalInformation.File, additionalInformation.Line, additionalInformation.Column, 
+                additionalInformation.Line, additionalInformation.Column, $"{MessageSender} {message}", "", MessageSender));
         }
 
         public void Debug(string message, DebugLogLevel debugLevel)
