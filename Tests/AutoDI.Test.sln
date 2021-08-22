@@ -30,16 +30,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLib", "TestAssemblies\C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{8B27C398-C3F3-4156-A3B4-4163EB3BB85A}"
 	ProjectSection(SolutionItems) = preProject
-		Tests\Directory.Build.targets = Tests\Directory.Build.targets
+		Directory.Build.targets = Directory.Build.targets
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLib.Tests", "Tests\CoreLib.Tests\CoreLib.Tests.csproj", "{DB64B655-7AEB-4778-A65E-0C4A38ACF2E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLib.Tests", "CoreLib.Tests\CoreLib.Tests.csproj", "{DB64B655-7AEB-4778-A65E-0C4A38ACF2E0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FullFrameworkLib.Tests", "Tests\FullFrameworkLib.Tests\FullFrameworkLib.Tests.csproj", "{941253A2-105A-471B-A8A7-EADD60123E84}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FullFrameworkLib.Tests", "FullFrameworkLib.Tests\FullFrameworkLib.Tests.csproj", "{941253A2-105A-471B-A8A7-EADD60123E84}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLibSigned", "TestAssemblies\CoreLibSigned\CoreLibSigned.csproj", "{F1CFAE20-167C-490D-B1AA-D61FC75AC55B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLibSigned", "..\TestAssemblies\CoreLibSigned\CoreLibSigned.csproj", "{F1CFAE20-167C-490D-B1AA-D61FC75AC55B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLibSigned.Tests", "Tests\CoreLibSigned.Tests\CoreLibSigned.Tests.csproj", "{4A48AB88-3922-4C8E-870D-A0FB8B4C74DA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreLibSigned.Tests", "CoreLibSigned.Tests\CoreLibSigned.Tests.csproj", "{4A48AB88-3922-4C8E-870D-A0FB8B4C74DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
