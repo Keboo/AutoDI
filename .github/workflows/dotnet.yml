@@ -1,18 +1,3 @@
-Skip to content
- 
-Search…
-All gists
-Back to GitHub
-@Keboo 
-@Keboo
-Keboo/dotnet-core.yaml Secret
-Created last month
-0
- Code
- Revisions 1
-<script src="https://gist.github.com/Keboo/cf2b9fef75478882816ff61f4bd347b0.js"></script>
-A starting GitHub Actions template for NuGet libraries
-dotnet-core.yaml
 name: .NET Core
 
 on:
@@ -81,7 +66,7 @@ jobs:
         name: NuGet
         path: ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}*nupkg
 
-    - name: Push NuGet
-      if: ${{ github.event_name != 'pull_request' }}
-      run: dotnet nuget push ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}.nupkg --source https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+    #- name: Push NuGet
+    #  if: ${{ github.event_name != 'pull_request' }}
+    #  run: dotnet nuget push ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}.nupkg --source https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --skip-duplicate
 
