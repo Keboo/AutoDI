@@ -1,0 +1,87 @@
+Skip to content
+ 
+Search…
+All gists
+Back to GitHub
+@Keboo 
+@Keboo
+Keboo/dotnet-core.yaml Secret
+Created last month
+0
+ Code
+ Revisions 1
+<script src="https://gist.github.com/Keboo/cf2b9fef75478882816ff61f4bd347b0.js"></script>
+A starting GitHub Actions template for NuGet libraries
+dotnet-core.yaml
+name: .NET Core
+
+on:
+  push:
+    branches: [ master ]
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+    paths-ignore:
+    - 'README.md'
+  pull_request:
+    branches: [ master ]
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  configuration: Release
+  baseVersion: 4.0.2
+  projectName: AutoDI
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    
+    - name: Set Version
+      run: |
+        if ("${{ github.ref }}".startsWith("refs/tags/v")) {
+          $tagVersion = "${{ github.ref }}".substring(11)
+          echo "buildVersion=$tagVersion.${{ github.run_number }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "nugetVersion=$tagVersion" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        } else {
+          echo "buildVersion=${{ env.baseVersion }}.${{ github.run_number }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "nugetVersion=${{ env.baseVersion }}-ci${{ github.run_number }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        }
+    - name: Setup .NET 6.0
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.x'
+        include-prerelease: true
+      env:
+        NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+    
+    - name: Install dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build -p:Version=${{ env.buildVersion }} -p:ContinuousIntegrationBuild=True --configuration ${{ env.configuration }} --no-restore
+
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --configuration ${{ env.configuration }} --logger "console"
+
+    - name: Pack
+      if: ${{ github.event_name != 'pull_request' }}
+      run: dotnet pack -p:PackageVersion=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build
+
+    - name: Upload Artifacts
+      if: ${{ github.event_name != 'pull_request' }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: NuGet
+        path: ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}*nupkg
+
+    - name: Push NuGet
+      if: ${{ github.event_name != 'pull_request' }}
+      run: dotnet nuget push ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}.nupkg --source https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --skip-duplicate
+
