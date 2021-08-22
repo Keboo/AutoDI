@@ -18,7 +18,7 @@ defaults:
 
 env:
   configuration: Release
-  baseVersion: 4.0.2
+  baseVersion: 4.1.0
   projectName: AutoDI
 
 
@@ -57,12 +57,15 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration ${{ env.configuration }} --logger "console"
 
+    - name: Update NuSpec Files
+      run: .\nuget\UpdateNuspecFiles.ps1 -Version ${{ env.nugetVersion }}
+
     - name: Pack
-      if: ${{ github.event_name != 'pull_request' }}
+      #if: ${{ github.event_name != 'pull_request' }}
       run: dotnet pack -p:PackageVersion=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build
 
     - name: Upload Artifacts
-      if: ${{ github.event_name != 'pull_request' }}
+      #if: ${{ github.event_name != 'pull_request' }}
       uses: actions/upload-artifact@v2
       with:
         name: NuGet
