@@ -21,6 +21,7 @@ env:
   baseVersion: 4.0.2
   projectName: AutoDI
 
+
 jobs:
   build:
     runs-on: windows-latest
