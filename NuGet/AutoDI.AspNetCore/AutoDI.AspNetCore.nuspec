@@ -8,18 +8,21 @@
     <owners>Keboo</owners>
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/Keboo/AutoDI</projectUrl>
-    <iconUrl>https://raw.github.com/Keboo/AutoDI/master/Icons/needle.png</iconUrl>
+    <icon>images\needle.png</icon>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>
 AutoDI integration for ASP.NET Core.
 
 Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     </description>
-    <copyright>Copyright 2019</copyright>
+    <copyright>Copyright 2021</copyright>
     <tags>AutoDI</tags>
     <dependencies>
       <dependency id="AutoDI" version="[4.2.0,4.3.0)" />
       <dependency id="Microsoft.AspNetCore.Hosting.Abstractions" version="[2.2.0,3.0.0)" />
     </dependencies>
   </metadata>
+  <files>
+    <file src="..\..\Icons\needle.png" target="images\" />
+  </files>
 </package>
