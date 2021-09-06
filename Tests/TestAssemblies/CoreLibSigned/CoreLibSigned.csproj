@@ -3,7 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <RootNamespace>AssemblyToProcess</RootNamespace>
-    <LangVersion>9.0</LangVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>CoreLibSigned.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>true</DelaySign>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,7 +14,7 @@
 
   <ItemGroup>
     <Reference Include="AutoDI">
-      <HintPath>..\..\NuGet\AutoDI\lib\netstandard2.0\AutoDI.dll</HintPath>
+      <HintPath>..\..\..\NuGet\AutoDI\lib\netstandard2.0\AutoDI.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

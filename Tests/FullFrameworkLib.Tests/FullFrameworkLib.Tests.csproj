@@ -82,7 +82,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\TestAssemblies\FullFrameworkLib\FullFrameworkLib.csproj">
+    <ProjectReference Include="..\TestAssemblies\FullFrameworkLib\FullFrameworkLib.csproj">
       <Project>{347d0821-b594-4dcc-99ff-52f600c2a8b2}</Project>
       <Name>FullFrameworkLib</Name>
     </ProjectReference>
