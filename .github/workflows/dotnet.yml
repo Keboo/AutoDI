@@ -3,7 +3,6 @@ name: .NET Core
 on:
   push:
     branches: [ master ]
-    # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
     paths-ignore:
@@ -61,17 +60,16 @@ jobs:
       run: .\nuget\UpdateNuspecFiles.ps1 -Version ${{ env.nugetVersion }}
 
     - name: Pack
-      #if: ${{ github.event_name != 'pull_request' }}
+      if: ${{ github.event_name != 'pull_request' }}
       run: dotnet pack -p:PackageVersion=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build
 
     - name: Upload Artifacts
-      #if: ${{ github.event_name != 'pull_request' }}
+      if: ${{ github.event_name != 'pull_request' }}
       uses: actions/upload-artifact@v2
       with:
         name: NuGet
         path: ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}*nupkg
 
-    #- name: Push NuGet
-    #  if: ${{ github.event_name != 'pull_request' }}
-    #  run: dotnet nuget push ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}.nupkg --source https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --skip-duplicate
-
+    - name: Push NuGet
+      if: ${{ github.event_name != 'pull_request' }}
+      run: dotnet nuget push ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}.nupkg --source https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --skip-duplicate
