@@ -11,7 +11,7 @@ namespace AutoDI.Build
 
         private void LoadRequiredData()
         {
-            if (Import == null)
+            if (Import is null)
             {
                 Import = new Imports(TypeResolver.ResolveType, ModuleDefinition, this);
             }

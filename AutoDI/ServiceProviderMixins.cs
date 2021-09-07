@@ -11,7 +11,7 @@ namespace AutoDI
 
         public static object GetService(this IServiceProvider provider, Type serviceType, params object[] autoDiParameters)
         {
-            if (provider == null) throw new ArgumentNullException(nameof(provider));
+            if (provider is null) throw new ArgumentNullException(nameof(provider));
 
             if (provider is IAutoDISerivceProvider autoDiProvider)
             {

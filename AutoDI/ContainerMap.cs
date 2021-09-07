@@ -31,7 +31,7 @@ namespace AutoDI
             {
                 Type targetType = serviceDescriptor.GetTargetType();
                 Lifetime lifetime = serviceDescriptor.GetAutoDILifetime();
-                if (targetType == null || !factories.TryGetValue((targetType, lifetime), out Func<IServiceProvider, object> factory))
+                if (targetType is null || !factories.TryGetValue((targetType, lifetime), out Func<IServiceProvider, object> factory))
                 {
                     factory = GetFactory(serviceDescriptor, lifetime);
                     if (targetType != null)
@@ -190,7 +190,7 @@ namespace AutoDI
                             break;
                         }
                         parameterValues[i] = provider.GetService(parameters[i].ParameterType);
-                        if (parameterValues[i] == null)
+                        if (parameterValues[i] is null)
                         {
                             if (parameters[i].HasDefaultValue)
                             {
@@ -374,8 +374,8 @@ namespace AutoDI
 
             public static IDelegateContainer operator +(IDelegateContainer left, DelegateContainer right)
             {
-                if (left == null) return right;
-                if (right == null) return left;
+                if (left is null) return right;
+                if (right is null) return left;
 
                 if (left is MulticastDelegateContainer multicastDelegateContainer)
                 {

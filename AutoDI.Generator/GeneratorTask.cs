@@ -36,8 +36,7 @@ namespace AutoDI.Generator
 
                 var typeResolver = new TypeResolver(ModuleDefinition, assemblyResolver, logger);
 
-                ICollection<TypeDefinition> allTypes =
-                    typeResolver.GetAllTypes(settings, out AssemblyDefinition _);
+                ICollection<TypeDefinition> allTypes = typeResolver.GetAllTypes(settings);
                 Mapping mapping = Mapping.GetMapping(settings, allTypes, logger);
 
                 if (Path.GetDirectoryName(GeneratedFilePath) is string directory)
@@ -77,7 +76,7 @@ namespace AutoDI.Generator
                     if (factoryMethodIndexes.ContainsKey(registration.TargetType.FullName)) continue;
 
                     MethodDefinition ctor = registration.TargetType.GetMappingConstructor();
-                    if (ctor == null) continue;
+                    if (ctor is null) continue;
 
                     factoryMethodIndexes[registration.TargetType.FullName] = index;
 
@@ -100,7 +99,7 @@ namespace AutoDI.Generator
 
                 foreach (Registration registration in mapping)
                 {
-                    if (!registration.TargetType.CanMapType() || registration.TargetType.GetMappingConstructor() == null) continue;
+                    if (!registration.TargetType.CanMapType() || registration.TargetType.GetMappingConstructor() is null) continue;
 
                     int indent = 3;
                     if (settings.DebugExceptions)

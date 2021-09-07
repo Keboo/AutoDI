@@ -12,7 +12,7 @@ namespace AutoDI
             Type autoDI = GetAutoDIType(containerAssembly);
 
             var method = autoDI.GetRuntimeMethod(nameof(Init), new[] { typeof(Action<IApplicationBuilder>) });
-            if (method == null) throw new RequiredMethodMissingException($"Could not find {nameof(Init)} method on {autoDI.FullName}");
+            if (method is null) throw new RequiredMethodMissingException($"Could not find {nameof(Init)} method on {autoDI.FullName}");
             method.Invoke(null, new object[] { configureMethod });
         }
 
@@ -36,7 +36,7 @@ namespace AutoDI
             Type autoDI = GetAutoDIType(containerAssembly);
 
             var method = autoDI.GetRuntimeMethod(nameof(AddServices), new[] { typeof(IServiceCollection) });
-            if (method == null) throw new RequiredMethodMissingException($"Could not find {nameof(AddServices)} method on {autoDI.FullName}");
+            if (method is null) throw new RequiredMethodMissingException($"Could not find {nameof(AddServices)} method on {autoDI.FullName}");
             method.Invoke(null, new object[] { collection });
         }
 
@@ -45,13 +45,13 @@ namespace AutoDI
             Type autoDI = GetAutoDIType(containerAssembly);
 
             var method = autoDI.GetRuntimeMethod(nameof(Dispose), new Type[0]);
-            if (method == null) throw new RequiredMethodMissingException($"Could not find {nameof(Dispose)} method on {autoDI.FullName}");
+            if (method is null) throw new RequiredMethodMissingException($"Could not find {nameof(Dispose)} method on {autoDI.FullName}");
             method.Invoke(null, new object[0]);
         }
 
         public static IServiceProvider GetGlobalServiceProvider(Assembly assembly)
         {
-            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+            if (assembly is null) throw new ArgumentNullException(nameof(assembly));
 
             Type autoDI = GetAutoDIType(assembly);
             FieldInfo field = autoDI.GetRuntimeFields().SingleOrDefault(f => f.Name == Constants.GlobalServiceProviderName) ??
@@ -67,7 +67,7 @@ namespace AutoDI
                 ? containerAssembly.GetType(typeName)
                 : Type.GetType(typeName);
 
-            if (containerType == null)
+            if (containerType is null)
                 throw new GeneratedClassMissingException("Could not find generated AutoDI class. Was the AutoDI.Build run on this assembly?");
             return containerType;
         }

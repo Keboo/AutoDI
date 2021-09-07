@@ -8,7 +8,7 @@ namespace AutoDI.Build
     {
         public static string GetAttributeValue(this XElement element, string attributeName)
         {
-            if (element == null) throw new ArgumentNullException(nameof(element));
+            if (element is null) throw new ArgumentNullException(nameof(element));
             return element.Attributes()
                 .FirstOrDefault(a => string.Equals(a.Name.LocalName, attributeName, StringComparison.OrdinalIgnoreCase))
                 ?.Value;

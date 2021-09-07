@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddAutoDIService(this IServiceCollection services, Type serviceType,
             Type implementationType, Lifetime lifetime)
         {
-            if (services == null) throw new ArgumentNullException(nameof(services));
+            if (services is null) throw new ArgumentNullException(nameof(services));
             services.Add(new AutoDIServiceDescriptor(serviceType, implementationType, lifetime));
             return services;
         }
@@ -17,7 +17,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddAutoDIService(this IServiceCollection services, Type serviceType,
             Type implementationType, Func<IServiceProvider, object> implementationFactory, Lifetime lifetime)
         {
-            if (services == null) throw new ArgumentNullException(nameof(services));
+            if (services is null) throw new ArgumentNullException(nameof(services));
             services.Add(new AutoDIServiceDescriptor(serviceType, implementationType, implementationFactory, lifetime));
             return services;
         }

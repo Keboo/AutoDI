@@ -39,7 +39,7 @@ namespace AutoDI.Build
         public override bool Execute()
         {
             //Debugger.Launch();
-            if (Logger == null)
+            if (Logger is null)
             {
                 Logger = new TaskLogger(this);
             }
@@ -49,12 +49,12 @@ namespace AutoDI.Build
 
             using (var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), Logger))
             {
-                if (AssemblyResolver == null)
+                if (AssemblyResolver is null)
                 {
                     AssemblyResolver = assemblyResolver;
                 }
 
-                if (TypeResolver == null)
+                if (TypeResolver is null)
                 {
                     TypeResolver = assemblyResolver;
                 }

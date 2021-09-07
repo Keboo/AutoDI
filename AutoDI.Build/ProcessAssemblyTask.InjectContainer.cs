@@ -25,7 +25,7 @@ namespace AutoDI.Build
         private void InjectModuleCctorInitCall(MethodReference initMethod)
         {
             var moduleClass = ModuleDefinition.Types.FirstOrDefault(t => t.Name == "<Module>");
-            if (moduleClass == null)
+            if (moduleClass is null)
             {
                 Logger.Debug($"No module class in {ModuleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
                 return;
@@ -50,7 +50,7 @@ namespace AutoDI.Build
         private MethodDefinition FindOrCreateCctor(TypeDefinition moduleClass)
         {
             var cctor = moduleClass.Methods.FirstOrDefault(m => m.Name == ".cctor");
-            if (cctor == null)
+            if (cctor is null)
             {
                 var attributes = MethodAttributes.Private
                     | MethodAttributes.HideBySig

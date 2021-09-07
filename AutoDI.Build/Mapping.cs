@@ -169,7 +169,7 @@ namespace AutoDI.Build
                             if (settingsMap.Force || CanBeCastToType(allTypes[typeName], mapped))
                             {
                                 Lifetime? lifetime = settingsMap.Lifetime;
-                                if (lifetime == null)
+                                if (lifetime is null)
                                 {
                                     lifetime = GetLifetime(mapped, null);
                                 }
