@@ -61,7 +61,7 @@ jobs:
 
     - name: Pack
       if: ${{ github.event_name != 'pull_request' }}
-      run: dotnet pack -p:PackageVersion=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build --output ${{ github.workspace }}
+      run: dotnet pack -p:Version=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build --output ${{ github.workspace }}
 
     - name: Upload Artifacts
       if: ${{ github.event_name != 'pull_request' }}

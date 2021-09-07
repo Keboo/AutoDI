@@ -3,7 +3,7 @@
 Param([Parameter(Mandatory=$true)][string]$Version,
 [Parameter()][System.IO.DirectoryInfo]$TargetDir)
 
-.\nuget\UpdateNuspecFiles.ps1 -Version $Version
+.\NuGet\UpdateNuspecFiles.ps1 -Version $Version
 
 dotnet pack "AutoDI.sln" -p:Version=$Version -p:Configuration=Debug --output ./
 
