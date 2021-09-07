@@ -8,5 +8,5 @@
     </Compile>
   </ItemGroup>
 
-  <Import Project="..\NuGet\AutoDI.Build\build\AutoDI.Build.targets" Condition="Exists('..\NuGet\AutoDI.Build\build\AutoDI.Build.targets')"/>
+  <Import Project="..\..\NuGet\AutoDI.Build\build\AutoDI.Build.targets" />
 </Project>
