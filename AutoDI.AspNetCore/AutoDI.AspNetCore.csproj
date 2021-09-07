@@ -21,8 +21,10 @@
     <ItemGroup>
       <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
       <CopyItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
+      <IconItems Include="$(SolutionDir)\Icons\needle.png" />
     </ItemGroup>
     <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
+    <Copy SourceFiles="@(IconItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\images\%(IconItems.RecursiveDir)" />
   </Target>
 
 </Project>

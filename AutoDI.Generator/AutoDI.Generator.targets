@@ -4,9 +4,9 @@
   <PropertyGroup>
     <RunAutoDI Condition="'$(RunAutoDI)' == '' Or $(RunAutoDI) == '*Undefined*'">True</RunAutoDI>
     <AutoDIOutputPath Condition="'$(AutoDIOutputPath)' == '' Or $(AutoDIOutputPath) == '*Undefined*'">$(ProjectDir)$(IntermediateOutputPath)AutoDI.Generated\</AutoDIOutputPath>
-    <AutoDIPath Condition="$(AutoDIPath) == '' Or $(AutoDIPath) == '*Undefined*'">$(MSBuildThisFileDirectory)..\</AutoDIPath>
-    <AutoDIDirectory Condition="$(MSBuildRuntimeType) == 'Core'">$(AutoDIPath)netcore</AutoDIDirectory>
-    <AutoDIDirectory Condition="$(MSBuildRuntimeType) != 'Core'">$(AutoDIPath)netframework</AutoDIDirectory>
+    <AutoDIPath Condition="$(AutoDIPath) == '' Or $(AutoDIPath) == '*Undefined*'">$(MSBuildThisFileDirectory)</AutoDIPath>
+    <AutoDIDirectory Condition="$(MSBuildRuntimeType) == 'Core'">$(AutoDIPath)netstandard2.0</AutoDIDirectory>
+    <AutoDIDirectory Condition="$(MSBuildRuntimeType) != 'Core'">$(AutoDIPath)net472</AutoDIDirectory>
     <AutoDIAssembly Condition="$(AutoDIAssembly) == '' Or $(AutoDIAssembly) == '*Undefined*'">$(AutoDIDirectory)\AutoDI.Generator.dll</AutoDIAssembly>
     <AutoDIGeneratedFileName>AutoDI.g.cs</AutoDIGeneratedFileName>
   </PropertyGroup>

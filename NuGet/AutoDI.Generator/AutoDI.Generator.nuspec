@@ -18,10 +18,7 @@ Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     <copyright>Copyright 2021</copyright>
     <tags>AutoDI, Generator</tags>
     <dependencies>
-      <dependency id="AutoDI" version="[4.2.0,4.3.0)" />
+      <dependency id="AutoDI" version="[5.0.0,5.1.0)" />
     </dependencies>
   </metadata>
-  <files>
-    <file src="..\..\Icons\needle.png" target="images\" />
-  </files>
 </package>

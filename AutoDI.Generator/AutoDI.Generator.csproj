@@ -35,11 +35,12 @@
 
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
     <ItemGroup>
-      <CopyItems Include="$(TargetDir)..\**\AutoDI*.dll" />
-      <CopyItems Include="$(TargetDir)..\**\AutoDI*.pdb" />
-      <CopyItems Include="$(TargetDir)..\**\Mono.Cecil*" />
-      <ContentItems Include="$(ProjectDir)AutoDI.cs" />
+      <BuildItems Include="$(TargetDir)..\**\AutoDI*.dll" />
+      <BuildItems Include="$(TargetDir)..\**\AutoDI*.pdb" />
+      <BuildItems Include="$(TargetDir)..\**\Mono.Cecil*" />
       <BuildItems Include="$(ProjectDir)AutoDI.Generator.targets" />
+      <ContentItems Include="$(ProjectDir)AutoDI.cs" />
+      <IconItems Include="$(SolutionDir)\Icons\needle.png"/>
     </ItemGroup>
 
     <PropertyGroup>
@@ -47,10 +48,10 @@
       <TaskOutputDirectory Condition="$(TargetFramework) == 'netstandard2.0'">netcore</TaskOutputDirectory>
     </PropertyGroup>
 
-    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\$(TaskOutputDirectory)" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\content\" />
     <Copy SourceFiles="@(ContentItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\contentFiles\cs\any\" />
-    <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\" />
+    <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\%(BuildItems.RecursiveDir)" />
+    <Copy SourceFiles="@(IconItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\images\%(IconItems.RecursiveDir)" />
   </Target>
 
 </Project>
