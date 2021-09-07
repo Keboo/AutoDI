@@ -5,7 +5,7 @@ Param([Parameter(Mandatory=$true)][string]$Version,
 
 .\nuget\UpdateNuspecFiles.ps1 -Version $Version
 
-dotnet pack "AutoDI.sln" -p:AUTODI_VERSION_FULL=$Version -p:Configuration=Debug --output ./
+dotnet pack "AutoDI.sln" -p:Version=$Version -p:Configuration=Debug --output ./
 
 if ($TargetDir){
     Move-Item "AutoDI.*.nupkg" $TargetDir -Force
