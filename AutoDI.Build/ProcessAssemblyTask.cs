@@ -264,7 +264,7 @@ namespace AutoDI.Build
 
         private void InsertObjectConstant(Injector injector, object constant, TypeDefinition type)
         {
-            if (ReferenceEquals(constant, null))
+            if (constant is null)
             {
                 injector.Insert(OpCodes.Ldnull);
                 return;
@@ -280,7 +280,11 @@ namespace AutoDI.Build
             }
         }
 
-        private void InsertAndBoxConstant(Injector injector, object constant, TypeReference type, TypeReference boxType = null)
+        private void InsertAndBoxConstant(
+            Injector injector,
+            object constant,
+            TypeReference type,
+            TypeReference boxType = null)
         {
             if (type.IsType<string>())
             {
@@ -326,11 +330,14 @@ namespace AutoDI.Build
             {
                 injector.Insert(OpCodes.Ldc_I4, (sbyte)constant);
             }
+            else
+            {
+                Logger.Warning($"Unknown constant type {type.FullName}");
+            }
             if (boxType != null)
             {
                 injector.Insert(Instruction.Create(OpCodes.Box, boxType));
             }
-            Logger.Warning($"Unknown constant type {constant.GetType().FullName}");
         }
 
         protected override IEnumerable<string> GetAssembliesToInclude()
