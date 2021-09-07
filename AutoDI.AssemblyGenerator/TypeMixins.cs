@@ -23,7 +23,7 @@ namespace AutoDI.AssemblyGenerator
 
         public static string GetTypeName(Type type, Type containerType)
         {
-            if (type == null) return null;
+            if (type is null) return null;
             string rv = type.FullName;
 
             if (containerType?.Namespace != null && rv != null)

@@ -23,9 +23,8 @@ namespace AutoDI.Build
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public ICollection<TypeDefinition> GetAllTypes(Settings settings, out AssemblyDefinition autoDIAssembly)
+        public ICollection<TypeDefinition> GetAllTypes(Settings settings)
         {
-            autoDIAssembly = null;
             var allTypes = new HashSet<TypeDefinition>(TypeComparer.FullName);
             IEnumerable<TypeDefinition> FilterTypes(IEnumerable<TypeDefinition> types) =>
                 types.Where(t => !t.IsCompilerGenerated() && !allTypes.Remove(t));
@@ -33,11 +32,6 @@ namespace AutoDI.Build
             foreach (ModuleDefinition module in GetAllModules(settings))
             {
                 _logger.Debug($"Processing module for {module.FileName}", DebugLogLevel.Verbose);
-                if (module.Assembly.Name.Name == AutoDIAssemblyName)
-                {
-                    autoDIAssembly = _assemblyResolver.Resolve(module.Assembly.Name);
-                    continue;
-                }
                 
                 _logger.Debug($"Including types from '{module.Assembly.FullName}' ({GetIncludeReason()})", DebugLogLevel.Default);
                 //Either references AutoDI, or was a config assembly match, include the types.
@@ -95,7 +89,7 @@ namespace AutoDI.Build
                     {
                         assembly = _assemblyResolver.Resolve(assemblyReference);
 
-                        if (assembly?.MainModule == null)
+                        if (assembly?.MainModule is null)
                         {
                             continue;
                         }

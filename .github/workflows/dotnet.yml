@@ -1,30 +1,15 @@
-Skip to content
- 
-Search…
-All gists
-Back to GitHub
-@Keboo 
-@Keboo
-Keboo/dotnet-core.yaml Secret
-Created last month
-0
- Code
- Revisions 1
-<script src="https://gist.github.com/Keboo/cf2b9fef75478882816ff61f4bd347b0.js"></script>
-A starting GitHub Actions template for NuGet libraries
-dotnet-core.yaml
 name: .NET Core
 
 on:
   push:
     branches: [ master ]
-    # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
     paths-ignore:
     - 'README.md'
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
 
 defaults:
   run:
@@ -32,8 +17,9 @@ defaults:
 
 env:
   configuration: Release
-  baseVersion: 4.0.2
+  baseVersion: 4.1.0
   projectName: AutoDI
+
 
 jobs:
   build:
@@ -70,6 +56,9 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration ${{ env.configuration }} --logger "console"
 
+    - name: Update NuSpec Files
+      run: .\nuget\UpdateNuspecFiles.ps1 -Version ${{ env.nugetVersion }}
+
     - name: Pack
       if: ${{ github.event_name != 'pull_request' }}
       run: dotnet pack -p:PackageVersion=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build
@@ -84,4 +73,3 @@ jobs:
     - name: Push NuGet
       if: ${{ github.event_name != 'pull_request' }}
       run: dotnet nuget push ${{ github.workspace }}\${{ env.projectName }}\bin\${{ env.configuration }}\${{ env.projectName }}.${{ env.nugetVersion }}.nupkg --source https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --skip-duplicate
-

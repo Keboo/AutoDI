@@ -28,24 +28,16 @@ namespace AutoDI.Build
                 var typeResolver = new TypeResolver(ModuleDefinition, ModuleDefinition.AssemblyResolver, Logger);
 
                 Settings settings = LoadSettings();
-                if (settings == null) return false;
+                if (settings is null) return false;
 
-                ICollection<TypeDefinition> allTypes = typeResolver.GetAllTypes(settings, out AssemblyDefinition autoDIAssembly);
+                ICollection<TypeDefinition> allTypes = typeResolver.GetAllTypes(settings);
 
                 Logger.Debug($"Found types:\r\n{string.Join("\r\n", allTypes.Select(x => x.FullName))}", DebugLogLevel.Verbose);
 
-                if (autoDIAssembly == null)
+                if (ResolveAssembly($"AutoDI, Version={Assembly.GetExecutingAssembly().GetName().Version}, Culture=neutral, PublicKeyToken=null") is null)
                 {
-                    autoDIAssembly = ResolveAssembly("AutoDI");
-                    if (autoDIAssembly == null)
-                    {
-                        Logger.Warning("Could not find AutoDI assembly");
-                        return false;
-                    }
-                    else
-                    {
-                        Logger.Warning($"Failed to find AutoDI assembly. Manually injecting '{autoDIAssembly.MainModule.FileName}'");
-                    }
+                    Logger.Error("Could not find AutoDI assembly. Ensure the project references AutoDI.");
+                    return false;
                 }
 
                 LoadRequiredData();
@@ -163,11 +155,11 @@ namespace AutoDI.Build
                 {
                     FieldDefinition backingField = null;
                     //Store the return from the resolve method in the method parameter
-                    if (property.SetMethod == null)
+                    if (property.SetMethod is null)
                     {
                         //NB: Constant string, compiler detail... yuck yuck and double duck
                         backingField = property.DeclaringType.Fields.FirstOrDefault(f => f.Name == $"<{property.Name}>k__BackingField");
-                        if (backingField == null)
+                        if (backingField is null)
                         {
                             Logger.Warning(
                                 $"{property.FullName} is marked with {Import.AutoDI.DependencyAttributeType.FullName} but cannot be set. Dependency properties must either be auto properties or have a setter");
@@ -272,7 +264,7 @@ namespace AutoDI.Build
 
         private void InsertObjectConstant(Injector injector, object constant, TypeDefinition type)
         {
-            if (ReferenceEquals(constant, null))
+            if (constant is null)
             {
                 injector.Insert(OpCodes.Ldnull);
                 return;
@@ -288,7 +280,11 @@ namespace AutoDI.Build
             }
         }
 
-        private void InsertAndBoxConstant(Injector injector, object constant, TypeReference type, TypeReference boxType = null)
+        private void InsertAndBoxConstant(
+            Injector injector,
+            object constant,
+            TypeReference type,
+            TypeReference boxType = null)
         {
             if (type.IsType<string>())
             {
@@ -334,17 +330,20 @@ namespace AutoDI.Build
             {
                 injector.Insert(OpCodes.Ldc_I4, (sbyte)constant);
             }
+            else
+            {
+                Logger.Warning($"Unknown constant type {type.FullName}");
+            }
             if (boxType != null)
             {
                 injector.Insert(Instruction.Create(OpCodes.Box, boxType));
             }
-            Logger.Warning($"Unknown constant type {constant.GetType().FullName}");
         }
 
         protected override IEnumerable<string> GetAssembliesToInclude()
         {
             return base.GetAssembliesToInclude().Concat(GetAssembliesToInclude());
-        
+
             IEnumerable<string> GetAssembliesToInclude()
             {
                 yield return "AutoDI";

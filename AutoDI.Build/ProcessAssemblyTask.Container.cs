@@ -88,7 +88,7 @@ namespace AutoDI.Build
                             out MethodDefinition factoryMethod))
                         {
                             factoryMethod = GenerateFactoryMethod(registration.TargetType, factoryIndex, codeGenerator);
-                            if (factoryMethod == null)
+                            if (factoryMethod is null)
                             {
                                 Logger.Debug($"No acceptable constructor for '{registration.TargetType.FullName}', skipping map",
                                     DebugLogLevel.Verbose);
@@ -226,7 +226,7 @@ namespace AutoDI.Build
             if (!targetType.CanMapType()) return null;
 
             MethodDefinition targetTypeCtor = targetType.GetMappingConstructor();
-            if (targetTypeCtor == null) return null;
+            if (targetTypeCtor is null) return null;
 
             var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
                 MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,

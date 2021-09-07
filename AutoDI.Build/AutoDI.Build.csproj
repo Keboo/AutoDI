@@ -3,13 +3,16 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <DebugType>portable</DebugType>
     <DefineConstants Condition="$(TargetFramework) == 'net472'">NETFRAMEWORK;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="$(TargetFramework) == 'netstandard2.0'">NETCORE;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup Label="NuGet">
+    <NuspecFile>../NuGet/AutoDI.Build/AutoDI.Build.nuspec</NuspecFile>
+  </PropertyGroup>
+  
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.11.2" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.*" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net472'">
@@ -18,8 +21,9 @@
     <Reference Include="Microsoft.Build.Tasks.v4.0" />
     <Reference Include="Microsoft.Build.Utilities.v4.0" />
   </ItemGroup>
+  
   <ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="16.5.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="16.11.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +38,6 @@
     <Compile Include="..\AutoDI\SettingsAttribute.cs" Link="SettingsAttribute.cs" />
   </ItemGroup>
 
-  <!--<Target Name="CopyOutput" AfterTargets="AfterBuild" Condition="$(Configuration) == 'Release'">-->
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
     <ItemGroup>
       <RootItems Include="$(TargetDir)..\**\$(TargetFileName)" />
@@ -50,7 +53,7 @@
       <TaskOutputDirectory Condition="$(TargetFramework) == 'netstandard2.0'">netcore</TaskOutputDirectory>
     </PropertyGroup>
 
-    <Copy SourceFiles="@(RootItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\$(TaskOutputDirectory)" />
+    <Copy SourceFiles="@(RootItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\$(TaskOutputDirectory)" />
     <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build" />
   </Target>
 </Project>

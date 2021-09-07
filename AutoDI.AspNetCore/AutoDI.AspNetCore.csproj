@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <ApplicationIcon>..\needle.ico</ApplicationIcon>
-    <DebugSymbols>True</DebugSymbols>
-    <Version Condition="'$(AUTODI_VERSION_FULL)' != ''">$(AUTODI_VERSION_FULL)</Version>
-    <DebugType>portable</DebugType>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet">
+    <NuspecFile>../NuGet/AutoDI.AspNetCore/AutoDI.AspNetCore.nuspec</NuspecFile>
   </PropertyGroup>
 
   <ItemGroup>

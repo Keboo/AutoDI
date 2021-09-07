@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Shared\**\*.cs">
+      <Link>%(Compile.Filename)</Link>
+    </Compile>
+  </ItemGroup>
+
+  <Import Project="..\..\NuGet\AutoDI.Build\build\AutoDI.Build.targets" />
+</Project>

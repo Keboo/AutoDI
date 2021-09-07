@@ -17,7 +17,7 @@ namespace AutoDI.AssemblyGenerator
                 //TODO: Check for BaseModuleWeaver type
                 Type weaverType = assembly.GetType(weaverTypeName);
 
-                if (weaverType == null) return null;
+                if (weaverType is null) return null;
                 return Activator.CreateInstance(weaverType);
             }
 

@@ -48,7 +48,7 @@ namespace AutoDI.Build
                     bool force = false;
 
                     var ctorParameterNames = GetConstructorParameterNames();
-                    if (ctorParameterNames == null) throw new SettingsParseException($"Unknown {nameof(MapAttribute)} constructor");
+                    if (ctorParameterNames is null) throw new SettingsParseException($"Unknown {nameof(MapAttribute)} constructor");
 
                     for (int i = 0; i < attribute.ConstructorArguments.Count; i++)
                     {

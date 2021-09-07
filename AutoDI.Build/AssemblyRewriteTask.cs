@@ -39,7 +39,7 @@ namespace AutoDI.Build
         public override bool Execute()
         {
             //Debugger.Launch();
-            if (Logger == null)
+            if (Logger is null)
             {
                 Logger = new TaskLogger(this);
             }
@@ -49,12 +49,12 @@ namespace AutoDI.Build
 
             using (var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), Logger))
             {
-                if (AssemblyResolver == null)
+                if (AssemblyResolver is null)
                 {
                     AssemblyResolver = assemblyResolver;
                 }
 
-                if (TypeResolver == null)
+                if (TypeResolver is null)
                 {
                     TypeResolver = assemblyResolver;
                 }
@@ -64,38 +64,38 @@ namespace AutoDI.Build
                     AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
                 }
 
-                using (Stream symbolStream = GetSymbolInformation(
-                    out ISymbolReaderProvider symbolReaderProvider,
-                    out ISymbolWriterProvider symbolWriterProvider))
+                var readerParameters = new ReaderParameters
                 {
-                    var readerParameters = new ReaderParameters
-                    {
-                        AssemblyResolver = AssemblyResolver,
+                    AssemblyResolver = AssemblyResolver,
+                    InMemory = true
+                };
 
-                        ReadSymbols = symbolStream != null || symbolReaderProvider is EmbeddedPortablePdbReaderProvider,
-                        SymbolReaderProvider = symbolReaderProvider,
-                        SymbolStream = symbolStream,
-                        InMemory = true
-                    };
-                    
-                    using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
+                using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
+                {
+                    bool loadedSymbols;
+                    try
                     {
-                        Logger.Info($"Loaded '{AssemblyFile}'");
-                        if (WeaveAssembly())
+                        ModuleDefinition.ReadSymbols();
+                        loadedSymbols = true;
+                    }
+                    catch
+                    {
+                        loadedSymbols = false;
+                    }
+                    Logger.Info($"Loaded '{AssemblyFile}'");
+                    if (WeaveAssembly())
+                    {
+                        Logger.Info("Weaving complete - updating assembly");
+                        var parameters = new WriterParameters
                         {
-                            Logger.Info("Weaving complete - updating assembly");
-                            var parameters = new WriterParameters
-                            {
-                                WriteSymbols = symbolReaderProvider != null,
-                                SymbolWriterProvider = symbolWriterProvider,
-                            };
+                            WriteSymbols = loadedSymbols,
+                        };
 
-                            ModuleDefinition.Write(AssemblyFile, parameters);
-                        }
-                        else
-                        {
-                            Logger.Info("Weaving complete - no update");
-                        }
+                        ModuleDefinition.Write(AssemblyFile, parameters);
+                    }
+                    else
+                    {
+                        Logger.Info("Weaving complete - no update");
                     }
                 }
             }
@@ -218,9 +218,9 @@ namespace AutoDI.Build
             bool IsPortablePdb(string symbolsPath)
             {
                 using (var fileStream = File.OpenRead(symbolsPath))
-                using(var reader = new BinaryReader(fileStream))
+                using (var reader = new BinaryReader(fileStream))
                 {
-                    return reader.ReadBytes(4).SequenceEqual(new byte[] {0x42, 0x4a, 0x53, 0x42});
+                    return reader.ReadBytes(4).SequenceEqual(new byte[] { 0x42, 0x4a, 0x53, 0x42 });
                 }
             }
 

@@ -20,7 +20,7 @@ namespace AutoDI.AssemblyGenerator
 
         public async Task<Dictionary<string, AssemblyInfo>> Execute([CallerFilePath] string sourceFile = null)
         {
-            if (sourceFile == null) throw new ArgumentNullException(nameof(sourceFile));
+            if (sourceFile is null) throw new ArgumentNullException(nameof(sourceFile));
 
             var builtAssemblies = new Dictionary<string, AssemblyInfo>();
 
@@ -39,7 +39,7 @@ namespace AutoDI.AssemblyGenerator
                     while (!sr.EndOfStream)
                     {
                         string line = sr.ReadLine();
-                        if (line == null) continue;
+                        if (line is null) continue;
                         string trimmed = line.Trim();
                         if (trimmed.StartsWith("//") || trimmed.StartsWith("/*"))
                         {

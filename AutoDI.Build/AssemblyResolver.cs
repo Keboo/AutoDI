@@ -35,7 +35,7 @@ namespace AutoDI.Build
 
         public override AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters readParameters)
         {
-            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (name is null) throw new ArgumentNullException(nameof(name));
 
             if (_assemblyCache.TryGetValue(name.Name, out AssemblyDefinition assemblyDefinition))
             {
@@ -58,7 +58,7 @@ namespace AutoDI.Build
 
         public TypeDefinition ResolveType(string fullTypeName)
         {
-            if (fullTypeName == null) throw new ArgumentNullException(nameof(fullTypeName));
+            if (fullTypeName is null) throw new ArgumentNullException(nameof(fullTypeName));
             if (_typeCache.TryGetValue(fullTypeName, out TypeDefinition type))
             {
                 return type;

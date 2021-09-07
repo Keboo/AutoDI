@@ -15,7 +15,7 @@ namespace AutoDI
 
         public IApplicationBuilder ConfigureContainer<TContainerType>(Action<TContainerType> configureContianer)
         {
-            if (configureContianer == null) throw new ArgumentNullException(nameof(configureContianer));
+            if (configureContianer is null) throw new ArgumentNullException(nameof(configureContianer));
             if (_specifiedContainerType != null) throw new InvalidOperationException($"A container type of '{_specifiedContainerType.FullName}' was already specified");
             _specifiedContainerType = typeof(TContainerType);
             _configureContainerDelegates.Add(configureContianer);
@@ -24,7 +24,7 @@ namespace AutoDI
 
         public IApplicationBuilder ConfigureServices(Action<IServiceCollection> configureServices)
         {
-            if (configureServices == null) throw new ArgumentNullException(nameof(configureServices));
+            if (configureServices is null) throw new ArgumentNullException(nameof(configureServices));
             _configureServicesDelegates.Add(configureServices);
             return this;
         }

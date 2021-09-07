@@ -14,7 +14,7 @@ namespace AutoDI.Build
         public Matcher(Func<T, string> valueProvider, string pattern, string replacement = null)
         {
             _valueProvider = valueProvider ?? throw new ArgumentNullException(nameof(valueProvider));
-            if (pattern == null) throw new ArgumentNullException(nameof(pattern));
+            if (pattern is null) throw new ArgumentNullException(nameof(pattern));
 
             if (pattern.StartsWith(RegexPrefix, StringComparison.OrdinalIgnoreCase))
             {

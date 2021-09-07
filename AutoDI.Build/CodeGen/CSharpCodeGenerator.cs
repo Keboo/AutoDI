@@ -71,7 +71,7 @@ namespace AutoDI.Build.CodeGen
 
             public void Save(string outputDirectory)
             {
-                if (_method.DebugInformation.Scope == null)
+                if (_method.DebugInformation.Scope is null)
                 {
                     _method.DebugInformation.Scope = new ScopeDebugInformation(_method.Body.Instructions.First(), _method.Body.Instructions.Last());
                 }
