@@ -51,7 +51,7 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build -p:Version=${{ env.buildVersion }} -p:ContinuousIntegrationBuild=True --configuration ${{ env.configuration }} --no-restore
+      run: dotnet build -p:Version=${{ env.buildVersion }} -p:ContinuousIntegrationBuild=True --configuration ${{ env.configuration }} --no-restore -v d
 
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration ${{ env.configuration }} --logger "console"
@@ -61,7 +61,7 @@ jobs:
 
     - name: Pack
       if: ${{ github.event_name != 'pull_request' }}
-      run: dotnet pack -p:Version=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build --output ${{ github.workspace }}
+      run: dotnet pack -p:Version=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build --output ${{ github.workspace }} -v d
 
     - name: Upload Artifacts
       if: ${{ github.event_name != 'pull_request' }}
