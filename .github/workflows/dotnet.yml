@@ -51,17 +51,17 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build -p:Version=${{ env.buildVersion }} -p:ContinuousIntegrationBuild=True --configuration ${{ env.configuration }} --no-restore -v d
+      run: dotnet build AutoDI.sln -p:Version=${{ env.buildVersion }} -p:ContinuousIntegrationBuild=True --configuration ${{ env.configuration }} --no-restore -v d
 
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration ${{ env.configuration }} --logger "console"
+      run: dotnet test AutoDI.sln --no-build --verbosity normal --configuration ${{ env.configuration }} --logger "console"
 
     - name: Update NuSpec Files
       run: .\nuget\UpdateNuspecFiles.ps1 -Version ${{ env.nugetVersion }}
 
     - name: Pack
       if: ${{ github.event_name != 'pull_request' }}
-      run: dotnet pack -p:Version=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build --output ${{ github.workspace }} -v d
+      run: dotnet pack AutoDI.sln -p:Version=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build --output ${{ github.workspace }} -v d
 
     - name: Upload Artifacts
       if: ${{ github.event_name != 'pull_request' }}
