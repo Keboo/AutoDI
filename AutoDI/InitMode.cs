@@ -8,7 +8,7 @@
         /// <summary>
         /// The container must be initialized manually.
         /// </summary>
-        None,
+        Manual,
         /// <summary>
         /// The container will be initialized on your program's entry point.
         /// Recommended for executable programs.
