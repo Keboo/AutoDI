@@ -19,10 +19,11 @@ namespace AutoDI.Build
             _task = task ?? throw new ArgumentNullException(nameof(task));
         }
 
-        public void Error(string message)
+        public void Error(string message, AdditionalInformation additionalInformation)
         {
             ErrorLogged = true;
-            _task.BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender));
+            _task.BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", additionalInformation.File, additionalInformation.Line, additionalInformation.Column, 
+                additionalInformation.Line, additionalInformation.Column, $"{MessageSender} {message}", "", MessageSender));
         }
 
         public void Debug(string message, DebugLogLevel debugLevel)
@@ -38,9 +39,20 @@ namespace AutoDI.Build
             _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Normal));
         }
 
-        public void Warning(string message)
+        public void Warning(string message, AdditionalInformation additionalInformation)
         {
-            _task.BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender));
+            if (additionalInformation == null)
+            {
+                _task.BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", null, 0, 0, 0, 0,
+                    $"{MessageSender} {message}", "",
+                    MessageSender));
+            }
+            else
+            {
+                _task.BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", additionalInformation.File,
+                    additionalInformation.Line, additionalInformation.Column, 0, 0, $"{MessageSender} {message}", "",
+                    MessageSender));
+            }
         }
     }
 }

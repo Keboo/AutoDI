@@ -29,7 +29,7 @@ namespace AutoDI.Build
                     _assemblyCache[assembly.Name.Name] = assembly;
                 }
             }
-            
+
             logger.Info("Done loading referenced assemblies");
         }
 
@@ -43,7 +43,7 @@ namespace AutoDI.Build
                 return assemblyDefinition;
             }
             assemblyDefinition = base.Resolve(name, readParameters);
-            
+
             if (assemblyDefinition != null)
             {
                 _logger.Debug($"Resolved assembly {name.FullName} from '{assemblyDefinition.MainModule.FileName}'", DebugLogLevel.Verbose);
@@ -98,9 +98,10 @@ namespace AutoDI.Build
                 assembly = Assembly.LoadWithPartialName(reference.Name);
 #pragma warning restore 618
             }
-            catch (FileNotFoundException)
+            catch (FileNotFoundException ex)
             {
-                _logger.Warning($"Failed to resolve '{reference.Name}'");
+                var additionalInformation = StackTracer.GetStackTrace(ex);
+                _logger.Warning($"Failed to resolve '{reference.Name}'", additionalInformation);
                 assembly = null;
             }
 

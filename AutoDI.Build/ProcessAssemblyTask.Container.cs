@@ -12,17 +12,17 @@ namespace AutoDI.Build
     {
         //TODO: out parameters... yuck
         private TypeDefinition GenerateAutoDIClass(Mapping mapping, Settings settings, ICodeGenerator codeGenerator,
-            out MethodDefinition initMethod)
+                out MethodDefinition initMethod)
         {
             var containerType = new TypeDefinition(Constants.Namespace, Constants.TypeName,
-                TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
-                | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit)
+                    TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed
+                    | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit)
             {
                 BaseType = Import.System.Object
             };
 
             FieldDefinition globalServiceProvider =
-                ModuleDefinition.CreateStaticReadonlyField(Constants.GlobalServiceProviderName, false, Import.System.IServiceProvider);
+                    ModuleDefinition.CreateStaticReadonlyField(Constants.GlobalServiceProviderName, false, Import.System.IServiceProvider);
             containerType.Fields.Add(globalServiceProvider);
 
             MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType, codeGenerator);
@@ -40,8 +40,8 @@ namespace AutoDI.Build
         private MethodDefinition GenerateAddServicesMethod(Mapping mapping, Settings settings, TypeDefinition containerType, ICodeGenerator codeGenerator)
         {
             var method = new MethodDefinition("AddServices",
-                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
-                Import.System.Void);
+                    MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
+                    Import.System.Void);
 
             var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.DependencyInjection.IServiceCollection);
             method.Parameters.Add(serviceCollection);
@@ -85,13 +85,13 @@ namespace AutoDI.Build
                         Logger.Debug($"Processing map for {registration.TargetType.FullName}", DebugLogLevel.Verbose);
 
                         if (!factoryMethods.TryGetValue(registration.TargetType.FullName,
-                            out MethodDefinition factoryMethod))
+                                out MethodDefinition factoryMethod))
                         {
                             factoryMethod = GenerateFactoryMethod(registration.TargetType, factoryIndex, codeGenerator);
                             if (factoryMethod is null)
                             {
                                 Logger.Debug($"No acceptable constructor for '{registration.TargetType.FullName}', skipping map",
-                                    DebugLogLevel.Verbose);
+                                        DebugLogLevel.Verbose);
                                 continue;
                             }
                             factoryMethods[registration.TargetType.FullName] = factoryMethod;
@@ -105,8 +105,8 @@ namespace AutoDI.Build
 
                         TypeReference importedKey = ModuleDefinition.ImportReference(registration.Key);
                         Logger.Debug(
-                            $"Mapping {importedKey.FullName} => {registration.TargetType.FullName} ({registration.Lifetime})",
-                            DebugLogLevel.Default);
+                                $"Mapping {importedKey.FullName} => {registration.TargetType.FullName} ({registration.Lifetime})",
+                                DebugLogLevel.Default);
                         processor.Emit(OpCodes.Ldtoken, importedKey);
                         processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
 
@@ -116,9 +116,9 @@ namespace AutoDI.Build
                         processor.Emit(OpCodes.Ldnull);
                         processor.Emit(OpCodes.Ldftn, factoryMethod);
                         processor.Emit(OpCodes.Newobj,
-                            ModuleDefinition.ImportReference(
-                                funcCtor.MakeGenericDeclaringType(Import.System.IServiceProvider,
-                                    ModuleDefinition.ImportReference(registration.TargetType))));
+                                ModuleDefinition.ImportReference(
+                                        funcCtor.MakeGenericDeclaringType(Import.System.IServiceProvider,
+                                                ModuleDefinition.ImportReference(registration.TargetType))));
 
                         processor.Emit(OpCodes.Ldc_I4, (int)registration.Lifetime);
 
@@ -147,14 +147,14 @@ namespace AutoDI.Build
                             processor.Append(handlerEnd);
 
                             var exceptionHandler =
-                                new ExceptionHandler(ExceptionHandlerType.Catch)
-                                {
-                                    CatchType = Import.System.Exception,
-                                    TryStart = tryStart,
-                                    TryEnd = handlerStart,
-                                    HandlerStart = handlerStart,
-                                    HandlerEnd = afterCatch
-                                };
+                                    new ExceptionHandler(ExceptionHandlerType.Catch)
+                                    {
+                                        CatchType = Import.System.Exception,
+                                        TryStart = tryStart,
+                                        TryEnd = handlerStart,
+                                        HandlerStart = handlerStart,
+                                        HandlerEnd = afterCatch
+                                    };
 
                             method.Body.ExceptionHandlers.Add(exceptionHandler);
 
@@ -176,11 +176,23 @@ namespace AutoDI.Build
                     }
                     catch (MultipleConstructorException e)
                     {
-                        Logger.Error($"Failed to create map for {registration}\r\n{e}");
+                        var additionalInformation = StackTracer.GetStackTrace(e);
+                        if (e.DuplicateConstructor?.DebugInformation?.HasSequencePoints == true)
+                        {
+                            SequencePoint sequencePoint = e.DuplicateConstructor.DebugInformation.SequencePoints.First();
+                            additionalInformation = new AdditionalInformation
+                            {
+                                File = sequencePoint.Document.Url,
+                                Column = sequencePoint.StartColumn,
+                                Line = sequencePoint.StartLine
+                            };
+                        }
+                        Logger.Error($"Failed to create map for {registration}\r\n{e}", additionalInformation);
                     }
                     catch (Exception e)
                     {
-                        Logger.Warning($"Failed to create map for {registration}\r\n{e}");
+                        var additionalInformation = StackTracer.GetStackTrace(e);
+                        Logger.Warning($"Failed to create map for {registration}\r\n{e}", additionalInformation);
                     }
                 }
             }
@@ -229,8 +241,8 @@ namespace AutoDI.Build
             if (targetTypeCtor is null) return null;
 
             var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
-                MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
-                ModuleDefinition.ImportReference(targetType));
+                    MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
+                    ModuleDefinition.ImportReference(targetType));
             factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.System.IServiceProvider));
 
             ILProcessor factoryProcessor = factory.Body.GetILProcessor();
@@ -261,8 +273,8 @@ namespace AutoDI.Build
         private MethodDefinition GenerateInitMethod(MethodDefinition configureMethod, FieldDefinition globalServiceProvider)
         {
             var initMethod = new MethodDefinition(Constants.InitMethodName,
-                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
-                Import.System.Void);
+                    MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
+                    Import.System.Void);
             var configureAction = new ParameterDefinition("configure", ParameterAttributes.None, Import.System.Action.Type.MakeGenericInstanceType(Import.AutoDI.IApplicationBuilder.Type));
             initMethod.Parameters.Add(configureAction);
 
@@ -326,8 +338,8 @@ namespace AutoDI.Build
         private MethodDefinition GenerateDisposeMethod(FieldDefinition globalServiceProvider)
         {
             var disposeMethod = new MethodDefinition("Dispose",
-                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
-                Import.System.Void);
+                    MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
+                    Import.System.Void);
 
             VariableDefinition disposable = new VariableDefinition(Import.System.IDisposable.Type);
             disposeMethod.Body.Variables.Add(disposable);

@@ -45,7 +45,7 @@ namespace AutoDI.Build
             {
                 if (annotatedConstructors.Length > 1)
                 {
-                    throw new MultipleConstructorException($"More then one constructor on '{targetType.Name}' annotated with DiConstructorAttribute");
+                    throw new MultipleConstructorException($"More then one constructor on '{targetType.Name}' annotated with DiConstructorAttribute", annotatedConstructors[1]);
                 }
                 targetTypeCtor = annotatedConstructors[0];
             }

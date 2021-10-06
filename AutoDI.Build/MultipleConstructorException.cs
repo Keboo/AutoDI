@@ -1,9 +1,14 @@
-﻿namespace AutoDI.Build
+﻿using Mono.Cecil;
+
+namespace AutoDI.Build
 {
     internal class MultipleConstructorException : AutoDIBuildException
     {
-        public MultipleConstructorException(string message) : base(message)
+        public MethodDefinition DuplicateConstructor { get; }
+
+        public MultipleConstructorException(string message, MethodDefinition duplicateContructor) : base(message)
         {
+            DuplicateConstructor = duplicateContructor;
         }
     }
 }

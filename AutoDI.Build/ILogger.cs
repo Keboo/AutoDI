@@ -7,7 +7,8 @@
 
         void Debug(string message, DebugLogLevel debugLevel);
         void Info(string message);
-        void Warning(string message);
-        void Error(string message);
+        void Warning(string message, AdditionalInformation additionalInformation = null);
+        //This could probably just replace the AdditionalInformation class with SequencePoint
+        void Error(string message, AdditionalInformation additionalInformation);
     }
 }
