@@ -54,7 +54,7 @@ namespace AutoDI.Build
 
                     switch (settings.InitMode)
                     {
-                        case InitMode.None:
+                        case InitMode.Manual:
                             Logger.Debug("Skipping injections of Init method", DebugLogLevel.Verbose);
                             break;
                         case InitMode.EntryPoint:
