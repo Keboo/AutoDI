@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -19,10 +20,24 @@ namespace AutoDI.Build
             _task = task ?? throw new ArgumentNullException(nameof(task));
         }
 
-        public void Error(string message)
+        public void Error(string message,
+            [CallerMemberName] string memberName = "",
+            [CallerFilePath] string sourceFilePath = "",
+            [CallerLineNumber] int sourceLineNumber = 0)
         {
             ErrorLogged = true;
-            _task.BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender));
+            _task.BuildEngine.LogWarningEvent(new BuildWarningEventArgs(
+               subcategory: "",
+               code: "",
+               file: sourceFilePath,
+               lineNumber: sourceLineNumber,
+               columnNumber: 0,
+               endLineNumber: 0,
+               endColumnNumber: 0,
+               message: $"{MessageSender} {message}",
+               helpKeyword: "",
+               senderName: MessageSender
+               ));
         }
 
         public void Debug(string message, DebugLogLevel debugLevel)
@@ -38,9 +53,23 @@ namespace AutoDI.Build
             _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Normal));
         }
 
-        public void Warning(string message)
+        public void Warning(string message,
+            [CallerMemberName] string memberName = "",
+            [CallerFilePath] string sourceFilePath = "",
+            [CallerLineNumber] int sourceLineNumber = 0)
         {
-            _task.BuildEngine.LogWarningEvent(new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender));
+            _task.BuildEngine.LogWarningEvent(new BuildWarningEventArgs(
+                subcategory: "",
+                code: "",
+                file: sourceFilePath,
+                lineNumber: sourceLineNumber,
+                columnNumber: 0,
+                endLineNumber: 0,
+                endColumnNumber: 0,
+                message: $"{MessageSender} {message}",
+                helpKeyword: "",
+                senderName: MessageSender
+                ));
         }
     }
 }
