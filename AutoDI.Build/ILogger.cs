@@ -1,4 +1,6 @@
-﻿namespace AutoDI.Build
+﻿using Mono.Cecil.Cil;
+
+namespace AutoDI.Build
 {
     public interface ILogger
     {
@@ -7,7 +9,7 @@
 
         void Debug(string message, DebugLogLevel debugLevel);
         void Info(string message);
-        void Warning(string message);
-        void Error(string message);
+        void Warning(string message, SequencePoint sequencePoint = null);
+        void Error(string message, SequencePoint sequencePoint);
     }
 }
