@@ -22,8 +22,19 @@ namespace AutoDI.Build
 
         public void Error(string message, SequencePoint sequencePoint)
         {
+            BuildErrorEventArgs buildErrorEventArgs;
             ErrorLogged = true;
-            _task.BuildEngine.LogErrorEvent(new BuildErrorEventArgs("", "", sequencePoint.Document.Url, sequencePoint.StartLine, sequencePoint.StartColumn, sequencePoint.EndLine, sequencePoint.EndColumn, $"{MessageSender} {message}", "", MessageSender));
+
+            if(sequencePoint == null)
+            {
+                buildErrorEventArgs = new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender);
+            }
+            else
+            {
+                buildErrorEventArgs = new BuildErrorEventArgs("", "", sequencePoint.Document.Url, sequencePoint.StartLine, sequencePoint.StartColumn, sequencePoint.EndLine, sequencePoint.EndColumn, $"{MessageSender} {message}", "", MessageSender);
+            }
+
+            _task.BuildEngine.LogErrorEvent(buildErrorEventArgs);
         }
 
         public void Debug(string message, DebugLogLevel debugLevel)
