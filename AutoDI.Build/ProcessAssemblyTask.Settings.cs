@@ -13,7 +13,7 @@ namespace AutoDI.Build
             }
             catch (SettingsParseException e)
             {
-                Logger.Error($"Failed to parse AutoDI settings{Environment.NewLine}{e.Message}");
+                Logger.Error($"Failed to parse AutoDI settings{Environment.NewLine}{e.Message}", null);
                 return null;
             }
 

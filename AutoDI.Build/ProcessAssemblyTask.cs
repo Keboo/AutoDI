@@ -36,7 +36,7 @@ namespace AutoDI.Build
 
                 if (ResolveAssembly($"AutoDI, Version={Assembly.GetExecutingAssembly().GetName().Version}, Culture=neutral, PublicKeyToken=null") is null)
                 {
-                    Logger.Error("Could not find AutoDI assembly. Ensure the project references AutoDI.");
+                    Logger.Error("Could not find AutoDI assembly. Ensure the project references AutoDI.", null);
                     return false;
                 }
 
@@ -86,7 +86,7 @@ namespace AutoDI.Build
                 var sb = new StringBuilder();
                 for (Exception e = ex; e != null; e = e.InnerException)
                     sb.AppendLine(e.ToString());
-                Logger.Error(sb.ToString());
+                Logger.Error(sb.ToString(), null);
                 return false;
             }
         }

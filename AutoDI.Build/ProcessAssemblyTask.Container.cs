@@ -176,7 +176,7 @@ namespace AutoDI.Build
                     }
                     catch (MultipleConstructorException e)
                     {
-                        Logger.Error($"Failed to create map for {registration}\r\n{e}");
+                        Logger.Error($"Failed to create map for {registration}\r\n{e}", null);
                     }
                     catch (Exception e)
                     {
