@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>AutoDI.Build</id>
-    <version>4.2.0</version>
+    <version>1.2.3</version>
     <title>AutoDI.Build</title>
     <authors>Keboo</authors>
     <owners>Keboo</owners>
@@ -15,10 +15,10 @@ Provides MSBuild integration for AutoDI to simplify the creation of objects from
 
 Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     </description>
-    <copyright>Copyright 2021</copyright>
+    <copyright>Copyright 2022</copyright>
     <tags>AutoDI</tags>
     <dependencies>
-      <dependency id="AutoDI" version="[5.0.0,5.1.0)" />
+      <dependency id="AutoDI" version="1.2.3" />
     </dependencies>
   </metadata>
 </package>

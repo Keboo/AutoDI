@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>AutoDI.Generator</id>
-    <version>4.2.0</version>
+    <version>1.2.3</version>
     <title>AutoDI.Generator</title>
     <authors>Keboo</authors>
     <owners>Keboo</owners>
@@ -15,10 +15,10 @@ AutoDI extension that generates C# code for AutoDI.
 
 Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
     </description>
-    <copyright>Copyright 2021</copyright>
+    <copyright>Copyright 2022</copyright>
     <tags>AutoDI, Generator</tags>
     <dependencies>
-      <dependency id="AutoDI" version="[5.0.0,5.1.0)" />
+      <dependency id="AutoDI" version="1.2.3" />
     </dependencies>
   </metadata>
 </package>

@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup>
+    <None Include="..\Icons\needle.png" Pack="true" PackagePath="images" />
+  </ItemGroup>
+</Project>

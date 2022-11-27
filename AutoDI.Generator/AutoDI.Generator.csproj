@@ -4,10 +4,6 @@
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup Label="NuGet">
-    <NuspecFile>../NuGet/AutoDI.Generator/AutoDI.Generator.nuspec</NuspecFile>
-  </PropertyGroup>
-
   <ItemGroup>
     <Compile Remove="AutoDI.cs" />
     <None Include="AutoDI.cs" />

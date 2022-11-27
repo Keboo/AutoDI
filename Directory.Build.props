@@ -1,0 +1,49 @@
+<Project>
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>true</WarningsAsErrors>
+    <AnalysisLevel>5</AnalysisLevel>
+    <LangVersion>11.0</LangVersion>
+    <ApplicationIcon>..\Icons\needle.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <Title>AutoDI</Title>
+    <Copyright>Copyright 2022</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageIcon>images\needle.png</PackageIcon>
+    <RepositoryUrl>https://github.com/Keboo/AutoDI</RepositoryUrl>
+    <Authors>Keboo</Authors>
+    <EmbedUntrackedSources>True</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <!-- Source Link Properties -->
+  <PropertyGroup>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSource>true</EmbedUntrackedSource>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="System"/>
+    <Using Include="System.Collections.Generic"/>
+    <Using Include="System.Diagnostics"/>
+    <Using Include="System.Diagnostics.CodeAnalysis"/>
+    <Using Include="System.Globalization"/>
+    <Using Include="System.IO"/>
+    <Using Include="System.Linq"/>
+    <Using Include="System.Text"/>
+    <Using Include="System.Threading"/>
+    <Using Include="System.Windows"/>
+  </ItemGroup>
+</Project>

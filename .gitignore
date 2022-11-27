@@ -255,3 +255,5 @@ paket-files/
 
 /nuget.exe
 /Examples/AutoDI.Container/Web.NetCore/wwwroot/lib
+
+*.snupkg

@@ -1,12 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
-    <ApplicationIcon>..\needle.ico</ApplicationIcon>
-  </PropertyGroup>
-
-  <PropertyGroup Label="NuGet">
-    <NuspecFile>../NuGet/AutoDI/AutoDI.nuspec</NuspecFile>
+    <TargetFrameworks>netstandard2.0;net461;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

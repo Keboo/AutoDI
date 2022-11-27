@@ -177,20 +177,22 @@ namespace AutoDI.Tests
             });
             map.Add(services);
 
-            var instance = map.Get<IInterface>(null);
-
-            Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>(null)));
-            Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>(null)));
+            AssertSingleInstance(map);
 
             Assert.AreEqual(1, instanceCount);
-
-            // ReSharper disable once RedundantAssignment
-            instance = null;
-
+            
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
-
+            
             Assert.IsNotNull(map.Get<IInterface>(null));
             Assert.AreEqual(2, instanceCount);
+
+            static void AssertSingleInstance(ContainerMap map)
+            {
+                var instance = map.Get<IInterface>(null);
+
+                Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>(null)));
+                Assert.IsTrue(ReferenceEquals(instance, map.Get<IInterface>(null)));
+            }
         }
 
         [TestMethod]
