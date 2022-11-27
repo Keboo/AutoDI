@@ -13,9 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AutoDI.AssemblyGenerator\AutoDI.AssemblyGenerator.csproj">
-      <Aliases></Aliases>
-    </ProjectReference>
+    <ProjectReference Include="..\AutoDI.AssemblyGenerator\AutoDI.AssemblyGenerator.csproj" />
     <ProjectReference Include="..\AutoDI.Build\AutoDI.Build.csproj">
       <Aliases>AutoDIBuild</Aliases>
     </ProjectReference>
@@ -23,10 +21,6 @@
 
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
 </Project>
