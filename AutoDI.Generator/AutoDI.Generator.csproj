@@ -9,6 +9,11 @@
     <None Include="AutoDI.cs" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeExeInPackage</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
   </ItemGroup>
@@ -36,7 +41,7 @@
       <BuildItems Include="$(TargetDir)..\**\Mono.Cecil*" />
       <BuildItems Include="$(ProjectDir)AutoDI.Generator.targets" />
       <ContentItems Include="$(ProjectDir)AutoDI.cs" />
-      <IconItems Include="$(SolutionDir)\Icons\needle.png"/>
+      <IconItems Include="$(SolutionDir)\Icons\needle.png" />
     </ItemGroup>
 
     <PropertyGroup>

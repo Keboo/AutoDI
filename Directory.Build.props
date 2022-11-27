@@ -17,11 +17,12 @@
   
   <PropertyGroup>
     <Title>AutoDI</Title>
-    <Copyright>Copyright 2022</Copyright>
+    <Copyright>Copyright $([System.DateTime]::Now.ToString('yyyy'))</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIcon>images\needle.png</PackageIcon>
     <RepositoryUrl>https://github.com/Keboo/AutoDI</RepositoryUrl>
     <Authors>Keboo</Authors>
+    <PackageTags>AutoDI</PackageTags>
     <EmbedUntrackedSources>True</EmbedUntrackedSources>
   </PropertyGroup>
 

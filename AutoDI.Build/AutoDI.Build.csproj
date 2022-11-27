@@ -2,10 +2,20 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <DefineConstants Condition="$(TargetFramework) == 'net472'">NETFRAMEWORK;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="$(TargetFramework) == 'netstandard2.0'">NETCORE;$(DefineConstants)</DefineConstants>
     <IncludeBuildOutput>false</IncludeBuildOutput>
+    <RemoveMicrosoftBuildFrameworkAssemblyReferences>True</RemoveMicrosoftBuildFrameworkAssemblyReferences>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Description>
+      Provides MSBuild integration for AutoDI to simplify the creation of objects from your favorite DI container
+
+      Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
+    </Description>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -17,10 +27,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework) == 'net472'">
-    <Reference Include="Microsoft.Build" />
-    <Reference Include="Microsoft.Build.Framework" />
-    <Reference Include="Microsoft.Build.Tasks.v4.0" />
-    <Reference Include="Microsoft.Build.Utilities.v4.0" />
+    <Reference Include="Microsoft.Build" PrivateAssets="All" />
+    <Reference Include="Microsoft.Build.Framework" PrivateAssets="All" />
+    <Reference Include="Microsoft.Build.Tasks.v4.0" PrivateAssets="All" />
+    <Reference Include="Microsoft.Build.Utilities.v4.0" PrivateAssets="All" />
   </ItemGroup>
   
   <ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
@@ -28,15 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\AutoDI\Behaviors.cs" Link="Behaviors.cs" />
-    <Compile Include="..\AutoDI\CodeLanguage.cs" Link="CodeLanguage.cs" />
-    <Compile Include="..\AutoDI\Constants.cs" Link="Constants.cs" />
-    <Compile Include="..\AutoDI\DebugLogLevel.cs" Link="DebugLogLevel.cs" />
-    <Compile Include="..\AutoDI\IncludeAssemblyAttribute.cs" Link="IncludeAssemblyAttribute.cs" />
-    <Compile Include="..\AutoDI\InitMode.cs" Link="InitMode.cs" />
-    <Compile Include="..\AutoDI\Lifetime.cs" Link="Lifetime.cs" />
-    <Compile Include="..\AutoDI\MapAttribute.cs" Link="MapAttribute.cs" />
-    <Compile Include="..\AutoDI\SettingsAttribute.cs" Link="SettingsAttribute.cs" />
+    <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
   </ItemGroup>
 
   <Target Name="IncludeExeInPackage">
@@ -52,34 +54,12 @@
       <TfmSpecificPackageFile Include="$(TargetDir)\Mono.Cecil.*">
         <PackagePath>build\$(TaskOutputDirectory)</PackagePath>
       </TfmSpecificPackageFile>
-      <!-- TODO Does AutoDI.dll need to be included? -->
 
-      <TfmSpecificPackageFile Include="$(ProjectDir)AutoDI.Build.targets">
+      <!-- Only include this item once -->
+      <TfmSpecificPackageFile Include="$(ProjectDir)AutoDI.Build.targets" Condition="$(TargetFramework) == 'netstandard2.0'">
         <PackagePath>build</PackagePath>
       </TfmSpecificPackageFile>
 
     </ItemGroup>
-  </Target>
-  
-  <Target Name="CopyOutput" AfterTargets="AfterBuild">
-    <ItemGroup>
-      <RootItems Include="$(TargetDir)..\**\$(TargetFileName)" />
-      <RootItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
-      <RootItems Include="$(TargetDir)..\**\Mono.Cecil.*" />
-      <RootItems Include="$(SolutionDir)NuGet\AutoDI\lib\netstandard2.0\*" />
-
-      <BuildItems Include="$(ProjectDir)AutoDI.Build.targets" />
-
-      <IconItems Include="$(SolutionDir)\Icons\needle.png" />
-    </ItemGroup>
-
-    <PropertyGroup>
-      <TaskOutputDirectory Condition="$(TargetFramework) == 'net472'">netframework</TaskOutputDirectory>
-      <TaskOutputDirectory Condition="$(TargetFramework) == 'netstandard2.0'">netcore</TaskOutputDirectory>
-    </PropertyGroup>
-
-    <Copy SourceFiles="@(RootItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build\$(TaskOutputDirectory)" />
-    <Copy SourceFiles="@(BuildItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\build" />
-    <Copy SourceFiles="@(IconItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\images\%(IconItems.RecursiveDir)" />
   </Target>
 </Project>

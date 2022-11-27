@@ -1,5 +1,4 @@
-﻿using System.IO;
-
+﻿
 namespace AutoDI.Generator
 {
     public static class StreamWriterMixins
