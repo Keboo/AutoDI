@@ -1,10 +1,7 @@
-﻿using System;
+﻿namespace AutoDI;
 
-namespace AutoDI
+[AttributeUsage(AttributeTargets.Constructor)]
+public class DiConstructorAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Constructor)]
-    public class DiConstructorAttribute : Attribute
-    {
-        
-    }
+
 }

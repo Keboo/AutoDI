@@ -1,12 +1,11 @@
-﻿namespace AutoDI.Build
-{
-    internal class SettingsParseException : AutoDIBuildException
-    {
-        public SettingsParseException()
-        { }
+﻿namespace AutoDI.Build;
 
-        public SettingsParseException(string message) 
-            : base(message)
-        { }
-    }
+internal class SettingsParseException : AutoDIBuildException
+{
+    public SettingsParseException()
+    { }
+
+    public SettingsParseException(string message)
+        : base(message)
+    { }
 }

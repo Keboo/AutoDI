@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace AutoDI;
 
-namespace AutoDI
+public interface IContainer : IEnumerable<Map>
 {
-    public interface IContainer : IEnumerable<Map>
-    {
-        event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFound;
+    event EventHandler<TypeKeyNotFoundEventArgs> TypeKeyNotFound;
 
-        T Get<T>(IServiceProvider provider);
-        object Get(Type serviceType, IServiceProvider provider);
+    T Get<T>(IServiceProvider? provider);
+    object Get(Type serviceType, IServiceProvider provider);
 
-        bool Remove<T>();
-        bool Remove(Type serviceType);
+    bool Remove<T>();
+    bool Remove(Type serviceType);
 
-        IContainer CreatedNestedContainer();
-    }
+    IContainer CreatedNestedContainer();
 }

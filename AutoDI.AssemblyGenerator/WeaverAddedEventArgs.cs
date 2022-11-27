@@ -1,14 +1,11 @@
-﻿using System;
+﻿namespace AutoDI.AssemblyGenerator;
 
-namespace AutoDI.AssemblyGenerator
+public class WeaverAddedEventArgs : EventArgs
 {
-    public class WeaverAddedEventArgs : EventArgs
-    {
-        public Weaver Weaver { get; }
+    public Weaver Weaver { get; }
 
-        public WeaverAddedEventArgs(Weaver weaver)
-        {
-            Weaver = weaver;
-        }
+    public WeaverAddedEventArgs(Weaver weaver)
+    {
+        Weaver = weaver;
     }
 }

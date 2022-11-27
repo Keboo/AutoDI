@@ -1,12 +1,8 @@
 ﻿extern alias AutoDIBuild;
 
-using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Xml.Linq;
-using Mono.Cecil;
 
-using Settings=AutoDIBuild::AutoDI.Build.Settings;
-using SettingsParseException=AutoDIBuild::AutoDI.Build.SettingsParseException;
+using Settings = AutoDIBuild::AutoDI.Build.Settings;
 
 namespace AutoDI.Build.Tests
 {

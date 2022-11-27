@@ -1,13 +1,16 @@
 ﻿extern alias AutoDIBuild;
 
-using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
     using MainAssembly;
+
     using SharedAssembly;
 
     [TestClass]
@@ -22,7 +25,7 @@ namespace AutoDI.Build.Tests
             var gen = new Generator();
 
             var testAssemblies = await gen.Execute();
-            
+
             _mainAssembly = testAssemblies["main"].Assembly;
 
         }
@@ -37,13 +40,7 @@ namespace AutoDI.Build.Tests
         public void CanLoadTypesFromDependentAssemblies()
         {
             IContainer map = null;
-            DI.Init(_mainAssembly, builder =>
-            {
-                builder.ConfigureContainer<IContainer>(container =>
-                {
-                    map = container;
-                });
-            });
+            DI.Init(_mainAssembly, builder => builder.ConfigureContainer<IContainer>(container => map = container));
 
             Assert.IsNotNull(map);
             Assert.IsTrue(map.IsMapped<IService, Service>(GetType()));
@@ -92,6 +89,7 @@ namespace AutoDI.Build.Tests
     namespace MainAssembly
     {
         using AutoDI;
+
         using SharedAssembly;
 
         public class Program
@@ -105,12 +103,9 @@ namespace AutoDI.Build.Tests
 
             public Program([Dependency] IService service = null)
             {
-                
+
             }
         }
     }
     //</assembly>
 }
-
-
-

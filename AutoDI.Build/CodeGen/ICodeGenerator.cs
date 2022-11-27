@@ -1,11 +1,10 @@
 ﻿using Mono.Cecil;
 
-namespace AutoDI.Build.CodeGen
-{
-    internal interface ICodeGenerator
-    {
-        IMethodGenerator Method(MethodDefinition method);
+namespace AutoDI.Build.CodeGen;
 
-        void Save();
-    }
+internal interface ICodeGenerator
+{
+    IMethodGenerator Method(MethodDefinition method);
+
+    void Save();
 }

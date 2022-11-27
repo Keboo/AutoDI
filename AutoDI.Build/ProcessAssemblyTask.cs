@@ -1,8 +1,11 @@
-﻿using AutoDI.Build.CodeGen;
+﻿using System.Reflection;
+using System.Runtime.CompilerServices;
+
+using AutoDI.Build.CodeGen;
+
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using Instruction = Mono.Cecil.Cil.Instruction;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
@@ -139,7 +142,7 @@ public partial class ProcessAssemblyTask : AssemblyRewriteTask
                 var initInstruction = Instruction.Create(OpCodes.Ldarg, parameter);
                 var storeInstruction = Instruction.Create(OpCodes.Starg, parameter);
                 ResolveDependency(
-                    parameter.ParameterType, 
+                    parameter.ParameterType,
                     parameter,
                     new[] { initInstruction },
                     null,
@@ -168,8 +171,8 @@ public partial class ProcessAssemblyTask : AssemblyRewriteTask
                 ResolveDependency(property.PropertyType, property,
                     new[]
                     {
-                        Instruction.Create(OpCodes.Ldarg_0),
-                        Instruction.Create(OpCodes.Call, property.GetMethod),
+                    Instruction.Create(OpCodes.Ldarg_0),
+                    Instruction.Create(OpCodes.Call, property.GetMethod),
                     },
                     Instruction.Create(OpCodes.Ldarg_0),
                     property.SetMethod != null
@@ -183,7 +186,7 @@ public partial class ProcessAssemblyTask : AssemblyRewriteTask
             method.Body.OptimizeMacros();
 
             void ResolveDependency(
-                TypeReference dependencyType, 
+                TypeReference dependencyType,
                 ICustomAttributeProvider source,
                 Instruction[] loadSource,
                 Instruction? resolveAssignmentTarget,
@@ -343,7 +346,7 @@ public partial class ProcessAssemblyTask : AssemblyRewriteTask
     {
         return base.GetAssembliesToInclude().Concat(GetAssembliesToInclude());
 
-        IEnumerable<string> GetAssembliesToInclude()
+        static IEnumerable<string> GetAssembliesToInclude()
         {
             yield return "AutoDI";
             yield return "Microsoft.Extensions.DependencyInjection.Abstractions";

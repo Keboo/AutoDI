@@ -1,24 +1,23 @@
 using Mono.Cecil;
 
-namespace AutoDI.Build
+namespace AutoDI.Build;
+
+public class Registration
 {
-    public class Registration
+    public TypeDefinition Key { get; }
+    public TypeDefinition TargetType { get; }
+
+    public Lifetime Lifetime { get; set; }
+
+    public Registration(TypeDefinition key, TypeDefinition targetType, Lifetime lifetime)
     {
-        public TypeDefinition Key { get; }
-        public TypeDefinition TargetType { get; }
+        Key = key;
+        TargetType = targetType;
+        Lifetime = lifetime;
+    }
 
-        public Lifetime Lifetime { get; set; }
-
-        public Registration(TypeDefinition key, TypeDefinition targetType, Lifetime lifetime)
-        {
-            Key = key;
-            TargetType = targetType;
-            Lifetime = lifetime;
-        }
-
-        public override string ToString()
-        {
-            return $"{Key.FullName} => {TargetType.FullName} ({Lifetime})";
-        }
+    public override string ToString()
+    {
+        return $"{Key.FullName} => {TargetType.FullName} ({Lifetime})";
     }
 }

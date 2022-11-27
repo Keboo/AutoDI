@@ -1,13 +1,10 @@
-using System;
+namespace AutoDI.AssemblyGenerator;
 
-namespace AutoDI.AssemblyGenerator
+public class AssemblyCreateInstanceException : Exception
 {
-    public class AssemblyCreateInstanceException : Exception
+    public AssemblyCreateInstanceException(string message)
+        : base(message)
     {
-        public AssemblyCreateInstanceException(string message) 
-            : base(message)
-        {
-            
-        }
+
     }
 }

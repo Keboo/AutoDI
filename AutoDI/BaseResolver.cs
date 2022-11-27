@@ -1,28 +1,21 @@
-﻿using System;
+﻿namespace AutoDI;
 
-namespace AutoDI
+public abstract class BaseResolver : IAutoDISerivceProvider, IInitializeServiceProvider
 {
-    public abstract class BaseResolver : IAutoDISerivceProvider, IInitializeServiceProvider
+    public virtual T Resolve<T>(params object[] parameters)
     {
-        public virtual T Resolve<T>(params object[] parameters)
-        {
-            if (Resolve(typeof(T), parameters) is T result)
-            {
-                return result;
-            }
-            return default(T);
-        }
+        return Resolve(typeof(T), parameters) is T result ? result : default;
+    }
 
-        public abstract object Resolve(Type desiredType, params object[] parameters);
+    public abstract object Resolve(Type desiredType, params object[] parameters);
 
-        public virtual void Initialize()
-        {
-            //Base implementation does nothing
-        }
+    public virtual void Initialize()
+    {
+        //Base implementation does nothing
+    }
 
-        public object GetService(Type serviceType, object[] parameters)
-        {
-            throw new NotImplementedException();
-        }
+    public object GetService(Type serviceType, object[] parameters)
+    {
+        throw new NotImplementedException();
     }
 }

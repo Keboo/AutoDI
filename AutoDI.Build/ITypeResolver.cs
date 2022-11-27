@@ -1,9 +1,8 @@
 ﻿using Mono.Cecil;
 
-namespace AutoDI.Build
+namespace AutoDI.Build;
+
+public interface ITypeResolver
 {
-    public interface ITypeResolver
-    {
-        TypeDefinition ResolveType(string fullTypeName);
-    }
+    TypeDefinition ResolveType(string fullTypeName);
 }

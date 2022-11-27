@@ -1,30 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using Mono.Cecil;
+﻿using Mono.Cecil;
 
-namespace AutoDI.Build
+namespace AutoDI.Build;
+
+internal class ModuleDefinitionComparer
 {
-    internal class ModuleDefinitionComparer
+    public static IEqualityComparer<ModuleDefinition> FileName { get; } = new Comparer<string>(md => md.FileName);
+
+    private class Comparer<T> : IEqualityComparer<ModuleDefinition>
     {
-        public static IEqualityComparer<ModuleDefinition> FileName { get; } = new Comparer<string>(md => md.FileName);
+        private readonly Func<ModuleDefinition, T> _accessor;
 
-        private class Comparer<T> : IEqualityComparer<ModuleDefinition>
+        public Comparer(Func<ModuleDefinition, T> accessor)
         {
-            private readonly Func<ModuleDefinition, T> _accessor;
+            _accessor = accessor;
+        }
+        public bool Equals(ModuleDefinition x, ModuleDefinition y)
+        {
+            return EqualityComparer<T>.Default.Equals(_accessor(x), _accessor(y));
+        }
 
-            public Comparer(Func<ModuleDefinition, T> accessor)
-            {
-                _accessor = accessor;
-            }
-            public bool Equals(ModuleDefinition x, ModuleDefinition y)
-            {
-                return EqualityComparer<T>.Default.Equals(_accessor(x), _accessor(y));
-            }
-
-            public int GetHashCode(ModuleDefinition obj)
-            {
-                return EqualityComparer<T>.Default.GetHashCode(_accessor(obj));
-            }
+        public int GetHashCode(ModuleDefinition obj)
+        {
+            return EqualityComparer<T>.Default.GetHashCode(_accessor(obj));
         }
     }
 }

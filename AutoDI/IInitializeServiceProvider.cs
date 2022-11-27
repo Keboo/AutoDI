@@ -1,7 +1,6 @@
-﻿namespace AutoDI
+﻿namespace AutoDI;
+
+public interface IInitializeServiceProvider
 {
-    public interface IInitializeServiceProvider
-    {
-        void Initialize();
-    }
+    void Initialize();
 }

@@ -1,69 +1,55 @@
-﻿using System;
-using Microsoft.Build.Framework;
+﻿using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+
 using Mono.Cecil.Cil;
 
-namespace AutoDI.Build
+namespace AutoDI.Build;
+
+internal class TaskLogger : ILogger
 {
-    internal class TaskLogger : ILogger
+    private readonly Task _task;
+
+    public bool ErrorLogged { get; private set; }
+
+    public DebugLogLevel DebugLogLevel { get; set; }
+
+    private const string MessageSender = "AutoDI:";
+
+    public TaskLogger(Task task)
     {
-        private readonly Task _task;
+        _task = task ?? throw new ArgumentNullException(nameof(task));
+    }
 
-        public bool ErrorLogged { get; private set; }
+    public void Error(string message, SequencePoint sequencePoint)
+    {
+        BuildErrorEventArgs buildErrorEventArgs;
+        ErrorLogged = true;
 
-        public DebugLogLevel DebugLogLevel { get; set; }
+        buildErrorEventArgs = sequencePoint == null
+            ? new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender)
+            : new BuildErrorEventArgs("", "", sequencePoint.Document.Url, sequencePoint.StartLine, sequencePoint.StartColumn, sequencePoint.EndLine, sequencePoint.EndColumn, $"{MessageSender} {message}", "", MessageSender);
 
-        private const string MessageSender = "AutoDI:";
+        _task.BuildEngine.LogErrorEvent(buildErrorEventArgs);
+    }
 
-        public TaskLogger(Task task)
+    public void Debug(string message, DebugLogLevel debugLevel)
+    {
+        if (debugLevel >= DebugLogLevel)
         {
-            _task = task ?? throw new ArgumentNullException(nameof(task));
+            _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Low));
         }
+    }
 
-        public void Error(string message, SequencePoint sequencePoint)
-        {
-            BuildErrorEventArgs buildErrorEventArgs;
-            ErrorLogged = true;
+    public void Info(string message)
+    {
+        _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Normal));
+    }
 
-            if(sequencePoint == null)
-            {
-                buildErrorEventArgs = new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender);
-            }
-            else
-            {
-                buildErrorEventArgs = new BuildErrorEventArgs("", "", sequencePoint.Document.Url, sequencePoint.StartLine, sequencePoint.StartColumn, sequencePoint.EndLine, sequencePoint.EndColumn, $"{MessageSender} {message}", "", MessageSender);
-            }
-
-            _task.BuildEngine.LogErrorEvent(buildErrorEventArgs);
-        }
-
-        public void Debug(string message, DebugLogLevel debugLevel)
-        {
-            if (debugLevel >= DebugLogLevel)
-            {
-                _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Low));
-            }
-        }
-
-        public void Info(string message)
-        {
-            _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Normal));
-        }
-
-        public void Warning(string message, SequencePoint sequencePoint)
-        {
-            BuildWarningEventArgs buildWarningEventArgs;
-
-            if (sequencePoint == null)
-            {
-                buildWarningEventArgs = new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender);
-            }
-            else
-            {
-                buildWarningEventArgs = new BuildWarningEventArgs("", "", sequencePoint.Document.Url, sequencePoint.StartLine, sequencePoint.StartColumn, sequencePoint.EndLine, sequencePoint.EndColumn, $"{MessageSender} {message}", "", MessageSender);
-            }
-
-            _task.BuildEngine.LogWarningEvent(buildWarningEventArgs);
-        }
+    public void Warning(string message, SequencePoint sequencePoint)
+    {
+        BuildWarningEventArgs buildWarningEventArgs = sequencePoint == null
+            ? new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender)
+            : new BuildWarningEventArgs("", "", sequencePoint.Document.Url, sequencePoint.StartLine, sequencePoint.StartColumn, sequencePoint.EndLine, sequencePoint.EndColumn, $"{MessageSender} {message}", "", MessageSender);
+        _task.BuildEngine.LogWarningEvent(buildWarningEventArgs);
     }
 }

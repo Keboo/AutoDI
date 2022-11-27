@@ -1,8 +1,11 @@
-﻿using ContainerDependencyNamespace;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
 using AutoDI.AssemblyGenerator;
+
+using ContainerDependencyNamespace;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
@@ -21,7 +24,7 @@ namespace AutoDI.Build.Tests
         [TestMethod]
         public void SimpleConstructorDependenciesAreInjected()
         {
-            _testAssembly.InvokeStatic<Program>(nameof(Program.Main), new object[] {new string[0]});
+            _testAssembly.InvokeStatic<Program>(nameof(Program.Main), new object[] { Array.Empty<string>() });
             dynamic sut = _testAssembly.CreateInstance<Sut>();
             Assert.IsTrue(((object)sut.Service).Is<Service>());
         }
@@ -34,8 +37,9 @@ namespace AutoDI.Build.Tests
 //<weaver: AutoDI.Build.ProcessAssemblyTask />
 namespace ContainerDependencyNamespace
 {
-    using AutoDI;
     using System;
+
+    using AutoDI;
 
     public class Program
     {

@@ -1,8 +1,10 @@
-﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Build.Tests.AnnotatedConstructorTestsNamespace;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+using AutoDI.Build.Tests.AnnotatedConstructorTestsNamespace;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
@@ -31,8 +33,8 @@ namespace AutoDI.Build.Tests
         public void CanResolveAnnotatedConstructor()
         {
             dynamic manager = _testAssembly.Resolve<SingleDiAnnotatedManager>(GetType());
-            var service1 = (object) manager.Service1;
-            var service2 = (object) manager.Service2;
+            var service1 = (object)manager.Service1;
+            var service2 = (object)manager.Service2;
 
             Assert.IsNotNull(service1);
             Assert.IsTrue(service1.Is<Service1>(GetType()));

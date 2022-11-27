@@ -1,9 +1,10 @@
-﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Build.Tests.ResolveTestsNamespace;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+using AutoDI.Build.Tests.ResolveTestsNamespace;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
@@ -34,7 +35,7 @@ namespace AutoDI.Build.Tests
             Type resolveType = _testAssembly.GetType(assemblyTypeName);
 
             IServiceProvider provider = DI.GetGlobalServiceProvider(_testAssembly);
-            return provider.GetService(resolveType, new object[0]);
+            return provider.GetService(resolveType, Array.Empty<object>());
         }
 
         [TestMethod]

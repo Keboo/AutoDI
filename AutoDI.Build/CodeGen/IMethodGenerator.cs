@@ -1,9 +1,8 @@
 ﻿using Mono.Cecil.Cil;
 
-namespace AutoDI.Build.CodeGen
+namespace AutoDI.Build.CodeGen;
+
+internal interface IMethodGenerator
 {
-    internal interface IMethodGenerator
-    {
-        void Append(string code, Instruction instruction = null);
-    }
+    void Append(string code, Instruction instruction = null);
 }

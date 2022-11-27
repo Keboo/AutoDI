@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+
 using AutoDI.AssemblyGenerator;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -329,11 +329,11 @@ namespace AutoDI.Build.Tests
             var ctorGenerator = generator.Method(ctor);
 
             ctorGenerator.Append("object foo == null;", Instruction.Create(OpCodes.Nop));
-            
+
             generator.Save();
 
             Assert.AreEqual(1, ctor.DebugInformation.SequencePoints.Count);
-            
+
             SequencePoint first = ctor.DebugInformation.SequencePoints[0];
             string expectedFilePath = Path.Combine(Path.GetFullPath(_outputDirectory), $"{nameof(CSharpCodeGenerationTestsNamespace)}.{nameof(CSharpCodeGenerationTestsNamespace.Class5)}.g.cs");
             Assert.AreEqual(expectedFilePath, first.Document.Url);
@@ -355,15 +355,15 @@ namespace AutoDI.Build.Tests
 
         public class Class1
         {
-            public Class1([Dependency]IService foo = null)
+            public Class1([Dependency] IService foo = null!)
             {
-                
+
             }
         }
 
         public class Class2<TGeneric>
         {
-            public Class2([Dependency]IService foo = null, [Dependency]IService2 bar = null)
+            public Class2([Dependency] IService foo = null!, [Dependency] IService2 bar = null!)
             { }
         }
 
@@ -375,7 +375,7 @@ namespace AutoDI.Build.Tests
 
         public class Class4
         {
-            public int DoStuff([Dependency] IService foo = null)
+            public static int DoStuff([Dependency] IService foo = null!)
             {
                 return 0;
             }
@@ -390,9 +390,9 @@ namespace AutoDI.Build.Tests
         {
             public class Nested
             {
-                public Nested([Dependency]IService foo =  null)
+                public Nested([Dependency] IService foo = null!)
                 {
-                    
+
                 }
             }
         }
@@ -406,7 +406,7 @@ namespace AutoDI.Build.Tests
             private protected void PrivateProtected() { }
             private void Private() { }
         }
-        
+
         public class ClassProtectedModifiers
         {
             public class Public

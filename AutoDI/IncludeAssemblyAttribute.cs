@@ -1,15 +1,12 @@
-﻿using System;
+﻿namespace AutoDI;
 
-namespace AutoDI
+[AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+public class IncludeAssemblyAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    public class IncludeAssemblyAttribute : Attribute
-    {
-        public string AssemblyPattern { get; }
+    public string AssemblyPattern { get; }
 
-        public IncludeAssemblyAttribute(string assemblyPattern)
-        {
-            AssemblyPattern = assemblyPattern;
-        }
+    public IncludeAssemblyAttribute(string assemblyPattern)
+    {
+        AssemblyPattern = assemblyPattern;
     }
 }

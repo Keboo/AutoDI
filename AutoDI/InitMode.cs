@@ -1,23 +1,22 @@
-﻿namespace AutoDI
+﻿namespace AutoDI;
+
+/// <summary>
+/// Controls when AutoDI is initialized
+/// </summary>
+public enum InitMode
 {
     /// <summary>
-    /// Controls when AutoDI is initialized
+    /// The container must be initialized manually.
     /// </summary>
-    public enum InitMode
-    {
-        /// <summary>
-        /// The container must be initialized manually.
-        /// </summary>
-        Manual,
-        /// <summary>
-        /// The container will be initialized on your program's entry point.
-        /// Recommended for executable programs.
-        /// </summary>
-        EntryPoint,
-        /// <summary>
-        /// The container will be initialized on assembly module load.
-        /// Recommended for libraries.
-        /// </summary>
-        ModuleLoad
-    }
+    Manual,
+    /// <summary>
+    /// The container will be initialized on your program's entry point.
+    /// Recommended for executable programs.
+    /// </summary>
+    EntryPoint,
+    /// <summary>
+    /// The container will be initialized on assembly module load.
+    /// Recommended for libraries.
+    /// </summary>
+    ModuleLoad
 }
