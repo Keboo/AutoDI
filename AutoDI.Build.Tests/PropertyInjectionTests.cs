@@ -1,9 +1,10 @@
-﻿using System;
-using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
 using AutoDI.Build.Tests.PropertyInjectionNamespace;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
@@ -70,18 +71,20 @@ namespace AutoDI.Build.Tests
                 var service = @class.Service;
                 Assert.Fail("Expected exception");
             }
-            catch (Exception e) when(e.Is<MyException>(GetType()))
+            catch (Exception e) when (e.Is<MyException>(GetType()))
             {
                 // expected exception
             }
         }
     }
+    
     //<assembly>
     //<ref: AutoDI />
     //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace PropertyInjectionNamespace
     {
         using System;
+
         using AutoDI;
 
         public interface IService
@@ -112,18 +115,14 @@ namespace AutoDI.Build.Tests
 
         public class PropertyWithImplementation
         {
-            private IService _service;
-        
+            private IService? _service;
+
             [Dependency]
-            public IService Service
+            public IService? Service
             {
                 get
                 {
-                    if (_service != null)
-                    {
-                        return _service;
-                    }
-                    return null;
+                    return _service ?? null;
                 }
                 set
                 {

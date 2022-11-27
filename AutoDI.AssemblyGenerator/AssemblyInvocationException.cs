@@ -1,10 +1,7 @@
-﻿using System;
+﻿namespace AutoDI.AssemblyGenerator;
 
-namespace AutoDI. AssemblyGenerator
+public class AssemblyInvocationException : Exception
 {
-    public class AssemblyInvocationException : Exception
-    {
-        public AssemblyInvocationException(string message) : base(message)
-        { }
-    }
+    public AssemblyInvocationException(string message) : base(message)
+    { }
 }

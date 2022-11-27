@@ -1,12 +1,11 @@
-namespace AutoDI
+namespace AutoDI;
+
+public enum Lifetime
 {
-    public enum Lifetime
-    {
-        None,
-        LazySingleton,
-        Singleton,
-        Scoped,
-        WeakSingleton,
-        Transient
-    }
+    None,
+    LazySingleton,
+    Singleton,
+    Scoped,
+    WeakSingleton,
+    Transient
 }

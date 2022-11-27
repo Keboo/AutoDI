@@ -1,8 +1,11 @@
-﻿using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ModuleLoadInjectionNamespace;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using ModuleLoadInjectionNamespace;
 
 namespace AutoDI.Build.Tests
 {

@@ -1,8 +1,7 @@
-namespace AutoDI.Build
+namespace AutoDI.Build;
+
+internal enum DuplicateKeyBehavior
 {
-    internal enum DuplicateKeyBehavior
-    {
-        Replace,
-        RemoveAll
-    }
+    Replace,
+    RemoveAll
 }

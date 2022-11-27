@@ -1,9 +1,10 @@
-﻿using System;
+﻿using System.Reflection;
+using System.Threading.Tasks;
+
 using AutoDI.AssemblyGenerator;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
-using System.Threading.Tasks;
 
 namespace AutoDI.Build.Tests
 {
@@ -50,7 +51,7 @@ namespace AutoDI.Build.Tests
             var method = typeof(ServiceProviderServiceExtensions)
                 .GetMethod(nameof(ServiceProviderServiceExtensions.GetService))
                 ?.MakeGenericMethod(serviceType);
-            Assert.IsTrue(method != null && method.Invoke(null, new object[]{provider}).Is<Service>(GetType()));
+            Assert.IsTrue(method != null && method.Invoke(null, new object[] { provider }).Is<Service>(GetType()));
         }
     }
 

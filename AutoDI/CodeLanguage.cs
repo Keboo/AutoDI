@@ -1,8 +1,7 @@
-﻿namespace AutoDI
+﻿namespace AutoDI;
+
+public enum CodeLanguage
 {
-    public enum CodeLanguage
-    {
-        None,
-        CSharp
-    }
+    None,
+    CSharp
 }

@@ -1,248 +1,241 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
+
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
 
-namespace AutoDI.Build.CodeGen
+namespace AutoDI.Build.CodeGen;
+
+internal class CSharpCodeGenerator : ICodeGenerator
 {
-    internal class CSharpCodeGenerator : ICodeGenerator
+    private readonly Dictionary<MethodDefinition, CSharpMethodGenerator>
+        _methodGenerators = new();
+
+    private readonly string _outputDirectory;
+
+    public CSharpCodeGenerator(string outputDirectory)
     {
-        private readonly Dictionary<MethodDefinition, CSharpMethodGenerator>
-            _methodGenerators = new Dictionary<MethodDefinition, CSharpMethodGenerator>();
+        _outputDirectory = outputDirectory;
+    }
 
-        private readonly string _outputDirectory;
-
-        public CSharpCodeGenerator(string outputDirectory)
+    public IMethodGenerator Method(MethodDefinition method)
+    {
+        if (!_methodGenerators.TryGetValue(method, out CSharpMethodGenerator methodGenerator))
         {
-            _outputDirectory = outputDirectory;
+            _methodGenerators.Add(method, methodGenerator = new CSharpMethodGenerator(method));
+        }
+        return methodGenerator;
+    }
+
+    public void Save()
+    {
+        if (_methodGenerators.Values.All(x => x.IsEmpty)) return;
+        try
+        {
+            Directory.Delete(_outputDirectory, true);
+        }
+        catch (IOException)
+        { }
+        Directory.CreateDirectory(_outputDirectory);
+
+        foreach (CSharpMethodGenerator classGenerator in _methodGenerators.Values)
+        {
+            classGenerator.Save(_outputDirectory);
+        }
+    }
+
+    private class CSharpMethodGenerator : IMethodGenerator
+    {
+        private static readonly Regex _newLinePattern = new("(\r?\n)");
+        private readonly List<KeyValuePair<string, Instruction>> _codeBlocks
+            = new();
+        private readonly MethodDefinition _method;
+        private readonly Document _document;
+
+        public bool IsEmpty => !_codeBlocks.Any();
+
+        public CSharpMethodGenerator(MethodDefinition method)
+        {
+            _method = method ?? throw new ArgumentNullException(nameof(method));
+            _document = new Document("") { Language = DocumentLanguage.CSharp };
         }
 
-        public IMethodGenerator Method(MethodDefinition method)
+        public void Append(string code, Instruction instruction)
         {
-            if (!_methodGenerators.TryGetValue(method, out CSharpMethodGenerator methodGenerator))
-            {
-                _methodGenerators.Add(method, methodGenerator = new CSharpMethodGenerator(method));
-            }
-            return methodGenerator;
+            _codeBlocks.Add(new KeyValuePair<string, Instruction>(code, instruction));
         }
 
-        public void Save()
+        public void Save(string outputDirectory)
         {
-            if (_methodGenerators.Values.All(x => x.IsEmpty)) return;
-            try
+            if (_method.DebugInformation.Scope is null)
             {
-                Directory.Delete(_outputDirectory, true);
-            }
-            catch (IOException)
-            { }
-            Directory.CreateDirectory(_outputDirectory);
-
-            foreach (CSharpMethodGenerator classGenerator in _methodGenerators.Values)
-            {
-                classGenerator.Save(_outputDirectory);
-            }
-        }
-
-        private class CSharpMethodGenerator : IMethodGenerator
-        {
-            private static readonly Regex _newLinePattern = new Regex("(\r?\n)");
-            private readonly List<KeyValuePair<string, Instruction>> _codeBlocks
-                = new List<KeyValuePair<string, Instruction>>();
-            private readonly MethodDefinition _method;
-            private readonly Document _document;
-
-            public bool IsEmpty => !_codeBlocks.Any();
-
-            public CSharpMethodGenerator(MethodDefinition method)
-            {
-                _method = method ?? throw new ArgumentNullException(nameof(method));
-                _document = new Document("") { Language = DocumentLanguage.CSharp };
+                _method.DebugInformation.Scope = new ScopeDebugInformation(_method.Body.Instructions.First(), _method.Body.Instructions.Last());
             }
 
-            public void Append(string code, Instruction instruction)
+            string filePath = GetFilePath(outputDirectory, _method.DeclaringType.FullNameCSharp());
+            _document.Url = filePath;
+
+            using StreamWriter writer = new(filePath);
+            int indentLevel = 0;
+
+            var parentTypes = GetParentTypes(_method.DeclaringType).Reverse().ToList();
+            writer.WriteLine(indentLevel, $"namespace {parentTypes.First().Namespace}");
+            writer.WriteLine(indentLevel++, "{");
+
+            int lineNumber = 3;
+
+            foreach (var type in parentTypes)
             {
-                _codeBlocks.Add(new KeyValuePair<string, Instruction>(code, instruction));
+                writer.WriteLine(indentLevel, type.DeclarationCSharp());
+                writer.WriteLine(indentLevel++, "{");
+                lineNumber += 2;
             }
 
-            public void Save(string outputDirectory)
+            writer.WriteLine(indentLevel, "//Generated by AutoDI");
+            writer.WriteLine(indentLevel, GetMethodDeclaration());
+            writer.WriteLine(indentLevel++, "{");
+            lineNumber += 3;
+
+            int startingIndent = indentLevel * 4;
+            foreach (var pair in _codeBlocks)
             {
-                if (_method.DebugInformation.Scope is null)
+                int numLines = 0;
+                int indent = 0;
+                int lastLineLength = 0;
+                foreach (string line in _newLinePattern.Split(pair.Key))
                 {
-                    _method.DebugInformation.Scope = new ScopeDebugInformation(_method.Body.Instructions.First(), _method.Body.Instructions.Last());
+                    if (line == "") continue;
+                    if (numLines == 0)
+                    {
+                        indent = pair.Key.TakeWhile(char.IsWhiteSpace).Count();
+                    }
+                    lastLineLength = line.Length - indent;
+                    if (_newLinePattern.IsMatch(line))
+                    {
+                        writer.WriteLine();
+                    }
+                    else
+                    {
+                        numLines++;
+                        writer.Write(indentLevel, line);
+                    }
                 }
 
-                string filePath = GetFilePath(outputDirectory, _method.DeclaringType.FullNameCSharp());
-                _document.Url = filePath;
+                Instruction instruction = pair.Value;
 
-                using (StreamWriter writer = new StreamWriter(filePath))
+                if (instruction != null)
                 {
-                    int indentLevel = 0;
-
-                    var parentTypes = GetParentTypes(_method.DeclaringType).Reverse().ToList();
-                    writer.WriteLine(indentLevel, $"namespace {parentTypes.First().Namespace}");
-                    writer.WriteLine(indentLevel++, "{");
-
-                    int lineNumber = 3;
-
-                    foreach (var type in parentTypes)
+                    var sequencePoint = new SequencePoint(instruction, _document)
                     {
-                        writer.WriteLine(indentLevel, type.DeclarationCSharp());
-                        writer.WriteLine(indentLevel++, "{");
-                        lineNumber += 2;
-                    }
+                        StartLine = lineNumber,
+                        EndLine = lineNumber + numLines - 1,
+                        StartColumn = startingIndent + indent + 1
+                    };
+                    sequencePoint.EndColumn = sequencePoint.StartColumn + lastLineLength;
 
-                    writer.WriteLine(indentLevel, "//Generated by AutoDI");
-                    writer.WriteLine(indentLevel, GetMethodDeclaration());
-                    writer.WriteLine(indentLevel++, "{");
-                    lineNumber += 3;
-
-                    int startingIndent = indentLevel * 4;
-                    foreach (var pair in _codeBlocks)
-                    {
-                        int numLines = 0;
-                        int indent = 0;
-                        int lastLineLength = 0;
-                        foreach (string line in _newLinePattern.Split(pair.Key))
-                        {
-                            if (line == "") continue;
-                            if (numLines == 0)
-                            {
-                                indent = pair.Key.TakeWhile(char.IsWhiteSpace).Count();
-                            }
-                            lastLineLength = line.Length - indent;
-                            if (_newLinePattern.IsMatch(line))
-                            {
-                                writer.WriteLine();
-                            }
-                            else
-                            {
-                                numLines++;
-                                writer.Write(indentLevel, line);
-                            }
-                        }
-
-                        Instruction instruction = pair.Value;
-
-                        if (instruction != null)
-                        {
-                            var sequencePoint = new SequencePoint(instruction, _document)
-                            {
-                                StartLine = lineNumber,
-                                EndLine = lineNumber + numLines - 1,
-                                StartColumn = startingIndent + indent + 1
-                            };
-                            sequencePoint.EndColumn = sequencePoint.StartColumn + lastLineLength;
-
-                            _method.DebugInformation.SequencePoints.Add(sequencePoint);
-                        }
-
-                        lineNumber += numLines;
-                    }
-
-                    indentLevel--;
-
-                    do
-                    {
-                        writer.WriteLine(indentLevel--, "}");
-                    } while (indentLevel >= 0);
+                    _method.DebugInformation.SequencePoints.Add(sequencePoint);
                 }
+
+                lineNumber += numLines;
             }
 
-            private string GetMethodDeclaration()
+            indentLevel--;
+
+            do
             {
-                var sb = new StringBuilder();
-                sb.Append(_method.Attributes.ProtectionModifierCSharp());
+                writer.WriteLine(indentLevel--, "}");
+            } while (indentLevel >= 0);
+        }
+
+        private string GetMethodDeclaration()
+        {
+            var sb = new StringBuilder();
+            sb.Append(_method.Attributes.ProtectionModifierCSharp());
+            sb.Append(' ');
+            if (!_method.IsConstructor)
+            {
+                sb.Append(_method.ReturnType.FullNameCSharp());
                 sb.Append(' ');
-                if (!_method.IsConstructor)
-                {
-                    sb.Append(_method.ReturnType.FullNameCSharp());
-                    sb.Append(' ');
-                    sb.Append(_method.Name);
-                }
-                else
-                {
-                    sb.Append(_method.DeclaringType.NameCSharp());
-                }
-                sb.Append('(');
-                sb.Append(GetParameters(_method.Parameters));
-                sb.Append(')');
-                return sb.ToString();
+                sb.Append(_method.Name);
             }
-
-            private static IEnumerable<TypeDefinition> GetParentTypes(TypeDefinition type)
+            else
             {
-                for (;type != null; type = type.DeclaringType)
-                {
-                    yield return type;
-                }
+                sb.Append(_method.DeclaringType.NameCSharp());
             }
+            sb.Append('(');
+            sb.Append(GetParameters(_method.Parameters));
+            sb.Append(')');
+            return sb.ToString();
+        }
 
-            private static string GetParameters(Collection<ParameterDefinition> methodParameters)
+        private static IEnumerable<TypeDefinition> GetParentTypes(TypeDefinition type)
+        {
+            for (; type != null; type = type.DeclaringType)
             {
-                if (methodParameters?.Any() != true) return "";
+                yield return type;
+            }
+        }
 
-                var sb = new StringBuilder();
-                bool isFirst = true;
-                foreach (ParameterDefinition parameter in methodParameters)
+        private static string GetParameters(Collection<ParameterDefinition> methodParameters)
+        {
+            if (methodParameters?.Any() != true) return "";
+
+            var sb = new StringBuilder();
+            bool isFirst = true;
+            foreach (ParameterDefinition parameter in methodParameters)
+            {
+                if (!isFirst)
                 {
-                    if (!isFirst)
-                    {
-                        sb.Append(", ");
-                    }
+                    sb.Append(", ");
+                }
 
-                    if (parameter.CustomAttributes.Any())
+                if (parameter.CustomAttributes.Any())
+                {
+                    sb.Append('[');
+                    bool firstAttribute = true;
+                    foreach (CustomAttribute attribute in parameter.CustomAttributes)
                     {
-                        sb.Append("[");
-                        bool firstAttribute = true;
-                        foreach (CustomAttribute attribute in parameter.CustomAttributes)
+                        if (!firstAttribute)
                         {
-                            if (!firstAttribute)
-                            {
-                                sb.Append(", ");
-                            }
-                            sb.Append(attribute.AttributeType.FullNameCSharp());
-                            firstAttribute = false;
+                            sb.Append(", ");
                         }
-                        sb.Append("]");
+                        sb.Append(attribute.AttributeType.FullNameCSharp());
+                        firstAttribute = false;
                     }
-
-                    sb.Append(parameter.ParameterType.FullNameCSharp());
-                    sb.Append(' ');
-                    sb.Append(parameter.Name);
-
-                    if (parameter.HasDefault)
-                    {
-                        sb.Append(" = ");
-                        sb.Append(parameter.Constant?.ToString() ?? "null");
-                    }
-                    isFirst = false;
+                    sb.Append(']');
                 }
-                return sb.ToString();
-            }
 
-            private static string GetFilePath(string outputDirectory, string name)
+                sb.Append(parameter.ParameterType.FullNameCSharp());
+                sb.Append(' ');
+                sb.Append(parameter.Name);
+
+                if (parameter.HasDefault)
+                {
+                    sb.Append(" = ");
+                    sb.Append(parameter.Constant?.ToString() ?? "null");
+                }
+                isFirst = false;
+            }
+            return sb.ToString();
+        }
+
+        private static string GetFilePath(string outputDirectory, string name)
+        {
+            foreach (var @char in Path.GetInvalidFileNameChars())
             {
-                foreach (var @char in Path.GetInvalidFileNameChars())
-                {
-                    name = name.Replace(@char, '_');
-                }
-                string filePath;
-                int? index = null;
-                do
-                {
-                    filePath = Path.Combine(outputDirectory, name);
-                    filePath += $"{index}.g.cs";
-                    filePath = Path.GetFullPath(filePath);
-                    index = index.GetValueOrDefault() + 1;
-                } while (File.Exists(filePath));
-
-                return filePath;
+                name = name.Replace(@char, '_');
             }
+            string filePath;
+            int? index = null;
+            do
+            {
+                filePath = Path.Combine(outputDirectory, name);
+                filePath += $"{index}.g.cs";
+                filePath = Path.GetFullPath(filePath);
+                index = index.GetValueOrDefault() + 1;
+            } while (File.Exists(filePath));
+
+            return filePath;
         }
     }
 }

@@ -1,15 +1,17 @@
-﻿using AutoDI.AssemblyGenerator;
+﻿using System.Reflection;
+using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Reflection;
-using System.Threading.Tasks;
+
 using ScopeTestsNamespace;
 
 //<assembly>
 //<ref: AutoDI />
 //<weaver: AutoDI.Build.ProcessAssemblyTask />
-[assembly:AutoDI.MapAttribute("*", AutoDI.Lifetime.Scoped)]
+[assembly: AutoDI.MapAttribute("*", AutoDI.Lifetime.Scoped)]
 namespace ScopeTestsNamespace
 {
     public interface IService
@@ -44,10 +46,7 @@ namespace AutoDI.Build.Tests
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
-            DI.Init(_testAssembly, app => app.ConfigureServices(serviceCollection =>
-                {
-                    serviceCollection.AddAutoDIScoped(ResolveType(typeof(ILogger<>)), ResolveType(typeof(Logger<>)));
-                }));
+            DI.Init(_testAssembly, app => app.ConfigureServices(serviceCollection => serviceCollection.AddAutoDIScoped(ResolveType(typeof(ILogger<>)), ResolveType(typeof(Logger<>)))));
         }
 
         [ClassCleanup]
@@ -65,7 +64,7 @@ namespace AutoDI.Build.Tests
         private static object Resolve<T>(IServiceScope scope = null)
         {
             Type resolveType = ResolveType(typeof(T));
-            return (scope?.ServiceProvider ?? DI.GetGlobalServiceProvider(_testAssembly)).GetService(resolveType, new object[0]);
+            return (scope?.ServiceProvider ?? DI.GetGlobalServiceProvider(_testAssembly)).GetService(resolveType, Array.Empty<object>());
         }
 
         [TestMethod]
@@ -100,28 +99,26 @@ namespace AutoDI.Build.Tests
         {
             var scopeFactory = DI.GetGlobalServiceProvider(_testAssembly).GetService<IServiceScopeFactory>();
 
-            using (IServiceScope scope1 = scopeFactory.CreateScope())
-            using (IServiceScope scope2 = scopeFactory.CreateScope())
-            {
-                var logger1A = Resolve<ILogger<MyClass>>(scope1);
-                var logger1B = Resolve<ILogger<MyOtherClass>>(scope1);
+            using IServiceScope scope1 = scopeFactory.CreateScope();
+            using IServiceScope scope2 = scopeFactory.CreateScope();
+            var logger1A = Resolve<ILogger<MyClass>>(scope1);
+            var logger1B = Resolve<ILogger<MyOtherClass>>(scope1);
 
-                Assert.IsNotNull(logger1A);
-                Assert.IsNotNull(logger1B);
-                Assert.IsTrue(ReferenceEquals(logger1A, Resolve<ILogger<MyClass>>(scope1)));
-                Assert.IsTrue(ReferenceEquals(logger1B, Resolve<ILogger<MyOtherClass>>(scope1)));
+            Assert.IsNotNull(logger1A);
+            Assert.IsNotNull(logger1B);
+            Assert.IsTrue(ReferenceEquals(logger1A, Resolve<ILogger<MyClass>>(scope1)));
+            Assert.IsTrue(ReferenceEquals(logger1B, Resolve<ILogger<MyOtherClass>>(scope1)));
 
-                var logger2A = Resolve<ILogger<MyClass>>(scope2);
-                var logger2B = Resolve<ILogger<MyOtherClass>>(scope2);
+            var logger2A = Resolve<ILogger<MyClass>>(scope2);
+            var logger2B = Resolve<ILogger<MyOtherClass>>(scope2);
 
-                Assert.IsNotNull(logger2A);
-                Assert.IsNotNull(logger2B);
-                Assert.IsTrue(ReferenceEquals(logger2A, Resolve<ILogger<MyClass>>(scope2)));
-                Assert.IsTrue(ReferenceEquals(logger2B, Resolve<ILogger<MyOtherClass>>(scope2)));
+            Assert.IsNotNull(logger2A);
+            Assert.IsNotNull(logger2B);
+            Assert.IsTrue(ReferenceEquals(logger2A, Resolve<ILogger<MyClass>>(scope2)));
+            Assert.IsTrue(ReferenceEquals(logger2B, Resolve<ILogger<MyOtherClass>>(scope2)));
 
-                Assert.IsFalse(ReferenceEquals(logger1A, logger2A));
-                Assert.IsFalse(ReferenceEquals(logger1B, logger2B));
-            }
+            Assert.IsFalse(ReferenceEquals(logger1A, logger2A));
+            Assert.IsFalse(ReferenceEquals(logger1B, logger2B));
         }
     }
 }

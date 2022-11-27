@@ -1,11 +1,8 @@
-﻿using System;
+﻿namespace AutoDI;
 
-namespace AutoDI
+[AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
+public sealed class DependencyAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-    public sealed class DependencyAttribute : Attribute
-    {
-        public DependencyAttribute(params object[] parameters)
-        { }
-    }
+    public DependencyAttribute(params object[] parameters)
+    { }
 }

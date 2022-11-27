@@ -1,8 +1,11 @@
-﻿using AutoDI.AssemblyGenerator;
-using ManualInjectionNamespace;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
+using ManualInjectionNamespace;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
@@ -31,10 +34,10 @@ namespace AutoDI.Build.Tests
                 sut = _testAssembly.CreateInstance<Sut>();
                 Assert.IsNull(sut.Service);
             }
-            catch (TargetInvocationException e) 
+            catch (TargetInvocationException e)
                 when (e.InnerException is NotInitializedException)
             { }
-            
+
 
             DI.Init(_testAssembly);
 

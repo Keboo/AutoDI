@@ -50,7 +50,7 @@ jobs:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
     
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet restore AutoDI.sln
 
     - name: Build
       run: dotnet build AutoDI.sln -p:Version=${{ env.buildVersion }} -p:ContinuousIntegrationBuild=True --configuration ${{ env.configuration }} --no-restore -v d
@@ -67,6 +67,7 @@ jobs:
       with:
         name: NuGet
         path: ${{ github.workspace }}\*nupkg
+
 
     - name: Push NuGet
       if: ${{ github.event_name != 'pull_request' }}

@@ -1,30 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using Mono.Cecil;
+﻿using Mono.Cecil;
 
-namespace AutoDI.Build
+namespace AutoDI.Build;
+
+internal class TypeComparer
 {
-    internal class TypeComparer
+    public static IEqualityComparer<TypeReference> FullName { get; } = new Comparer<string>(td => td.FullName);
+
+    private class Comparer<T> : IEqualityComparer<TypeReference>
     {
-        public static IEqualityComparer<TypeReference> FullName { get; } = new Comparer<string>(td => td.FullName);
+        private readonly Func<TypeReference, T> _accessor;
 
-        private class Comparer<T> : IEqualityComparer<TypeReference>
+        public Comparer(Func<TypeReference, T> accessor)
         {
-            private readonly Func<TypeReference, T> _accessor;
+            _accessor = accessor;
+        }
+        public bool Equals(TypeReference x, TypeReference y)
+        {
+            return EqualityComparer<T>.Default.Equals(_accessor(x), _accessor(y));
+        }
 
-            public Comparer(Func<TypeReference, T> accessor)
-            {
-                _accessor = accessor;
-            }
-            public bool Equals(TypeReference x, TypeReference y)
-            {
-                return EqualityComparer<T>.Default.Equals(_accessor(x), _accessor(y));
-            }
-
-            public int GetHashCode(TypeReference obj)
-            {
-                return EqualityComparer<T>.Default.GetHashCode(_accessor(obj));
-            }
+        public int GetHashCode(TypeReference obj)
+        {
+            return EqualityComparer<T>.Default.GetHashCode(_accessor(obj));
         }
     }
 }

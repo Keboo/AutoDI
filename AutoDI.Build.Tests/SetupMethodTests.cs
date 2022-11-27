@@ -1,8 +1,9 @@
-﻿using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
@@ -27,13 +28,13 @@ namespace AutoDI.Build.Tests
         [Description("Issue 23")]
         public void PublicSetupMethodIsInvoked()
         {
-            ContainerMap GetInitMap()
+            static ContainerMap GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
                 return (ContainerMap)_publicAssembly.GetStaticProperty<SetupMethodPublicTests.Program>(
                     nameof(SetupMethodPublicTests.Program.InitMap));
             }
-            
+
             Assert.IsNull(GetInitMap());
             _publicAssembly.InvokeEntryPoint();
             Assert.IsNotNull(GetInitMap());
@@ -43,7 +44,7 @@ namespace AutoDI.Build.Tests
         [Description("Issue 38")]
         public void InternalSetupMethodIsInvoked()
         {
-            ContainerMap GetInitMap()
+            static ContainerMap GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
                 return (ContainerMap)_internalAssembly.GetStaticProperty<SetupMethodInternalTests.Program>(
@@ -59,7 +60,7 @@ namespace AutoDI.Build.Tests
         [Description("Issue 49")]
         public void SetupMethodIsNotInvokedUntilTheContainerIsInjected()
         {
-            ContainerMap GetInitMap()
+            static ContainerMap GetInitMap()
             {
                 // ReSharper disable once PossibleNullReferenceException
                 return (ContainerMap)_manualAssembly.GetStaticProperty<SetupMethodManualInjectionTests.TestClass>(
@@ -69,7 +70,7 @@ namespace AutoDI.Build.Tests
             Assert.IsNull(GetInitMap());
             DI.Init(_manualAssembly);
             Assert.IsNotNull(GetInitMap());
-            
+
         }
     }
 }
@@ -87,16 +88,13 @@ namespace SetupMethodPublicTests
 
         public static void Main(string[] args)
         {
-            
+
         }
 
         [SetupMethod]
         public static void Setup(IApplicationBuilder builder)
         {
-            builder.ConfigureContainer<IContainer>(map =>
-            {
-                InitMap = map;
-            });
+            builder.ConfigureContainer<IContainer>(map => InitMap = map);
         }
     }
 }
@@ -122,10 +120,7 @@ namespace SetupMethodInternalTests
         [SetupMethod]
         internal static void Setup(IApplicationBuilder builder)
         {
-            builder.ConfigureContainer<IContainer>(map =>
-            {
-                InitMap = map;
-            });
+            builder.ConfigureContainer<IContainer>(map => InitMap = map);
         }
     }
 }
@@ -136,8 +131,9 @@ namespace SetupMethodInternalTests
 //<weaver: AutoDI.Build.ProcessAssemblyTask />
 namespace SetupMethodManualInjectionTests
 {
-    using AutoDI;
     using System;
+
+    using AutoDI;
 
     public class TestClass
     {
@@ -146,10 +142,7 @@ namespace SetupMethodManualInjectionTests
         [SetupMethod]
         internal static void InitializeContainer(IApplicationBuilder builder)
         {
-            builder.ConfigureContainer<IContainer>(map =>
-            {
-                InitMap = map;
-            });
+            builder.ConfigureContainer<IContainer>(map => InitMap = map);
         }
     }
 

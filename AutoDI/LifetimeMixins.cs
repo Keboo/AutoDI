@@ -1,40 +1,28 @@
-﻿using System;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace AutoDI
+namespace AutoDI;
+
+public static class LifetimeMixins
 {
-    public static class LifetimeMixins
+    public static Lifetime ToAutoDI(this ServiceLifetime lifetime)
     {
-        public static Lifetime ToAutoDI(this ServiceLifetime lifetime)
+        return lifetime switch
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    return Lifetime.LazySingleton;
-                case ServiceLifetime.Scoped:
-                    return Lifetime.Scoped;
-                case ServiceLifetime.Transient:
-                    return Lifetime.Transient;
-                default:
-                    throw new InvalidOperationException($"Unknown {nameof(ServiceLifetime)} '{lifetime}'");
-            }
-        }
+            ServiceLifetime.Singleton => Lifetime.LazySingleton,
+            ServiceLifetime.Scoped => Lifetime.Scoped,
+            ServiceLifetime.Transient => Lifetime.Transient,
+            _ => throw new InvalidOperationException($"Unknown {nameof(ServiceLifetime)} '{lifetime}'"),
+        };
+    }
 
-        public static ServiceLifetime FromAutoDI(this Lifetime lifetime)
+    public static ServiceLifetime FromAutoDI(this Lifetime lifetime)
+    {
+        return lifetime switch
         {
-            switch (lifetime)
-            {
-                case Lifetime.Singleton:
-                case Lifetime.LazySingleton:
-                case Lifetime.WeakSingleton:
-                    return ServiceLifetime.Singleton;
-                case Lifetime.Scoped:
-                    return ServiceLifetime.Scoped;
-                case Lifetime.Transient:
-                    return ServiceLifetime.Transient;
-                default:
-                    throw new InvalidOperationException($"Unknown {nameof(Lifetime)} '{lifetime}'");
-            }
-        }
+            Lifetime.Singleton or Lifetime.LazySingleton or Lifetime.WeakSingleton => ServiceLifetime.Singleton,
+            Lifetime.Scoped => ServiceLifetime.Scoped,
+            Lifetime.Transient => ServiceLifetime.Transient,
+            _ => throw new InvalidOperationException($"Unknown {nameof(Lifetime)} '{lifetime}'"),
+        };
     }
 }

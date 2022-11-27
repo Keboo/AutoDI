@@ -1,8 +1,11 @@
-﻿using AutoDI.AssemblyGenerator;
-using MethodDependencyNamespace;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
+using MethodDependencyNamespace;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
@@ -89,9 +92,9 @@ namespace MethodDependencyNamespace
     {
         public IService Service { get; private set; }
 
-        public void DoSomething() => ((IOther) this).DoSomething();
+        public void DoSomething() => ((IOther)this).DoSomething();
 
-        void IOther.DoSomething([Dependency]IService service)
+        void IOther.DoSomething([Dependency] IService service)
         {
             Service = service;
         }

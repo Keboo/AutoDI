@@ -1,9 +1,9 @@
-﻿using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 //<assembly>
 //<ref: AutoDI />

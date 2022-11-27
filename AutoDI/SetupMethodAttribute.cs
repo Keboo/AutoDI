@@ -1,10 +1,7 @@
-﻿using System;
+﻿namespace AutoDI;
 
-namespace AutoDI
+[AttributeUsage(AttributeTargets.Method)]
+public class SetupMethodAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Method)]
-    public class SetupMethodAttribute : Attribute
-    {
 
-    }
 }

@@ -1,15 +1,19 @@
-﻿using System;
-using System.Linq;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
 
-namespace AutoDI.Build
+namespace AutoDI.Build;
+
+internal static class XmlMixins
 {
-    internal static class XmlMixins
+    public static string? GetAttributeValue(this XElement element, string attributeName)
     {
-        public static string GetAttributeValue(this XElement element, string attributeName)
+        if (element is null)
         {
-            if (element is null) throw new ArgumentNullException(nameof(element));
-            return element.Attributes()
+            throw new ArgumentNullException(nameof(element));
+        }
+        else
+        {
+            return element
+                .Attributes()
                 .FirstOrDefault(a => string.Equals(a.Name.LocalName, attributeName, StringComparison.OrdinalIgnoreCase))
                 ?.Value;
         }

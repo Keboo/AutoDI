@@ -1,9 +1,6 @@
-﻿using System;
+﻿namespace AutoDI;
 
-namespace AutoDI
+public interface IAutoDISerivceProvider
 {
-    public interface IAutoDISerivceProvider
-    {
-        object GetService(Type serviceType, object[] parameters);
-    }
+    object GetService(Type serviceType, object[] parameters);
 }

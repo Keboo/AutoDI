@@ -1,8 +1,10 @@
-﻿using AutoDI.AssemblyGenerator;
-using AutoDI.Build.Tests.ResolutionOrderingTestsNamespace;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+using AutoDI.Build.Tests.ResolutionOrderingTestsNamespace;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AutoDI.Build.Tests
 {
@@ -29,7 +31,7 @@ namespace AutoDI.Build.Tests
         public void ClassesShouldDefaultToResolvingToThemselves()
         {
             DI.Init(_testAssembly);
-            
+
             var libraryClass = _testAssembly.Resolve<LibraryClass>(GetType());
             Assert.IsTrue(libraryClass.Is<LibraryClass>(GetType()), $"Expected {nameof(LibraryClass)} but was {libraryClass?.GetType().Name ?? "<null>"}");
             var myBaseClass = _testAssembly.Resolve<MyBaseClass>(GetType());
@@ -45,11 +47,11 @@ namespace AutoDI.Build.Tests
     //<weaver: AutoDI.Build.ProcessAssemblyTask />
     namespace ResolutionOrderingTestsNamespace
     {
-        public class LibraryClass {}
+        public class LibraryClass { }
 
-        public class MyBaseClass : LibraryClass {}
+        public class MyBaseClass : LibraryClass { }
 
-        public class MyClass : MyBaseClass {}
+        public class MyClass : MyBaseClass { }
     }
     //</assembly>
 }

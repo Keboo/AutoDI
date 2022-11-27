@@ -3,16 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31612.314
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{F83F8524-0472-4640-87A6-82E4058FC032}"
-	ProjectSection(SolutionItems) = preProject
-		NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec = NuGet\AutoDI.AspNetCore\AutoDI.AspNetCore.nuspec
-		NuGet\AutoDI.Build\AutoDI.Build.nuspec = NuGet\AutoDI.Build\AutoDI.Build.nuspec
-		NuGet\AutoDI.Generator\AutoDI.Generator.nuspec = NuGet\AutoDI.Generator\AutoDI.Generator.nuspec
-		NuGet\AutoDI\AutoDI.nuspec = NuGet\AutoDI\AutoDI.nuspec
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		BuildLocalNugets.ps1 = BuildLocalNugets.ps1
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets

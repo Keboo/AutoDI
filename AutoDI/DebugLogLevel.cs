@@ -1,9 +1,8 @@
-﻿namespace AutoDI
+﻿namespace AutoDI;
+
+public enum DebugLogLevel
 {
-    public enum DebugLogLevel
-    {
-        None,
-        Default,
-        Verbose
-    }
+    None,
+    Default,
+    Verbose
 }

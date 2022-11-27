@@ -1,17 +1,20 @@
-﻿using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 
 //<assembly:singleton />
 //<ref: AutoDI/>
 //<weaver: AutoDI.Build.ProcessAssemblyTask />
-[assembly:AutoDI.Map(".*", AutoDI.Lifetime.Singleton)]
+[assembly: AutoDI.Map(".*", AutoDI.Lifetime.Singleton)]
 namespace SingletonResolutionTest
 {
-    using AutoDI;
     using System;
+
+    using AutoDI;
 
     public interface IService { }
 
@@ -41,8 +44,9 @@ namespace SingletonResolutionTest
 //<weaver: AutoDI.Build.ProcessAssemblyTask />
 namespace SingletonResolvedInSetupMethod
 {
-    using AutoDI;
     using System;
+
+    using AutoDI;
 
     public interface IService { }
 
@@ -65,7 +69,7 @@ namespace SingletonResolvedInSetupMethod
             builder.ConfigureContainer<IContainer>(map =>
             {
                 var service = map.Get<IService>(null);
-                if (!(service is Service)) throw new Exception();
+                if (service is not Service) throw new Exception();
             });
         }
     }

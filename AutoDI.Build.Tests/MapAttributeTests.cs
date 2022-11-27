@@ -1,13 +1,12 @@
-﻿using AutoDI.AssemblyGenerator;
+﻿using System.Reflection;
+using System.Threading.Tasks;
+using AutoDI.AssemblyGenerator;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 //<assembly>
 //<ref: AutoDI />
 //<weaver: AutoDI.Build.ProcessAssemblyTask />
 using AutoDI;
-using System.Reflection;
-using System.Threading.Tasks;
-
 [assembly: Map(typeof(MapAttributeTestsNamespace.AssemblySingletonClass), Lifetime.Singleton)]
 
 namespace MapAttributeTestsNamespace
@@ -25,6 +24,7 @@ namespace AutoDI.Build.Tests
     public class MapAttributeTests
     {
         private static Assembly _testAssembly;
+        private static bool _initialized;
 
         [ClassInitialize]
         public static async Task Initialize(TestContext context)
@@ -34,12 +34,16 @@ namespace AutoDI.Build.Tests
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
             DI.Init(_testAssembly);
+            _initialized = true;
         }
 
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         [TestMethod]
@@ -47,7 +51,7 @@ namespace AutoDI.Build.Tests
         {
             var singletonClass1 = _testAssembly.Resolve<MapAttributeTestsNamespace.SingletonClass>();
             var singletonClass2 = _testAssembly.Resolve<MapAttributeTestsNamespace.SingletonClass>();
-            
+
             Assert.IsNotNull(singletonClass1);
             Assert.IsTrue(ReferenceEquals(singletonClass1, singletonClass2));
 

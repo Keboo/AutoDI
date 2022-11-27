@@ -1,8 +1,9 @@
-﻿using AutoDI.AssemblyGenerator;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading.Tasks;
+
+using AutoDI.AssemblyGenerator;
+
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 // ReSharper disable RedundantNameQualifier
 //<assembly />
@@ -81,13 +82,7 @@ namespace AutoDI.Build.Tests
         [TestInitialize]
         public void TestSetup()
         {
-            DI.Init(_testAssembly, builder =>
-            {
-                builder.ConfigureContainer<IContainer>(map =>
-                {
-                    _map = map;
-                });
-            });
+            DI.Init(_testAssembly, builder => builder.ConfigureContainer<IContainer>(map => _map = map));
         }
 
         [TestCleanup]
@@ -102,7 +97,7 @@ namespace AutoDI.Build.Tests
             dynamic sut = _testAssembly.CreateInstance<Manager>(typeof(ManualMappingTests));
             Assert.IsTrue(((object)sut.Service).Is<Service>(typeof(ManualMappingTests)));
             Assert.IsNull(sut.Service2);
-            
+
             var mappings = _map.ToArray();
 
             Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService2>(typeof(ManualMappingTests)) || m.TargetType.Is<Service2>(typeof(ManualMappingTests))));
@@ -146,7 +141,7 @@ namespace AutoDI.Build.Tests
 
             Assert.IsTrue(mappings.Any(m => m.SourceType.Is<IService4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
             Assert.IsTrue(mappings.Any(m => m.SourceType.Is<Service4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
-            
+
             Assert.IsTrue(_testAssembly.Resolve<IService4>(typeof(ManualMappingTests)).Is<Service4>(typeof(ManualMappingTests)));
         }
 
@@ -168,5 +163,3 @@ namespace AutoDI.Build.Tests
         }
     }
 }
-
-
