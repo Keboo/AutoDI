@@ -38,10 +38,13 @@ jobs:
           echo "buildVersion=${{ env.baseVersion }}.${{ github.run_number }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "nugetVersion=${{ env.baseVersion }}-ci${{ github.run_number }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         }
-    - name: Setup .NET 6.0
+    - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '6.0.x'
+        dotnet-version: |
+          3.1.x
+          6.x
+          7.x
         include-prerelease: true
       env:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -55,11 +58,7 @@ jobs:
     - name: Test
       run: dotnet test AutoDI.sln --no-build --verbosity normal --configuration ${{ env.configuration }} --logger "console"
 
-    - name: Update NuSpec Files
-      run: .\nuget\UpdateNuspecFiles.ps1 -Version ${{ env.nugetVersion }}
-
     - name: Pack
-      if: ${{ github.event_name != 'pull_request' }}
       run: dotnet pack AutoDI.sln -p:Version=${{ env.nugetVersion }} --configuration ${{ env.configuration }} --no-build --output ${{ github.workspace }} -v d
 
     - name: Upload Artifacts
@@ -67,7 +66,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: NuGet
-        path: ${{ github.workspace }}\*.nupkg
+        path: ${{ github.workspace }}\*nupkg
 
     - name: Push NuGet
       if: ${{ github.event_name != 'pull_request' }}

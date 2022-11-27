@@ -1,12 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <ApplicationIcon>..\needle.ico</ApplicationIcon>
-  </PropertyGroup>
-
-  <PropertyGroup Label="NuGet">
-    <NuspecFile>../NuGet/AutoDI.AspNetCore/AutoDI.AspNetCore.nuspec</NuspecFile>
+    <TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,15 +11,4 @@
   <ItemGroup>
     <ProjectReference Include="..\AutoDI\AutoDI.csproj" />
   </ItemGroup>
-
-  <Target Name="CopyOutput" AfterTargets="AfterBuild">
-    <ItemGroup>
-      <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
-      <CopyItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
-      <IconItems Include="$(SolutionDir)\Icons\needle.png" />
-    </ItemGroup>
-    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
-    <Copy SourceFiles="@(IconItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\images\%(IconItems.RecursiveDir)" />
-  </Target>
-
 </Project>

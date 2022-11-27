@@ -1,0 +1,15 @@
+<Project>
+  <ItemGroup>
+    <None Include="..\Icons\needle.png" Pack="true" PackagePath="images" />
+  </ItemGroup>
+
+  <!-- Remove Microsoft.Build framework elements -->
+  <Target Name="ExcludeTargetFramework" 
+          Condition="$(RemoveMicrosoftBuildFrameworkAssemblyReferences) == 'True'"
+          AfterTargets="_WalkEachTargetPerFramework" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <_FrameworkAssemblyReferencesToRemove Include="@(_FrameworkAssemblyReferences)" Condition="$([System.Text.RegularExpressions.Regex]::Match(%(Identity),'Microsoft\.Build.*').Success)" />
+      <_FrameworkAssemblyReferences Remove="@(_FrameworkAssemblyReferencesToRemove)" />
+    </ItemGroup>
+  </Target>
+</Project>

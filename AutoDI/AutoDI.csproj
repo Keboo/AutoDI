@@ -1,12 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
-    <ApplicationIcon>..\needle.ico</ApplicationIcon>
+    <TargetFrameworks>netstandard2.0;net461;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup Label="NuGet">
-    <NuspecFile>../NuGet/AutoDI/AutoDI.nuspec</NuspecFile>
+  <PropertyGroup>
+    <Description>
+      AutoDI classes. These are expected to be used with the AutoDI.Build package.
+
+      Release notes: https://github.com/Keboo/AutoDI/wiki/Release-Notes
+    </Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,14 +17,4 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" Condition="$(TargetFramework)==net461" />
   </ItemGroup>
-
-  <Target Name="CopyOutput" AfterTargets="AfterBuild">
-    <ItemGroup>
-      <CopyItems Include="$(TargetDir)..\**\$(TargetFileName)" />
-      <CopyItems Include="$(TargetDir)..\**\$(TargetName).pdb" />
-      <CopyImages Include="$(SolutionDir)\Icons\needle.png"/>
-    </ItemGroup>
-    <Copy SourceFiles="@(CopyItems)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\lib\%(CopyItems.RecursiveDir)" />
-    <Copy SourceFiles="@(CopyImages)" DestinationFolder="$(SolutionDir)NuGet\$(ProjectName)\images\%(CopyImages.RecursiveDir)" />
-  </Target>
 </Project>

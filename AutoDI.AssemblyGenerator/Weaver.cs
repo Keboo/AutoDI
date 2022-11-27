@@ -6,97 +6,96 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace AutoDI.AssemblyGenerator
+namespace AutoDI.AssemblyGenerator;
+
+public sealed class Weaver
 {
-    public sealed class Weaver
+    public static Weaver FindWeaver(string weaverTypeName)
     {
-        public static Weaver FindWeaver(string weaverTypeName)
+        object ProcessAssembly(Assembly assembly)
         {
-            object ProcessAssembly(Assembly assembly)
-            {
-                //TODO: Check for BaseModuleWeaver type
-                Type weaverType = assembly.GetType(weaverTypeName);
+            //TODO: Check for BaseModuleWeaver type
+            Type weaverType = assembly.GetType(weaverTypeName);
 
-                if (weaverType is null) return null;
-                return Activator.CreateInstance(weaverType);
-            }
-
-            const string assemblyName = "AutoDI.Build";
-
-            var weaverInstance = (Task)ProcessAssembly(Assembly.Load(assemblyName));
-            if (weaverInstance != null)
-                return new Weaver(weaverTypeName, weaverInstance);
-
-            throw new Exception($"Failed to find weaver task '{weaverTypeName}'. Could not locate {weaverTypeName} in {assemblyName}.");
+            if (weaverType is null) return null;
+            return Activator.CreateInstance(weaverType);
         }
 
-        public Task Instance { get; }
-        public string Name { get; }
+        const string assemblyName = "AutoDI.Build";
 
-        internal Weaver(string name, Task taskInstance)
+        var weaverInstance = (Task)ProcessAssembly(Assembly.Load(assemblyName));
+        if (weaverInstance != null)
+            return new Weaver(weaverTypeName, weaverInstance);
+
+        throw new Exception($"Failed to find weaver task '{weaverTypeName}'. Could not locate {weaverTypeName} in {assemblyName}.");
+    }
+
+    public Task Instance { get; }
+    public string Name { get; }
+
+    internal Weaver(string name, Task taskInstance)
+    {
+        Instance = taskInstance ?? throw new ArgumentNullException(nameof(taskInstance));
+        Name = name;
+    }
+
+    public void ApplyToAssembly(string assemblyFilePath)
+    {
+        Task task = Instance;
+        var buildEngine = new InMemoryBuildEngine();
+        SetProperty("AssemblyFile", assemblyFilePath);
+        task.BuildEngine = buildEngine;
+
+        bool result = task.Execute();
+
+        if (buildEngine.LoggedErrors.Any())
         {
-            Instance = taskInstance ?? throw new ArgumentNullException(nameof(taskInstance));
-            Name = name;
+            throw new WeaverErrorException(buildEngine.LoggedErrors);
+        }
+        if (!result)
+        {
+            throw new Exception("Task did not succeed");
         }
 
-        public void ApplyToAssembly(string assemblyFilePath)
+        void SetProperty<T>(string propertyName, T value)
         {
-            Task task = Instance;
-            var buildEngine = new InMemoryBuildEngine();
-            SetProperty("AssemblyFile", assemblyFilePath);
-            task.BuildEngine = buildEngine;
+            task.GetType().GetProperty(propertyName)?.SetValue(task, value);
+        }
+    }
 
-            bool result = task.Execute();
-
-            if (buildEngine.LoggedErrors.Any())
-            {
-                throw new WeaverErrorException(buildEngine.LoggedErrors);
-            }
-            if (!result)
-            {
-                throw new Exception("Task did not succeed");
-            }
-
-            void SetProperty<T>(string propertyName, T value)
-            {
-                task.GetType().GetProperty(propertyName)?.SetValue(task, value);
-            }
+    private class InMemoryBuildEngine : IBuildEngine
+    {
+        private readonly List<string> _LoggedErrors = new List<string>();
+        public IReadOnlyList<string> LoggedErrors => _LoggedErrors;
+        public void LogErrorEvent(BuildErrorEventArgs e)
+        {
+            _LoggedErrors.Add(e.Message);
         }
 
-        private class InMemoryBuildEngine : IBuildEngine
+        public void LogWarningEvent(BuildWarningEventArgs e)
         {
-            private readonly List<string> _LoggedErrors = new List<string>();
-            public IReadOnlyList<string> LoggedErrors => _LoggedErrors;
-            public void LogErrorEvent(BuildErrorEventArgs e)
-            {
-                _LoggedErrors.Add(e.Message);
-            }
 
-            public void LogWarningEvent(BuildWarningEventArgs e)
-            {
-
-            }
-
-            public void LogMessageEvent(BuildMessageEventArgs e)
-            {
-
-            }
-
-            public void LogCustomEvent(CustomBuildEventArgs e)
-            {
-                throw new NotImplementedException();
-            }
-
-            public bool BuildProjectFile(string projectFileName, string[] targetNames, IDictionary globalProperties,
-                IDictionary targetOutputs)
-            {
-                throw new NotImplementedException();
-            }
-
-            public bool ContinueOnError { get; } = false;
-            public int LineNumberOfTaskNode { get; } = 0;
-            public int ColumnNumberOfTaskNode { get; } = 0;
-            public string ProjectFileOfTaskNode { get; } = "";
         }
+
+        public void LogMessageEvent(BuildMessageEventArgs e)
+        {
+
+        }
+
+        public void LogCustomEvent(CustomBuildEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool BuildProjectFile(string projectFileName, string[] targetNames, IDictionary globalProperties,
+            IDictionary targetOutputs)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ContinueOnError { get; } = false;
+        public int LineNumberOfTaskNode { get; } = 0;
+        public int ColumnNumberOfTaskNode { get; } = 0;
+        public string ProjectFileOfTaskNode { get; } = "";
     }
 }

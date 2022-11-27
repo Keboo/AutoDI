@@ -14,8 +14,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}"
 	ProjectSection(SolutionItems) = preProject
 		BuildLocalNugets.ps1 = BuildLocalNugets.ps1
-		..\XAMLTest\Directory.Build.props = ..\XAMLTest\Directory.Build.props
-		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
 		local.testsettings = local.testsettings
 		README.md = README.md
 		testing.runsettings = testing.runsettings
@@ -38,9 +38,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Tests", "AutoDI.Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.AspNetCore", "AutoDI.AspNetCore\AutoDI.AspNetCore.csproj", "{EC8FEB67-0EC6-430E-892B-20EFFC47B423}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Generator", "AutoDI.Generator\AutoDI.Generator.csproj", "{931F999C-07DD-4CB7-9DCB-657D795857F8}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoDI.Build", "AutoDI.Build\AutoDI.Build.csproj", "{BAC90B37-E91D-4E13-BE28-DCB0ACD8FEDE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{74697D7B-81FB-47CC-B5F3-5C719E1C9C4A}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,10 +71,6 @@ Global
 		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC8FEB67-0EC6-430E-892B-20EFFC47B423}.Release|Any CPU.Build.0 = Release|Any CPU
-		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{931F999C-07DD-4CB7-9DCB-657D795857F8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BAC90B37-E91D-4E13-BE28-DCB0ACD8FEDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BAC90B37-E91D-4E13-BE28-DCB0ACD8FEDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BAC90B37-E91D-4E13-BE28-DCB0ACD8FEDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -82,6 +81,7 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1A6636EB-C26C-4F4D-9644-EC1BD8A725C0} = {D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}
+		{74697D7B-81FB-47CC-B5F3-5C719E1C9C4A} = {D03C8A7D-4EAD-413D-9025-A60D75BF9E3E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4E3F596C-3D1B-4F27-9F3F-D9D892CF6DE6}

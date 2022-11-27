@@ -16,6 +16,7 @@
     <Reference Include="Microsoft.Build.Tasks.v4.0" />
     <Reference Include="Microsoft.Build.Utilities.v4.0" />
   </ItemGroup>
+  
   <ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Build.Tasks.Core" Version="16.11.0" PrivateAssets="All" />
   </ItemGroup>
