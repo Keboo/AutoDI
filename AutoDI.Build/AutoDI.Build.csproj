@@ -5,6 +5,11 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <DefineConstants Condition="$(TargetFramework) == 'net472'">NETFRAMEWORK;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="$(TargetFramework) == 'netstandard2.0'">NETCORE;$(DefineConstants)</DefineConstants>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeExeInPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
   
   <ItemGroup>
@@ -34,6 +39,28 @@
     <Compile Include="..\AutoDI\SettingsAttribute.cs" Link="SettingsAttribute.cs" />
   </ItemGroup>
 
+  <Target Name="IncludeExeInPackage">
+    <PropertyGroup>
+      <TaskOutputDirectory Condition="$(TargetFramework) == 'net472'">netframework</TaskOutputDirectory>
+      <TaskOutputDirectory Condition="$(TargetFramework) == 'netstandard2.0'">netcore</TaskOutputDirectory>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(TargetDir)\AutoDI*">
+        <PackagePath>build\$(TaskOutputDirectory)</PackagePath>
+      </TfmSpecificPackageFile>
+      <TfmSpecificPackageFile Include="$(TargetDir)\Mono.Cecil.*">
+        <PackagePath>build\$(TaskOutputDirectory)</PackagePath>
+      </TfmSpecificPackageFile>
+      <!-- TODO Does AutoDI.dll need to be included? -->
+
+      <TfmSpecificPackageFile Include="$(ProjectDir)AutoDI.Build.targets">
+        <PackagePath>build</PackagePath>
+      </TfmSpecificPackageFile>
+
+    </ItemGroup>
+  </Target>
+  
   <Target Name="CopyOutput" AfterTargets="AfterBuild">
     <ItemGroup>
       <RootItems Include="$(TargetDir)..\**\$(TargetFileName)" />

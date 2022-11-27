@@ -1,17 +1,14 @@
-﻿using System;
+﻿namespace AutoDI.Build;
 
-namespace AutoDI.Build
+internal class AutoDIBuildException : Exception
 {
-    internal class AutoDIBuildException : Exception
+    public AutoDIBuildException()
     {
-        public AutoDIBuildException()
-        {
-            
-        }
+        
+    }
 
-        public AutoDIBuildException(string message) : base(message)
-        {
-            
-        }
+    public AutoDIBuildException(string message) : base(message)
+    {
+        
     }
 }
