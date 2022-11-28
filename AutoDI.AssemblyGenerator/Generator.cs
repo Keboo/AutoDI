@@ -13,7 +13,7 @@ public class Generator
 {
     public event EventHandler<WeaverAddedEventArgs>? WeaverAdded;
 
-    private static int _instanceCount = 1;
+    private static int _instanceCount = 0;
 
     public LanguageVersion LangVersion { get; set; } = LanguageVersion.Latest;
 
@@ -116,7 +116,7 @@ public class Generator
             var projectId = ProjectId.CreateNewId();
 
             var document = DocumentInfo.Create(DocumentId.CreateNewId(projectId), "Generated.cs",
-                loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents(), System.Text.Encoding.Unicode),
+                loader: TextLoader.From(TextAndVersion.Create(SourceText.From(assemblyInfo.GetContents(), Encoding.Unicode),
                     VersionStamp.Create())));
 
             var project = workspace.AddProject(ProjectInfo.Create(projectId,

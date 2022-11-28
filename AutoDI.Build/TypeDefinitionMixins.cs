@@ -36,7 +36,7 @@ internal static class TypeDefinitionMixins
 
     public static MethodDefinition GetMappingConstructor(this TypeDefinition targetType)
     {
-        var targetTypeCtors = targetType.GetConstructors();
+        var targetTypeCtors = targetType.GetConstructors().Where(x => !x.IsStatic);
         var annotatedConstructors = targetTypeCtors
             .Where(ctor => ctor.CustomAttributes.Any(attr => attr.AttributeType.FullName == "AutoDI.DiConstructorAttribute")).ToArray();
         MethodDefinition targetTypeCtor;
@@ -52,7 +52,9 @@ internal static class TypeDefinitionMixins
         }
         else
         {
-            targetTypeCtor = targetType.GetConstructors().OrderByDescending(c => c.Parameters.Count)
+            targetTypeCtor = targetType.GetConstructors()
+                .Where(c => !c.IsStatic)
+                .OrderByDescending(c => c.Parameters.Count)
                 .FirstOrDefault();
         }
 
