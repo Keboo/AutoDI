@@ -58,13 +58,13 @@ namespace AutoDI.Build.Tests
         [Description("Issue 137")]
         public void DependencyWithThrowingStaticConstructorPropogatesException()
         {
-            Exception ex = Assert.ThrowsException<Exception>(() =>
+            TypeInitializationException ex = Assert.ThrowsException<TypeInitializationException>(() =>
             {
                 dynamic tester = _testAssembly.CreateInstance<Tester>();
                 tester.StaticThrow();
             });
 
-            Assert.AreEqual("Static constructor exception", ex.Message);
+            Assert.AreEqual("Static constructor exception", ex.InnerException.Message);
         }
     }
 }
