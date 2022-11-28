@@ -43,15 +43,28 @@ namespace AutoDI.Build.Tests
 
         [TestMethod]
         [Description("Issue 137")]
-        public void ExplicitInterfaceMethodDependenciesAreInjected()
+        public void DependencyWithThrowingConstructorPropogatesException()
         {
             Exception ex = Assert.ThrowsException<Exception>(() =>
             {
                 dynamic tester = _testAssembly.CreateInstance<Tester>();
-                tester.DoWork();
+                tester.InstanceThrow();
             });
             
             Assert.AreEqual("Constructor exception", ex.Message);
+        }
+
+        [TestMethod]
+        [Description("Issue 137")]
+        public void DependencyWithThrowingStaticConstructorPropogatesException()
+        {
+            Exception ex = Assert.ThrowsException<Exception>(() =>
+            {
+                dynamic tester = _testAssembly.CreateInstance<Tester>();
+                tester.StaticThrow();
+            });
+
+            Assert.AreEqual("Static constructor exception", ex.Message);
         }
     }
 }
@@ -67,13 +80,27 @@ namespace ThrowingDependencyNamespace
 
     public class Tester
     {
-        public void DoWork()
+        public void InstanceThrow()
             => _ = new ClassWithThrowingDependency();
+
+        public void StaticThrow()
+            => _ = new ClassWithStaticThrowingDependency();
     }
 
     public class ClassWithThrowingDependency
     {
         public ClassWithThrowingDependency([Dependency] IThrowException service = null!)
+        {
+            if (service is null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+        }
+    }
+
+    public class ClassWithStaticThrowingDependency
+    {
+        public ClassWithStaticThrowingDependency([Dependency] IThrowStaticException service = null!)
         {
             if (service is null)
             {
@@ -89,6 +116,16 @@ namespace ThrowingDependencyNamespace
         public ThrowException()
         {
             throw new Exception("Constructor exception");
+        }
+    }
+
+    public interface IThrowStaticException { }
+    
+    public class ThrowStaticException : IThrowStaticException
+    {
+        static ThrowStaticException()
+        {
+            throw new Exception("Static constructor exception");
         }
     }
 }
