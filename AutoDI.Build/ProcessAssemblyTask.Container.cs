@@ -8,8 +8,13 @@ namespace AutoDI.Build;
 
 partial class ProcessAssemblyTask
 {
-    //TODO: out parameters... yuck
-    private TypeDefinition GenerateAutoDIClass(Mapping mapping, Settings settings, ICodeGenerator codeGenerator,
+    //TODO: out parameter... yuck
+    private TypeDefinition GenerateAutoDIClass(
+        ModuleDefinition moduleDefinition,
+        Mapping mapping,
+        Settings settings,
+        ICodeGenerator? codeGenerator,
+        ILogger logger,
         out MethodDefinition initMethod)
     {
         var containerType = new TypeDefinition(Constants.Namespace, Constants.TypeName,
@@ -20,13 +25,13 @@ partial class ProcessAssemblyTask
         };
 
         FieldDefinition globalServiceProvider =
-            ModuleDefinition.CreateStaticReadonlyField(Constants.GlobalServiceProviderName, false, Import.System.IServiceProvider);
+            moduleDefinition.CreateStaticReadonlyField(Constants.GlobalServiceProviderName, false, Import.System.IServiceProvider);
         containerType.Fields.Add(globalServiceProvider);
 
-        MethodDefinition configureMethod = GenerateAddServicesMethod(mapping, settings, containerType, codeGenerator);
+        MethodDefinition configureMethod = GenerateAddServicesMethod(moduleDefinition, mapping, settings, containerType, codeGenerator, logger);
         containerType.Methods.Add(configureMethod);
 
-        initMethod = GenerateInitMethod(configureMethod, globalServiceProvider);
+        initMethod = GenerateInitMethod(moduleDefinition, configureMethod, globalServiceProvider, logger);
         containerType.Methods.Add(initMethod);
 
         MethodDefinition disposeMethod = GenerateDisposeMethod(globalServiceProvider);
@@ -35,7 +40,13 @@ partial class ProcessAssemblyTask
         return containerType;
     }
 
-    private MethodDefinition GenerateAddServicesMethod(Mapping mapping, Settings settings, TypeDefinition containerType, ICodeGenerator codeGenerator)
+    private MethodDefinition GenerateAddServicesMethod(
+        ModuleDefinition moduleDefinition,
+        Mapping mapping,
+        Settings settings,
+        TypeDefinition containerType,
+        ICodeGenerator? codeGenerator,
+        ILogger logger)
     {
         var method = new MethodDefinition("AddServices",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
@@ -44,14 +55,14 @@ partial class ProcessAssemblyTask
         var serviceCollection = new ParameterDefinition("collection", ParameterAttributes.None, Import.DependencyInjection.IServiceCollection);
         method.Parameters.Add(serviceCollection);
 
-        IMethodGenerator methodGenerator = codeGenerator?.Method(method);
+        IMethodGenerator? methodGenerator = codeGenerator?.Method(method);
         ILProcessor processor = method.Body.GetILProcessor();
 
-        VariableDefinition exceptionList = null;
-        VariableDefinition exception = null;
+        VariableDefinition? exceptionList = null;
+        VariableDefinition? exception = null;
         if (settings.DebugExceptions)
         {
-            var genericType = ModuleDefinition.ImportReference(Import.System.Collections.List.Type.MakeGenericInstanceType(Import.System.Exception));
+            var genericType = moduleDefinition.ImportReference(Import.System.Collections.List.Type.MakeGenericInstanceType(Import.System.Exception));
             exceptionList = new VariableDefinition(genericType);
             exception = new VariableDefinition(Import.System.Exception);
 
@@ -80,15 +91,15 @@ partial class ProcessAssemblyTask
             {
                 try
                 {
-                    Logger.Debug($"Processing map for {registration.TargetType.FullName}", DebugLogLevel.Verbose);
+                    logger.Debug($"Processing map for {registration.TargetType.FullName}", DebugLogLevel.Verbose);
 
                     if (!factoryMethods.TryGetValue(registration.TargetType.FullName,
-                        out MethodDefinition factoryMethod))
+                        out MethodDefinition? factoryMethod))
                     {
-                        factoryMethod = GenerateFactoryMethod(registration.TargetType, factoryIndex, codeGenerator);
+                        factoryMethod = GenerateFactoryMethod(moduleDefinition, registration.TargetType, factoryIndex, codeGenerator);
                         if (factoryMethod is null)
                         {
-                            Logger.Debug($"No acceptable constructor for '{registration.TargetType.FullName}', skipping map",
+                            logger.Debug($"No acceptable constructor for '{registration.TargetType.FullName}', skipping map",
                                 DebugLogLevel.Verbose);
                             continue;
                         }
@@ -101,22 +112,22 @@ partial class ProcessAssemblyTask
                     var tryStart = Instruction.Create(OpCodes.Ldarg_0); //collection parameter
                     processor.Append(tryStart);
 
-                    TypeReference importedKey = ModuleDefinition.ImportReference(registration.Key);
-                    Logger.Debug(
+                    TypeReference importedKey = moduleDefinition.ImportReference(registration.Key);
+                    logger.Debug(
                         $"Mapping {importedKey.FullName} => {registration.TargetType.FullName} ({registration.Lifetime})",
                         DebugLogLevel.Default);
                     processor.Emit(OpCodes.Ldtoken, importedKey);
                     processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
 
-                    processor.Emit(OpCodes.Ldtoken, ModuleDefinition.ImportReference(registration.TargetType));
+                    processor.Emit(OpCodes.Ldtoken, moduleDefinition.ImportReference(registration.TargetType));
                     processor.Emit(OpCodes.Call, Import.System.Type.GetTypeFromHandle);
 
                     processor.Emit(OpCodes.Ldnull);
                     processor.Emit(OpCodes.Ldftn, factoryMethod);
                     processor.Emit(OpCodes.Newobj,
-                        ModuleDefinition.ImportReference(
+                        moduleDefinition.ImportReference(
                             funcCtor.MakeGenericDeclaringType(Import.System.IServiceProvider,
-                                ModuleDefinition.ImportReference(registration.TargetType))));
+                                moduleDefinition.ImportReference(registration.TargetType))));
 
                     processor.Emit(OpCodes.Ldc_I4, (int)registration.Lifetime);
 
@@ -174,11 +185,11 @@ partial class ProcessAssemblyTask
                 }
                 catch (MultipleConstructorException e)
                 {
-                    Logger.Error($"Failed to create map for {registration}\r\n{e}", null);
+                    logger.Error($"Failed to create map for {registration}{Environment.NewLine}{e}", null);
                 }
                 catch (Exception e)
                 {
-                    Logger.Warning($"Failed to create map for {registration}\r\n{e}");
+                    logger.Warning($"Failed to create map for {registration}{Environment.NewLine}{e}");
                 }
             }
         }
@@ -219,7 +230,11 @@ partial class ProcessAssemblyTask
         return method;
     }
 
-    private MethodDefinition GenerateFactoryMethod(TypeDefinition targetType, int index, ICodeGenerator codeGenerator)
+    private MethodDefinition? GenerateFactoryMethod(
+        ModuleDefinition moduleDefinition,
+        TypeDefinition targetType,
+        int index,
+        ICodeGenerator? codeGenerator)
     {
         if (!targetType.CanMapType()) return null;
 
@@ -228,7 +243,7 @@ partial class ProcessAssemblyTask
 
         var factory = new MethodDefinition($"<{targetType.Name}>_generated_{index}",
             MethodAttributes.Private | MethodAttributes.HideBySig | MethodAttributes.Static,
-            ModuleDefinition.ImportReference(targetType));
+            moduleDefinition.ImportReference(targetType));
         factory.Parameters.Add(new ParameterDefinition("serviceProvider", ParameterAttributes.None, Import.System.IServiceProvider));
 
         ILProcessor factoryProcessor = factory.Body.GetILProcessor();
@@ -239,14 +254,14 @@ partial class ProcessAssemblyTask
         {
             factoryProcessor.Emit(OpCodes.Ldarg_0);
             var genericGetService = new GenericInstanceMethod(getServiceMethod);
-            genericGetService.GenericArguments.Add(ModuleDefinition.ImportReference(parameter.ParameterType));
+            genericGetService.GenericArguments.Add(moduleDefinition.ImportReference(parameter.ParameterType));
             factoryProcessor.Emit(OpCodes.Call, genericGetService);
         }
 
-        factoryProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(targetTypeCtor));
+        factoryProcessor.Emit(OpCodes.Newobj, moduleDefinition.ImportReference(targetTypeCtor));
         factoryProcessor.Emit(OpCodes.Ret);
 
-        IMethodGenerator methodGenerator = codeGenerator?.Method(factory);
+        IMethodGenerator? methodGenerator = codeGenerator?.Method(factory);
         if (methodGenerator != null)
         {
             var parameters = string.Join(", ", targetTypeCtor.Parameters.Select(x => $"serviceProvider.GetService<{x.ParameterType.NameCSharp(true)}>()"));
@@ -256,7 +271,11 @@ partial class ProcessAssemblyTask
         return factory;
     }
 
-    private MethodDefinition GenerateInitMethod(MethodDefinition configureMethod, FieldDefinition globalServiceProvider)
+    private MethodDefinition GenerateInitMethod(
+        ModuleDefinition moduleDefinition,
+        MethodDefinition configureMethod,
+        FieldDefinition globalServiceProvider,
+        ILogger logger)
     {
         var initMethod = new MethodDefinition(Constants.InitMethodName,
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Static,
@@ -282,21 +301,21 @@ partial class ProcessAssemblyTask
         initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
         initProcessor.Emit(OpCodes.Ldnull);
         initProcessor.Emit(OpCodes.Ldftn, configureMethod);
-        initProcessor.Emit(OpCodes.Newobj, ModuleDefinition.ImportReference(Import.System.Action.Ctor.MakeGenericDeclaringType(Import.DependencyInjection.IServiceCollection)));
+        initProcessor.Emit(OpCodes.Newobj, moduleDefinition.ImportReference(Import.System.Action.Ctor.MakeGenericDeclaringType(Import.DependencyInjection.IServiceCollection)));
         initProcessor.Emit(OpCodes.Callvirt, Import.AutoDI.IApplicationBuilder.ConfigureServices);
         initProcessor.Emit(OpCodes.Pop);
 
-        MethodDefinition setupMethod = SetupMethod.Find(ModuleDefinition, Logger);
+        MethodDefinition? setupMethod = SetupMethod.Find(moduleDefinition, logger);
         if (setupMethod != null)
         {
-            Logger.Debug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
+            logger.Debug($"Found setup method '{setupMethod.FullName}'", DebugLogLevel.Default);
             initProcessor.Emit(OpCodes.Ldloc_0); //applicationBuilder
             initProcessor.Emit(OpCodes.Call, setupMethod);
             initProcessor.Emit(OpCodes.Nop);
         }
         else
         {
-            Logger.Debug("No setup method found", DebugLogLevel.Default);
+            logger.Debug("No setup method found", DebugLogLevel.Default);
         }
 
         Instruction loadForBuild = Instruction.Create(OpCodes.Ldloc_0);
@@ -305,7 +324,7 @@ partial class ProcessAssemblyTask
         initProcessor.Emit(OpCodes.Brfalse_S, loadForBuild);
         initProcessor.Emit(OpCodes.Ldarg_0);
         initProcessor.Emit(OpCodes.Ldloc_0);
-        initProcessor.Emit(OpCodes.Callvirt, ModuleDefinition.ImportReference(Import.System.Action.Invoke.MakeGenericDeclaringType(Import.AutoDI.IApplicationBuilder.Type)));
+        initProcessor.Emit(OpCodes.Callvirt, moduleDefinition.ImportReference(Import.System.Action.Invoke.MakeGenericDeclaringType(Import.AutoDI.IApplicationBuilder.Type)));
 
 
         initProcessor.Append(loadForBuild);

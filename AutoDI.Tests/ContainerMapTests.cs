@@ -49,7 +49,7 @@ public class ContainerMapTests
 
         map.Add(services);
 
-        IInterface retrievedService = map.Get<IInterface>(null);
+        IInterface? retrievedService = map.Get<IInterface>(null);
         Assert.AreEqual(@class, retrievedService);
     }
 
@@ -61,7 +61,7 @@ public class ContainerMapTests
         services.AddAutoDISingleton<IInterface, Class>();
         map.Add(services);
 
-        IInterface c = map.Get<IInterface>(null);
+        IInterface? c = map.Get<IInterface>(null);
         Assert.IsTrue(c is Class);
     }
 
@@ -73,7 +73,7 @@ public class ContainerMapTests
         services.AddAutoDILazySingleton<IInterface, Class>();
         map.Add(services);
 
-        IInterface c = map.Get<IInterface>(null);
+        IInterface? c = map.Get<IInterface>(null);
         Assert.IsTrue(c is Class);
     }
 
@@ -85,7 +85,7 @@ public class ContainerMapTests
         services.AddAutoDIWeakSingleton<IInterface, Class>();
         map.Add(services);
 
-        IInterface c = map.Get<IInterface>(null);
+        IInterface? c = map.Get<IInterface>(null);
         Assert.IsTrue(c is Class);
     }
 
@@ -97,7 +97,7 @@ public class ContainerMapTests
         services.AddAutoDITransient<IInterface, Class>();
         map.Add(services);
 
-        IInterface c = map.Get<IInterface>(null);
+        IInterface? c = map.Get<IInterface>(null);
         Assert.IsTrue(c is Class);
     }
 
@@ -110,8 +110,8 @@ public class ContainerMapTests
         services.AddAutoDISingleton<IInterface>(instance);
         map.Add(services);
 
-        IInterface c1 = map.Get<IInterface>(null);
-        IInterface c2 = map.Get<IInterface>(null);
+        IInterface? c1 = map.Get<IInterface>(null);
+        IInterface? c2 = map.Get<IInterface>(null);
         Assert.IsTrue(ReferenceEquals(c1, c2));
         Assert.IsTrue(ReferenceEquals(c1, instance));
         Assert.IsTrue(ReferenceEquals(c2, instance));
@@ -215,7 +215,7 @@ public class ContainerMapTests
         services.AddAutoDISingleton<IInterface>(@class);
         map.Add(services);
 
-        Lazy<IInterface> lazy = map.Get<Lazy<IInterface>>(null);
+        Lazy<IInterface>? lazy = map.Get<Lazy<IInterface>>(null);
         Assert.IsNotNull(lazy);
         Assert.IsTrue(ReferenceEquals(@class, lazy.Value));
     }
@@ -230,7 +230,7 @@ public class ContainerMapTests
         services.AddAutoDISingleton<IInterface>(@class);
         map.Add(services);
 
-        Func<IInterface> func = map.Get<Func<IInterface>>(null);
+        Func<IInterface>? func = map.Get<Func<IInterface>>(null);
         Assert.IsNotNull(func);
         Assert.IsTrue(ReferenceEquals(@class, func()));
     }
@@ -241,7 +241,7 @@ public class ContainerMapTests
     {
         var map = new ContainerMap();
 
-        Class @class = map.Get<Class>(null);
+        Class? @class = map.Get<Class>(null);
         Assert.IsInstanceOfType(@class, typeof(Class));
     }
 
@@ -254,9 +254,9 @@ public class ContainerMapTests
         services.AddAutoDITransient<IInterface, Class>();
         map.Add(services);
 
-        ClassWithParameters @class = map.Get<ClassWithParameters>(null);
+        ClassWithParameters? @class = map.Get<ClassWithParameters>(null);
         Assert.IsInstanceOfType(@class, typeof(ClassWithParameters));
-        Assert.IsInstanceOfType(@class.Service, typeof(Class));
+        Assert.IsInstanceOfType(@class!.Service, typeof(Class));
     }
 
     [TestMethod]
@@ -268,10 +268,10 @@ public class ContainerMapTests
         services.AddAutoDITransient<IInterface, Class>();
         map.Add(services);
 
-        ClassWithParameters class1 = map.Get<ClassWithParameters>(null);
+        ClassWithParameters? class1 = map.Get<ClassWithParameters>(null);
         Assert.IsInstanceOfType(class1, typeof(ClassWithParameters));
 
-        ClassWithParameters class2 = map.Get<ClassWithParameters>(null);
+        ClassWithParameters? class2 = map.Get<ClassWithParameters>(null);
         Assert.IsInstanceOfType(class2, typeof(ClassWithParameters));
 
         Assert.IsFalse(ReferenceEquals(class1, class2));
@@ -502,8 +502,8 @@ public class ContainerMapTests
 
     private class ClassWithOptionalStringParameter
     {
-        public string Foo { get; }
-        public ClassWithOptionalStringParameter(string foo = null)
+        public string? Foo { get; }
+        public ClassWithOptionalStringParameter(string? foo = null)
         {
             Foo = foo;
         }

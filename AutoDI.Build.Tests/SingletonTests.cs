@@ -81,17 +81,17 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class SingletonTests
     {
-        private static Assembly _singleton;
-        private static Assembly _inSetup;
+        private static Assembly _singleton = null!;
+        private static Assembly _inSetup = null!;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
-            var gen = new Generator();
+            Generator gen = new();
 
             var testAssemblies = await gen.Execute();
-            _singleton = testAssemblies["singleton"].Assembly;
-            _inSetup = testAssemblies["inSetup"].Assembly;
+            _singleton = testAssemblies["singleton"].Assembly ?? throw new Exception("Could not find singleton assembly");
+            _inSetup = testAssemblies["inSetup"].Assembly ?? throw new Exception("Could not find inSetup assembly");
         }
 
         [TestMethod]

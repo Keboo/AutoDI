@@ -6,12 +6,12 @@ namespace AutoDI.AssemblyGenerator;
 
 public static class AssemblyMixins
 {
-    public static object GetStaticProperty<TContainingType>(this Assembly assembly, string propertyName, Type containerType = null) where TContainingType : class
+    public static object GetStaticProperty<TContainingType>(this Assembly assembly, string propertyName, Type? containerType = null) where TContainingType : class
     {
         if (assembly is null) throw new ArgumentNullException(nameof(assembly));
         if (propertyName is null) throw new ArgumentNullException(nameof(propertyName));
 
-        string typeName = TypeMixins.GetTypeName(typeof(TContainingType), containerType);
+        string? typeName = TypeMixins.GetTypeName(typeof(TContainingType), containerType);
         Type type = assembly.GetType(typeName);
         if (type is null)
             throw new AssemblyGetPropertyException($"Could not find '{typeof(TContainingType).FullName}' in '{assembly.FullName}'");
@@ -81,11 +81,11 @@ public static class AssemblyMixins
         return genericMethod.Invoke(target, parameters);
     }
 
-    public static object CreateInstance<T>(this Assembly assembly, Type containerType = null)
+    public static object CreateInstance<T>(this Assembly assembly, Type? containerType = null)
     {
         if (assembly is null) throw new ArgumentNullException(nameof(assembly));
 
-        string typeName = TypeMixins.GetTypeName(typeof(T), containerType);
+        string? typeName = TypeMixins.GetTypeName(typeof(T), containerType);
         Type type = assembly.GetType(typeName);
         if (type is null)
             throw new AssemblyCreateInstanceException($"Could not find '{typeName}' in '{assembly.FullName}'");
@@ -101,11 +101,11 @@ public static class AssemblyMixins
         throw new AssemblyCreateInstanceException($"Could not find valid constructor for '{typeof(T).FullName}'");
     }
 
-    public static object Resolve<T>(this Assembly assembly, Type containerType = null)
+    public static object Resolve<T>(this Assembly assembly, Type? containerType = null)
     {
         if (assembly is null) throw new ArgumentNullException(nameof(assembly));
 
-        string typeName = TypeMixins.GetTypeName(typeof(T), containerType);
+        string? typeName = TypeMixins.GetTypeName(typeof(T), containerType);
         Type type = assembly.GetType(typeName);
         if (type is null)
             throw new AssemblyCreateInstanceException($"Could not find '{typeName}' in '{assembly.FullName}'");
@@ -124,11 +124,14 @@ public static class AssemblyMixins
 
     public static Assembly SingleAssembly(this IDictionary<string, AssemblyInfo> assemblies)
     {
-        return assemblies?.Select(x => x.Value.Assembly).Single();
+        return assemblies
+            .Select(x => x.Value.Assembly)
+            .OfType<Assembly>()
+            .Single();
     }
 
     public static ModuleDefinition SingleModule(this IDictionary<string, AssemblyInfo> assemblies)
     {
-        return assemblies?.Select(x => ModuleDefinition.ReadModule(x.Value.FilePath)).Single();
+        return assemblies.Select(x => ModuleDefinition.ReadModule(x.Value.FilePath)).Single();
     }
 }

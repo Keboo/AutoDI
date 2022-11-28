@@ -12,9 +12,10 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class ContainerDependenciesTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
@@ -51,7 +52,7 @@ namespace ContainerDependencyNamespace
     {
         public IService Service { get; }
 
-        public Sut([Dependency] IService service = null)
+        public Sut([Dependency] IService service = null!)
         {
             Service = service ?? throw new ArgumentNullException(nameof(service));
 

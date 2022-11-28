@@ -20,7 +20,7 @@ internal class AssemblyResolver : BaseAssemblyResolver, ITypeResolver
         ResolveFailure += OnResolveFailure;
         foreach (var assemblyPath in assembliesToInclude)
         {
-            AssemblyDefinition assembly = GetFromPath(assemblyPath);
+            AssemblyDefinition? assembly = GetFromPath(assemblyPath);
             if (assembly != null)
             {
                 logger.Debug($"Caching ref '{assembly.Name.FullName}' from '{assembly.MainModule.FileName}'", DebugLogLevel.Verbose);
@@ -31,7 +31,7 @@ internal class AssemblyResolver : BaseAssemblyResolver, ITypeResolver
         logger.Info("Done loading referenced assemblies");
     }
 
-    public override AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters readParameters)
+    public override AssemblyDefinition? Resolve(AssemblyNameReference name, ReaderParameters readParameters)
     {
         if (name is null) throw new ArgumentNullException(nameof(name));
 
@@ -54,7 +54,7 @@ internal class AssemblyResolver : BaseAssemblyResolver, ITypeResolver
         return assemblyDefinition;
     }
 
-    public TypeDefinition ResolveType(string fullTypeName)
+    public TypeDefinition? ResolveType(string fullTypeName)
     {
         if (fullTypeName is null) throw new ArgumentNullException(nameof(fullTypeName));
         if (_typeCache.TryGetValue(fullTypeName, out TypeDefinition type))
@@ -83,9 +83,9 @@ internal class AssemblyResolver : BaseAssemblyResolver, ITypeResolver
         base.Dispose(disposing);
     }
 
-    private AssemblyDefinition OnResolveFailure(object sender, AssemblyNameReference reference)
+    private AssemblyDefinition? OnResolveFailure(object sender, AssemblyNameReference reference)
     {
-        Assembly assembly;
+        Assembly? assembly;
         try
         {
             if (_assemblyCache.TryGetValue(reference.Name, out AssemblyDefinition cached))
@@ -104,14 +104,14 @@ internal class AssemblyResolver : BaseAssemblyResolver, ITypeResolver
 
         if (!string.IsNullOrWhiteSpace(assembly?.CodeBase))
         {
-            string path = new Uri(assembly.CodeBase).AbsolutePath;
+            string path = new Uri(assembly!.CodeBase).AbsolutePath;
             return GetFromPath(path);
         }
 
         return null;
     }
 
-    private AssemblyDefinition GetFromPath(string filePath)
+    private AssemblyDefinition? GetFromPath(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
         {

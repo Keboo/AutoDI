@@ -11,10 +11,10 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class AnnotatedConstructorTest
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
@@ -65,7 +65,7 @@ namespace AutoDI.Build.Tests
         {
             public IService1 Service1 { get; }
 
-            public IService2 Service2 { get; }
+            public IService2? Service2 { get; }
 
 
             [DiConstructor]

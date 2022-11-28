@@ -21,7 +21,7 @@ internal static class TypeReferenceMixins
 
     internal static string FullNameCSharp(this TypeReference type)
     {
-        if (TryGetKeyword(type.FullName, out string keyword))
+        if (TryGetKeyword(type.FullName, out string? keyword))
         {
             return keyword;
         }
@@ -35,8 +35,11 @@ internal static class TypeReferenceMixins
 
     internal static string NameCSharp(this TypeReference type, bool includeGenericParameters = false)
     {
-        if (TryGetKeyword(type.Name, out string keyword)) return keyword;
-
+        if (TryGetKeyword(type.Name, out string? keyword))
+        {
+            return keyword;
+        }
+        
         string rv = type.Name;
         int index = rv.IndexOf('`');
         if (index >= 0)
@@ -51,7 +54,8 @@ internal static class TypeReferenceMixins
         return rv;
     }
 
-    internal static bool TryGetKeyword(string input, out string? keyword)
+    internal static bool TryGetKeyword(string input, 
+        [NotNullWhen(true)]out string? keyword)
     {
         switch (input)
         {

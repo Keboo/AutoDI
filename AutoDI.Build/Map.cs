@@ -17,7 +17,9 @@ internal class Map
         Lifetime = lifetime;
     }
 
-    public bool TryGetMap(TypeDefinition fromType, out string mappedType)
+    public bool TryGetMap(TypeDefinition fromType,
+        [NotNullWhen(true)]
+        out string? mappedType)
     {
         return _matcher.TryMatch(fromType, out mappedType);
     }

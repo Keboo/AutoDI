@@ -2,12 +2,17 @@
 
 public static class ServiceProviderMixins
 {
-    public static T GetService<T>(this IServiceProvider provider, params object[] autoDiParameters)
+    public static T GetRequiredService<T>(this IServiceProvider provider, params object[] autoDiParameters)
     {
-        return (T)provider.GetService(typeof(T), autoDiParameters);
+        return (T)(provider.GetService(typeof(T), autoDiParameters) ?? throw new InvalidOperationException($"Requested service '{typeof(T).FullName}' was null"));
     }
 
-    public static object GetService(this IServiceProvider provider, Type serviceType, params object[] autoDiParameters)
+    public static T? GetService<T>(this IServiceProvider provider, params object[] autoDiParameters)
+    {
+        return (T?)provider.GetService(typeof(T), autoDiParameters);
+    }
+
+    public static object? GetService(this IServiceProvider provider, Type serviceType, params object[] autoDiParameters)
     {
         if (provider is null)
         {

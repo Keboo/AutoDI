@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net462;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -12,9 +12,13 @@
     </Description>
   </PropertyGroup>
 
+
+  <ItemGroup Condition="$(TargetFramework) == 'net462'">
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+  </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" Condition="$(TargetFramework)==net461" />
   </ItemGroup>
 </Project>

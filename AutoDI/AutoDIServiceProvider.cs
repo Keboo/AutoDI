@@ -9,12 +9,12 @@ internal class AutoDIServiceProvider : IServiceProvider, IAutoDISerivceProvider,
         ContainerMap = containerMap ?? throw new ArgumentNullException(nameof(containerMap));
     }
 
-    object IServiceProvider.GetService(Type serviceType)
+    object? IServiceProvider.GetService(Type serviceType)
     {
         return ContainerMap.Get(serviceType, this);
     }
 
-    object IAutoDISerivceProvider.GetService(Type serviceType, object[] parameters)
+    object? IAutoDISerivceProvider.GetService(Type serviceType, object[] parameters)
     {
         //TODO: use parameters
         return ContainerMap.Get(serviceType, this);

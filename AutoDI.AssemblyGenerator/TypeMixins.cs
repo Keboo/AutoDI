@@ -4,23 +4,23 @@ namespace AutoDI.AssemblyGenerator;
 
 public static class TypeMixins
 {
-    public static bool Is<TExpected>(this object @object, Type containerType = null)
+    public static bool Is<TExpected>(this object @object, Type? containerType = null)
     {
         return Is(@object?.GetType(), typeof(TExpected), containerType);
     }
 
-    public static bool Is<TExpected>(this Type type, Type containerType = null)
+    public static bool Is<TExpected>(this Type type, Type? containerType = null)
     {
         return Is(type, typeof(TExpected), containerType);
     }
 
-    private static bool Is(Type? typeA, Type typeB, Type containerType)
+    private static bool Is(Type? typeA, Type? typeB, Type? containerType)
     {
         return string.Equals(GetTypeName(typeA, containerType), GetTypeName(typeB, containerType),
             StringComparison.Ordinal);
     }
 
-    public static string? GetTypeName(Type type, Type containerType)
+    public static string? GetTypeName(Type? type, Type? containerType)
     {
         if (type is null) return null;
         string rv = type.FullName;

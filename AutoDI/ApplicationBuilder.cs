@@ -9,7 +9,7 @@ public class ApplicationBuilder : IApplicationBuilder
     private readonly List<Action<IServiceCollection>> _configureServicesDelegates = new();
     private readonly List<Delegate> _configureContainerDelegates = new();
 
-    private Type _specifiedContainerType;
+    private Type? _specifiedContainerType;
 
     public IApplicationBuilder ConfigureContainer<TContainerType>(Action<TContainerType> configureContianer)
     {
@@ -39,7 +39,7 @@ public class ApplicationBuilder : IApplicationBuilder
         return rootProvider;
     }
 
-    private Type GetContainerType(IServiceCollection serviceCollection)
+    private Type? GetContainerType(IServiceCollection serviceCollection)
     {
         if (_specifiedContainerType != null)
         {
@@ -59,15 +59,17 @@ public class ApplicationBuilder : IApplicationBuilder
     private IServiceProvider GetProvider(IServiceProvider applicationProvider,
         IServiceCollection serviceCollection)
     {
-        Type containerType = GetContainerType(serviceCollection) ??
+        Type? containerType = GetContainerType(serviceCollection) ??
                              throw new NoRegisteredContainerException($"Could not determine container type. Is there an {typeof(IServiceProviderFactory<>).FullName} registered?");
-        return (IServiceProvider)GetType().GetTypeInfo().DeclaredMethods
+        return (IServiceProvider?)GetType().GetTypeInfo().DeclaredMethods
             .Single(m => m.IsGenericMethodDefinition && m.Name == nameof(GetProvider))
             .MakeGenericMethod(containerType)
-            .Invoke(this, new object[] { applicationProvider, serviceCollection });
+            .Invoke(this, new object[] { applicationProvider, serviceCollection })
+            ?? throw new AutoDIException("Could not create generic service provider");
     }
 
     private IServiceProvider GetProvider<TContainerType>(IServiceProvider applicationProvider, IServiceCollection serviceCollection)
+        where TContainerType: notnull
     {
         IServiceProviderFactory<TContainerType> providerFactory =
             applicationProvider.GetService<IServiceProviderFactory<TContainerType>>()

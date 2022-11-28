@@ -48,7 +48,8 @@ public class Generator
                     {
                         if (currentAssembly != null)
                             yield return currentAssembly;
-                        currentAssembly = new AssemblyInfo(assemblyStartMatch.Groups["Name"]?.Value);
+                        
+                        currentAssembly = new AssemblyInfo(assemblyStartMatch.Groups["Name"]!.Value);
                     }
                     else if (currentAssembly != null)
                     {
@@ -66,17 +67,18 @@ public class Generator
                         }
                         else if ((referenceMatch = referenceRegex.Match(trimmed)).Success)
                         {
-                            MetadataReference GetReference(string name)
+                            MetadataReference? GetReference(string name)
                             {
-                                if (builtAssemblies.TryGetValue(name, out AssemblyInfo builtAssembly))
+                                if (builtAssemblies.TryGetValue(name, out AssemblyInfo builtAssembly) &&
+                                    builtAssembly.Assembly?.Location is { } location)
                                 {
-                                    return MetadataReference.CreateFromFile(builtAssembly.Assembly.Location);
+                                    return MetadataReference.CreateFromFile(location);
                                 }
                                 string filePath = $@".\{name}.dll";
                                 return File.Exists(filePath) ? MetadataReference.CreateFromFile(filePath) : (MetadataReference?)null;
                             }
 
-                            MetadataReference reference = GetReference(referenceMatch.Groups["Name"].Value);
+                            MetadataReference? reference = GetReference(referenceMatch.Groups["Name"].Value);
                             if (reference != null)
                             {
                                 currentAssembly.AddReference(reference);
@@ -126,6 +128,10 @@ public class Generator
                     $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}.csproj")));
 
             Compilation? compile = await project.GetCompilationAsync();
+            if (compile is null)
+            {
+                throw new Exception("Failed to compile");
+            }
             assemblyInfo.FilePath = Path.GetFullPath($"{assemblyName}.dll");
             string pdbPath = Path.ChangeExtension(assemblyInfo.FilePath, ".pdb");
             using (var file = File.Create(assemblyInfo.FilePath))

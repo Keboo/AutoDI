@@ -10,18 +10,18 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class SetupMethodTests
     {
-        private static Assembly _publicAssembly;
-        private static Assembly _internalAssembly;
-        private static Assembly _manualAssembly;
+        private static Assembly _publicAssembly = null!;
+        private static Assembly _internalAssembly = null!;
+        private static Assembly _manualAssembly = null!;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
-            var gen = new Generator();
+            Generator gen = new();
             Dictionary<string, AssemblyInfo> result = await gen.Execute();
-            _publicAssembly = result["public"].Assembly;
-            _internalAssembly = result["internal"].Assembly;
-            _manualAssembly = result["manual"].Assembly;
+            _publicAssembly = result["public"].Assembly ?? throw new Exception("Could not find public assembly");
+            _internalAssembly = result["internal"].Assembly ?? throw new Exception("Could not find internal assembly");
+            _manualAssembly = result["manual"].Assembly ?? throw new Exception("Could not find manual assembly");
         }
 
         [TestMethod]
@@ -84,9 +84,9 @@ namespace SetupMethodPublicTests
 
     public class Program
     {
-        public static IContainer InitMap { get; set; }
-
-        public static void Main(string[] args)
+        public static IContainer? InitMap { get; set; }
+        
+        public static void Main(string[] _)
         {
 
         }
@@ -110,9 +110,9 @@ namespace SetupMethodInternalTests
 
     public class Program
     {
-        public static IContainer InitMap { get; set; }
+        public static IContainer? InitMap { get; set; }
 
-        public static void Main(string[] args)
+        public static void Main(string[] _)
         {
 
         }
@@ -137,7 +137,7 @@ namespace SetupMethodManualInjectionTests
 
     public class TestClass
     {
-        public static IContainer InitMap { get; set; }
+        public static IContainer? InitMap { get; set; }
 
         [SetupMethod]
         internal static void InitializeContainer(IApplicationBuilder builder)
@@ -151,7 +151,7 @@ namespace SetupMethodManualInjectionTests
     public class Manager : IManager
     {
         public IService Service { get; }
-        public Manager([Dependency] IService service = null)
+        public Manager([Dependency] IService service = null!)
         {
             Service = service ?? throw new ArgumentNullException(nameof(service));
         }

@@ -5,21 +5,34 @@ namespace AutoDI.Build;
 
 public partial class ProcessAssemblyTask
 {
-    private Imports Import { get; set; }
-
-    private void LoadRequiredData()
+    private Imports? _import;
+    private Imports Import
     {
-        Import ??= new Imports(TypeResolver.ResolveType, ModuleDefinition, this);
+        get => _import ?? throw new InvalidOperationException("Required Import types have not been loaded");
+        set => _import = value;
+    }
+
+    private void LoadRequiredData(AssemblyRewiteTaskContext context)
+    {
+        if (_import is null)
+        {
+            Func<string, TypeDefinition> findRequiredType = typeName =>
+            {
+                return context.TypeResolver.ResolveType(typeName)
+                    ?? throw new InvalidOperationException($"Could not resolve required type {typeName}");
+            };
+
+            Import = new Imports(findRequiredType, context.ModuleDefinition);
+        }
     }
 
     internal class Imports
     {
-        public Imports(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition,
-            ProcessAssemblyTask processAssemblyTask)
+        public Imports(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition)
         {
             System = new SystemImport(findType, moduleDefinition);
             DependencyInjection = new DependencyInjectionImport(findType, moduleDefinition);
-            AutoDI = new AutoDIImport(findType, moduleDefinition, processAssemblyTask, this);
+            AutoDI = new AutoDIImport(findType, moduleDefinition, this);
         }
 
         public SystemImport System { get; }
@@ -184,10 +197,10 @@ public partial class ProcessAssemblyTask
             public TypeReference DependencyAttributeType { get; }
 
             public AutoDIImport(Func<string, TypeDefinition> findType, ModuleDefinition moduleDefinition,
-                ProcessAssemblyTask processAssemblyTask, Imports imports)
+                Imports imports)
             {
                 Exceptions = new AutoDIExceptionsImport(findType, moduleDefinition);
-                IApplicationBuilder = new IApplicationBuilderImport(findType, moduleDefinition, processAssemblyTask, imports);
+                IApplicationBuilder = new IApplicationBuilderImport(findType, moduleDefinition, imports);
                 ApplicationBuilder = new ApplicationBuilderImport(findType, moduleDefinition);
                 GlobalDI = new GlobalDIImport(findType, moduleDefinition);
                 ServiceCollectionMixins = new ServiceCollectionMixinsImport(findType, moduleDefinition, imports);
@@ -217,8 +230,9 @@ public partial class ProcessAssemblyTask
             {
                 public const string TypeName = "AutoDI.IApplicationBuilder";
 
-                public IApplicationBuilderImport(Func<string, TypeDefinition> findType,
-                    ModuleDefinition moduleDefinition, ProcessAssemblyTask processAssemblyTask,
+                public IApplicationBuilderImport(
+                    Func<string, TypeDefinition> findType,
+                    ModuleDefinition moduleDefinition,
                     Imports imports)
                 {
                     Type = moduleDefinition.ImportReference(findType(TypeName));

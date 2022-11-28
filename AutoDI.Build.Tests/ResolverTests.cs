@@ -11,27 +11,32 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class ResolverTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        private static bool _initialized;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
             DI.Init(_testAssembly);
+            _initialized = true;
         }
 
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
-        private object Resolve<T>()
+        private object? Resolve<T>()
         {
-            string assemblyTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
+            string? assemblyTypeName = TypeMixins.GetTypeName(typeof(T), GetType());
             Type resolveType = _testAssembly.GetType(assemblyTypeName);
 
             IServiceProvider provider = DI.GetGlobalServiceProvider(_testAssembly);
@@ -41,7 +46,7 @@ namespace AutoDI.Build.Tests
         [TestMethod]
         public void CanResolveSingleInterfaceImplementationsByInterface()
         {
-            Assert.IsTrue(Resolve<IService>().Is<Service>(GetType()));
+            Assert.IsTrue(Resolve<IService>()?.Is<Service>(GetType()));
         }
 
         [TestMethod]
@@ -83,7 +88,7 @@ namespace AutoDI.Build.Tests
         public void CanResolveClassByBaseType()
         {
             //This works because it is the only derived class from Base2
-            Assert.IsTrue(Resolve<Base2>().Is<Derived2>(GetType()));
+            Assert.IsTrue(Resolve<Base2>()?.Is<Derived2>(GetType()));
         }
     }
 

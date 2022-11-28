@@ -11,22 +11,27 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class GenericClassTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        private static bool _initialized;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
             DI.Init(_testAssembly);
+            _initialized = true;
         }
 
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         [TestMethod]

@@ -6,7 +6,7 @@ public static class GlobalDI
 
     public static IReadOnlyList<IServiceProvider> Providers => _providers.AsReadOnly();
 
-    public static T GetService<T>(object[] parameters)
+    public static T? GetService<T>(object[] parameters)
     {
         lock (_providers)
         {
@@ -17,12 +17,12 @@ public static class GlobalDI
         }
     }
 
-    public static T GetService<T>()
+    public static T? GetService<T>()
     {
         return GetService<T>(Array.Empty<object>());
     }
 
-    public static object GetService(Type serviceType, object[] parameters)
+    public static object? GetService(Type serviceType, object[] parameters)
     {
         lock (_providers)
         {
@@ -33,7 +33,7 @@ public static class GlobalDI
         }
     }
 
-    public static object GetService(Type serviceType)
+    public static object? GetService(Type serviceType)
     {
         return GetService(serviceType, Array.Empty<object>());
     }
