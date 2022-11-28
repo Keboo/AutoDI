@@ -10,20 +10,25 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class DITests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        private static bool _initialized = false;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
+            _initialized = true;
         }
 
         [TestCleanup]
         public void Cleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         [TestMethod]

@@ -15,7 +15,7 @@ internal static class ModuleDefinitionMixins
         return module.ImportReference(typeof(T));
     }
 
-    public static MethodDefinition CreateDefaultConstructor(this ModuleDefinition module, Type baseType = null)
+    public static MethodDefinition CreateDefaultConstructor(this ModuleDefinition module, Type? baseType = null)
     {
         var ctor = new MethodDefinition(".ctor",
             MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName |

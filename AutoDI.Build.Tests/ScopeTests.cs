@@ -37,31 +37,36 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class ScopeTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        private static bool _initialized;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
-            var gen = new Generator();
+            Generator gen = new();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
             DI.Init(_testAssembly, app => app.ConfigureServices(serviceCollection => serviceCollection.AddAutoDIScoped(ResolveType(typeof(ILogger<>)), ResolveType(typeof(Logger<>)))));
+            _initialized = true;
         }
 
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         private static Type ResolveType(Type type)
         {
-            string assemblyTypeName = TypeMixins.GetTypeName(type, typeof(ScopeTests));
+            string? assemblyTypeName = TypeMixins.GetTypeName(type, typeof(ScopeTests));
             return _testAssembly.GetType(assemblyTypeName);
         }
 
-        private static object Resolve<T>(IServiceScope scope = null)
+        private static object? Resolve<T>(IServiceScope? scope = null)
         {
             Type resolveType = ResolveType(typeof(T));
             return (scope?.ServiceProvider ?? DI.GetGlobalServiceProvider(_testAssembly)).GetService(resolveType, Array.Empty<object>());
@@ -70,7 +75,7 @@ namespace AutoDI.Build.Tests
         [TestMethod]
         public void CanResolveScopedSingletonsByInterface()
         {
-            var scopeFactory = DI.GetGlobalServiceProvider(_testAssembly).GetService<IServiceScopeFactory>();
+            var scopeFactory = DI.GetGlobalServiceProvider(_testAssembly).GetRequiredService<IServiceScopeFactory>();
 
             using (IServiceScope scope1 = scopeFactory.CreateScope())
             using (IServiceScope scope2 = scopeFactory.CreateScope())
@@ -89,7 +94,7 @@ namespace AutoDI.Build.Tests
                 Assert.IsFalse(ReferenceEquals(service1A, service2A));
             }
 
-            Assert.IsTrue(Resolve<IService>().Is<Service>(GetType()));
+            Assert.IsTrue(Resolve<IService>()?.Is<Service>(GetType()));
         }
 
         [TestMethod]
@@ -97,7 +102,7 @@ namespace AutoDI.Build.Tests
 
         public void CanResolveClosedGenericFromOpenGenericRegistrationInScope()
         {
-            var scopeFactory = DI.GetGlobalServiceProvider(_testAssembly).GetService<IServiceScopeFactory>();
+            var scopeFactory = DI.GetGlobalServiceProvider(_testAssembly).GetRequiredService<IServiceScopeFactory>();
 
             using IServiceScope scope1 = scopeFactory.CreateScope();
             using IServiceScope scope2 = scopeFactory.CreateScope();

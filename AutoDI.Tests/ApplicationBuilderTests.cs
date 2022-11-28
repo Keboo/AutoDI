@@ -9,7 +9,7 @@ public class ApplicationBuilderTests
     [TestMethod]
     public void CanReplaceContainer()
     {
-        IContainer container = null;
+        IContainer? container = null;
         var applicationBuilder = new ApplicationBuilder();
         applicationBuilder.ConfigureServices(sc => sc.AddAutoDISingleton<IServiceProviderFactory<IContainer>, ContainerServiceProviderFactory>());
         applicationBuilder.ConfigureContainer<IContainer>(c => container = c);
@@ -21,7 +21,7 @@ public class ApplicationBuilderTests
 
     private class ContainerServiceProvider : IServiceProvider
     {
-        public object GetService(Type serviceType)
+        public object? GetService(Type serviceType)
         {
             return null;
         }
@@ -38,8 +38,8 @@ public class ApplicationBuilderTests
     private class ContainerServiceProviderFactory : IServiceProviderFactory<IContainer>
     {
         //This is simulating DryIocServiceProviderFactory
-        public ContainerServiceProviderFactory(IContainer container = null,
-            Func<IRegistrator, ServiceDescriptor, bool> registerDescriptor = null)
+        public ContainerServiceProviderFactory(IContainer? _ = null,
+            Func<IRegistrator, ServiceDescriptor, bool>? __ = null)
         {
 
         }

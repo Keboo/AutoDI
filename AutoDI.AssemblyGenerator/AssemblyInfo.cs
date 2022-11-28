@@ -15,9 +15,9 @@ public sealed class AssemblyInfo
 
     public string Name { get; }
 
-    public Assembly Assembly { get; internal set; }
+    public Assembly? Assembly { get; internal set; }
 
-    public string FilePath { get; internal set; }
+    public string? FilePath { get; internal set; }
 
     internal IReadOnlyList<MetadataReference> References => _references;
 

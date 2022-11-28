@@ -12,9 +12,10 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class MethodDependenciesTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        private bool _initialized;
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
@@ -25,12 +26,16 @@ namespace AutoDI.Build.Tests
         public void TestSetup()
         {
             DI.Init(_testAssembly);
+            _initialized = true;
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         [TestMethod]
@@ -68,9 +73,9 @@ namespace MethodDependencyNamespace
 
     public class ClassWithPublicMethodDependency
     {
-        public IService Service { get; private set; }
+        public IService Service { get; private set; } = null!;
 
-        public void DoSomething([Dependency] IService service = null)
+        public void DoSomething([Dependency] IService service = null!)
         {
             Service = service;
         }
@@ -78,11 +83,11 @@ namespace MethodDependencyNamespace
 
     public class ClassWithPrivateMethodDependency
     {
-        public IService Service { get; private set; }
+        public IService Service { get; private set; } = null!;
 
         public void DoSomething() => DoSomethingPrivate();
 
-        private void DoSomethingPrivate([Dependency] IService service = null)
+        private void DoSomethingPrivate([Dependency] IService service = null!)
         {
             Service = service;
         }
@@ -90,7 +95,7 @@ namespace MethodDependencyNamespace
 
     public class ClassWithExplicitInterfaceImplementation : IOther
     {
-        public IService Service { get; private set; }
+        public IService? Service { get; private set; }
 
         public void DoSomething() => ((IOther)this).DoSomething();
 
@@ -102,7 +107,7 @@ namespace MethodDependencyNamespace
 
     public interface IOther
     {
-        void DoSomething(IService service = null);
+        void DoSomething(IService service = null!);
     }
 
     public interface IService { }

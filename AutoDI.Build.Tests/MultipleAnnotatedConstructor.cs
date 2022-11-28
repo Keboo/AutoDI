@@ -39,7 +39,7 @@ namespace AutoDI.Build.Tests
 
         public class MultipleDiAnnotatedManager
         {
-            public IService1 Service1 { get; }
+            public IService1 Service1 { get; } = null!;
 
 
             [DiConstructor]

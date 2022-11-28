@@ -239,13 +239,13 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddAutoDISingleton(this IServiceCollection services, Type serviceType,
             object implementationInstance)
         {
-            return services.AddAutoDIService(serviceType, implementationInstance?.GetType(), provider => implementationInstance, Lifetime.Singleton);
+            return services.AddAutoDIService(serviceType, implementationInstance.GetType(), provider => implementationInstance, Lifetime.Singleton);
         }
 
         public static IServiceCollection AddAutoDISingleton<TService>(this IServiceCollection services,
             TService implementationInstance) where TService : class
         {
-            return services.AddAutoDIService(typeof(TService), implementationInstance?.GetType(), provider => implementationInstance,
+            return services.AddAutoDIService(typeof(TService), implementationInstance.GetType(), provider => implementationInstance,
                 Lifetime.Singleton);
         }
     }

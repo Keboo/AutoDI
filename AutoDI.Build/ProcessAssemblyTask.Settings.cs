@@ -2,21 +2,21 @@
 
 public partial class ProcessAssemblyTask
 {
-    private Settings? LoadSettings()
+    private Settings? LoadSettings(AssemblyRewiteTaskContext context)
     {
         Settings settings;
         try
         {
-            settings = Settings.Load(ModuleDefinition);
+            settings = Settings.Load(context.ModuleDefinition);
         }
         catch (SettingsParseException e)
         {
-            Logger.Error($"Failed to parse AutoDI settings{Environment.NewLine}{e.Message}", null);
+            context.Error($"Failed to parse AutoDI settings{Environment.NewLine}{e.Message}", null);
             return null;
         }
 
-        Logger.DebugLogLevel = settings.DebugLogLevel;
-        Logger.Debug($"Loaded settings\r\n{settings}", DebugLogLevel.Default);
+        context.DebugLogLevel = settings.DebugLogLevel;
+        context.Debug($"Loaded settings\r\n{settings}", DebugLogLevel.Default);
 
         return settings;
     }

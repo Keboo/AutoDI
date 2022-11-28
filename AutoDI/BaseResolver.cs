@@ -2,7 +2,7 @@
 
 public abstract class BaseResolver : IAutoDISerivceProvider, IInitializeServiceProvider
 {
-    public virtual T Resolve<T>(params object[] parameters)
+    public virtual T? Resolve<T>(params object[] parameters)
     {
         return Resolve(typeof(T), parameters) is T result ? result : default;
     }

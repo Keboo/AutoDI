@@ -14,7 +14,7 @@ public class MatcherTests
     {
         var sut = new StringMatcher(s => s, "Namespace.I*", "OtherNamespace.*");
 
-        bool result = sut.TryMatch("Namespace.IService", out string replacement);
+        bool result = sut.TryMatch("Namespace.IService", out string? replacement);
         Assert.IsTrue(result);
         Assert.AreEqual("OtherNamespace.Service", replacement);
     }
@@ -24,7 +24,7 @@ public class MatcherTests
     {
         var sut = new StringMatcher(s => s, @"regex:(.+)\.I(.+)", "regex:$1.$2");
 
-        bool result = sut.TryMatch("Namespace.IService", out string replacement);
+        bool result = sut.TryMatch("Namespace.IService", out string? replacement);
         Assert.IsTrue(result);
         Assert.AreEqual("Namespace.Service", replacement);
     }

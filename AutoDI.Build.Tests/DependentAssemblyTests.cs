@@ -16,30 +16,33 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class DependentAssemblyTests
     {
-        //private static Assembly _sharedAssembly;
-        private static Assembly _mainAssembly;
+        private static Assembly _mainAssembly = null!;
+        private static bool _initialized;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
             var testAssemblies = await gen.Execute();
 
-            _mainAssembly = testAssemblies["main"].Assembly;
-
+            _mainAssembly = testAssemblies["main"].Assembly ?? throw new Exception("Could not find main assembly");
+            _initialized = true;
         }
 
         [TestCleanup]
         public void Cleanup()
         {
-            DI.Dispose(_mainAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_mainAssembly);
+            }
         }
 
         [TestMethod]
         public void CanLoadTypesFromDependentAssemblies()
         {
-            IContainer map = null;
+            IContainer? map = null;
             DI.Init(_mainAssembly, builder => builder.ConfigureContainer<IContainer>(container => map = container));
 
             Assert.IsNotNull(map);
@@ -74,7 +77,7 @@ namespace AutoDI.Build.Tests
         {
             public IService Service { get; }
 
-            public Manager([Dependency] IService service = null)
+            public Manager([Dependency] IService service = null!)
             {
                 Service = service;
             }
@@ -94,14 +97,14 @@ namespace AutoDI.Build.Tests
 
         public class Program
         {
-            public static Manager Manager { get; set; }
+            public static Manager? Manager { get; set; }
 
-            public static void Main(string[] args)
+            public static void Main(string[] _)
             {
                 Manager = new Manager();
             }
 
-            public Program([Dependency] IService service = null)
+            public Program([Dependency] IService service = null!)
             {
 
             }

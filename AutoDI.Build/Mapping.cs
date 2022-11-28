@@ -134,14 +134,14 @@ internal class Mapping : IEnumerable<Registration>
 
     private void AddBaseClasses(IEnumerable<TypeDefinition> types)
     {
-        static TypeDefinition GetBaseType(TypeDefinition type)
+        static TypeDefinition? GetBaseType(TypeDefinition type)
         {
             return type.BaseType?.Resolve();
         }
 
         foreach (TypeDefinition type in types.Where(t => t.IsClass && !t.IsAbstract && t.BaseType != null))
         {
-            for (TypeDefinition t = GetBaseType(type); t != null; t = GetBaseType(t))
+            for (TypeDefinition? t = GetBaseType(type); t != null; t = GetBaseType(t))
             {
                 if (t.FullName != typeof(object).FullName)
                 {
@@ -159,7 +159,7 @@ internal class Mapping : IEnumerable<Registration>
         {
             foreach (Map settingsMap in settings.Maps)
             {
-                if (settingsMap.TryGetMap(allTypes[typeName], out string mappedType))
+                if (settingsMap.TryGetMap(allTypes[typeName], out string? mappedType))
                 {
                     if (allTypes.TryGetValue(mappedType, out TypeDefinition mapped))
                     {
@@ -195,7 +195,7 @@ internal class Mapping : IEnumerable<Registration>
     {
         var comparer = TypeComparer.FullName;
 
-        for (TypeDefinition t = targetType; t != null; t = t.BaseType?.Resolve())
+        for (TypeDefinition? t = targetType; t != null; t = t.BaseType?.Resolve())
         {
             if (comparer.Equals(key, t)) return true;
             if (t.Interfaces.Any(i => comparer.Equals(i.InterfaceType, key)))

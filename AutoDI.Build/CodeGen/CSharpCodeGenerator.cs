@@ -47,8 +47,7 @@ internal class CSharpCodeGenerator : ICodeGenerator
     private class CSharpMethodGenerator : IMethodGenerator
     {
         private static readonly Regex _newLinePattern = new("(\r?\n)");
-        private readonly List<KeyValuePair<string, Instruction>> _codeBlocks
-            = new();
+        private readonly List<KeyValuePair<string, Instruction?>> _codeBlocks = new();
         private readonly MethodDefinition _method;
         private readonly Document _document;
 
@@ -60,9 +59,9 @@ internal class CSharpCodeGenerator : ICodeGenerator
             _document = new Document("") { Language = DocumentLanguage.CSharp };
         }
 
-        public void Append(string code, Instruction instruction)
+        public void Append(string code, Instruction? instruction)
         {
-            _codeBlocks.Add(new KeyValuePair<string, Instruction>(code, instruction));
+            _codeBlocks.Add(new KeyValuePair<string, Instruction?>(code, instruction));
         }
 
         public void Save(string outputDirectory)
@@ -121,7 +120,7 @@ internal class CSharpCodeGenerator : ICodeGenerator
                     }
                 }
 
-                Instruction instruction = pair.Value;
+                Instruction? instruction = pair.Value;
 
                 if (instruction != null)
                 {

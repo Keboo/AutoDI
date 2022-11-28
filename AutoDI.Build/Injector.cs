@@ -5,12 +5,12 @@ namespace AutoDI.Build;
 
 internal class Injector
 {
-    private readonly MethodDefinition _constructor;
+    private readonly MethodDefinition _method;
     private int _insertionPoint;
 
-    public Injector(MethodDefinition constructor)
+    public Injector(MethodDefinition method)
     {
-        _constructor = constructor ?? throw new ArgumentNullException(nameof(constructor));
+        _method = method ?? throw new ArgumentNullException(nameof(method));
     }
 
     public Instruction Insert(OpCode code, TypeReference type)
@@ -75,7 +75,7 @@ internal class Injector
 
     public Instruction Insert(Instruction instruction)
     {
-        _constructor.Body.Instructions.Insert(_insertionPoint++, instruction);
+        _method.Body.Instructions.Insert(_insertionPoint++, instruction);
         return instruction;
     }
 

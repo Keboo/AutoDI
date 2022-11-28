@@ -4,5 +4,5 @@ namespace AutoDI.Build;
 
 public interface ITypeResolver
 {
-    TypeDefinition ResolveType(string fullTypeName);
+    TypeDefinition? ResolveType(string fullTypeName);
 }

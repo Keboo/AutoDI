@@ -23,13 +23,13 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class MapAttributeTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
         private static bool _initialized;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
-            var gen = new Generator();
+            Generator gen = new();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 

@@ -12,10 +12,10 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class DisableContainerGeneration
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
@@ -39,7 +39,7 @@ namespace AutoDI.Build.Tests
     {
         public class Program
         {
-            public static void Main(string[] args)
+            public static void Main(string[] _)
             { }
         }
 

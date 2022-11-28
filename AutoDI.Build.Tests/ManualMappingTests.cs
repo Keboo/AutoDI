@@ -48,7 +48,7 @@ namespace TestAssembly
 
     public class Manager
     {
-        public Manager([Dependency] IService service = null, [Dependency] IService2 service2 = null)
+        public Manager([Dependency] IService service = null!, [Dependency] IService2 service2 = null!)
         {
             Service = service;
             Service2 = service2;
@@ -68,13 +68,14 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class ManualMappingTests
     {
-        private static Assembly _testAssembly;
-        private IContainer _map;
+        private static Assembly _testAssembly = null!;
+        private bool _initialized;
+        private IContainer _map = null!;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
-            var gen = new Generator();
+            Generator gen = new();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
         }
@@ -83,12 +84,16 @@ namespace AutoDI.Build.Tests
         public void TestSetup()
         {
             DI.Init(_testAssembly, builder => builder.ConfigureContainer<IContainer>(map => _map = map));
+            _initialized = true;
         }
 
         [TestCleanup]
         public void TestCleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         [TestMethod]
@@ -100,7 +105,7 @@ namespace AutoDI.Build.Tests
 
             var mappings = _map.ToArray();
 
-            Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService2>(typeof(ManualMappingTests)) || m.TargetType.Is<Service2>(typeof(ManualMappingTests))));
+            Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService2>(typeof(ManualMappingTests)) || m.TargetType?.Is<Service2>(typeof(ManualMappingTests)) == true));
         }
 
         [TestMethod]
@@ -130,8 +135,8 @@ namespace AutoDI.Build.Tests
         {
             var mappings = _map.ToArray();
 
-            Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
-            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<Service3>(typeof(ManualMappingTests)) && m.TargetType.Is<Service3>(typeof(ManualMappingTests))));
+            Assert.IsFalse(mappings.Any(m => m.SourceType.Is<IService3>(typeof(ManualMappingTests)) && m.TargetType?.Is<Service3>(typeof(ManualMappingTests)) == true));
+            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<Service3>(typeof(ManualMappingTests)) && m.TargetType?.Is<Service3>(typeof(ManualMappingTests)) == true));
         }
 
         [TestMethod]
@@ -139,8 +144,8 @@ namespace AutoDI.Build.Tests
         {
             var mappings = _map.ToArray();
 
-            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<IService4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
-            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<Service4>(typeof(ManualMappingTests)) && m.TargetType.Is<Service4>(typeof(ManualMappingTests))));
+            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<IService4>(typeof(ManualMappingTests)) && m.TargetType?.Is<Service4>(typeof(ManualMappingTests)) == true));
+            Assert.IsTrue(mappings.Any(m => m.SourceType.Is<Service4>(typeof(ManualMappingTests)) && m.TargetType?.Is<Service4>(typeof(ManualMappingTests)) == true));
 
             Assert.IsTrue(_testAssembly.Resolve<IService4>(typeof(ManualMappingTests)).Is<Service4>(typeof(ManualMappingTests)));
         }
@@ -157,7 +162,7 @@ namespace AutoDI.Build.Tests
         {
             var mappings = _map.ToArray();
 
-            var map = mappings.Single(m => m.SourceType.Name == nameof(Service5) && m.TargetType.Name == nameof(Service5Extended));
+            var map = mappings.Single(m => m.SourceType.Name == nameof(Service5) && m.TargetType?.Name == nameof(Service5Extended));
 
             Assert.AreEqual(Lifetime.Scoped, map.Lifetime);
         }

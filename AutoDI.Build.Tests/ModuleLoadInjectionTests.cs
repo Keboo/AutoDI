@@ -12,20 +12,25 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class ModuleLoadInjectionTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        private static bool _initialized = false;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
-            var gen = new Generator();
+            Generator gen = new();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
+            _initialized = true;
         }
 
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         [TestMethod]
@@ -70,7 +75,7 @@ namespace ModuleLoadInjectionNamespace
     {
         public IService Service { get; }
 
-        public ModuleLoadingLibrary([Dependency] IService service = null)
+        public ModuleLoadingLibrary([Dependency] IService service = null!)
         {
             Service = service;
         }

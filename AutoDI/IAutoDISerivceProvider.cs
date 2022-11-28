@@ -2,5 +2,5 @@
 
 public interface IAutoDISerivceProvider
 {
-    object GetService(Type serviceType, object[] parameters);
+    object? GetService(Type serviceType, object[] parameters);
 }

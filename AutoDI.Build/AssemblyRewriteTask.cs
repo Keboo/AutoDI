@@ -16,77 +16,59 @@ public abstract class AssemblyRewriteTask : Task, ICancelableTask
     [Required]
     public string DebugType { get; set; } = "";
 
-    protected ILogger? Logger { get; set; }
-
-    protected IAssemblyResolver? AssemblyResolver { get; set; }
-
-    protected ITypeResolver? TypeResolver { get; set; }
-
-    protected ModuleDefinition? ModuleDefinition { get; private set; }
-
-    protected AssemblyDefinition? ResolveAssembly(string assemblyName)
-    {
-        return AssemblyResolver?.Resolve(AssemblyNameReference.Parse(assemblyName));
-    }
-
     public override bool Execute()
     {
         //Debugger.Launch();
-        Logger ??= new TaskLogger(this);
+        var logger = new TaskLogger(this);
 
-        Logger.Info($"Starting AutoDI on '{AssemblyFile}'");
+        logger.Info($"Starting AutoDI on '{AssemblyFile}'");
         var sw = Stopwatch.StartNew();
 
-        using (var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), Logger))
+        using (var assemblyResolver = new AssemblyResolver(GetIncludedReferences(), logger))
         {
-            AssemblyResolver ??= assemblyResolver;
-
-            TypeResolver ??= assemblyResolver;
-
             foreach (var assemblyName in GetAssembliesToInclude())
             {
-                AssemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
+                assemblyResolver.Resolve(new AssemblyNameReference(assemblyName, null));
             }
 
             var readerParameters = new ReaderParameters
             {
-                AssemblyResolver = AssemblyResolver,
+                AssemblyResolver = assemblyResolver,
                 InMemory = true
             };
 
-            using (ModuleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters))
+            using var moduleDefinition = ModuleDefinition.ReadModule(AssemblyFile, readerParameters);
+            bool loadedSymbols;
+            try
             {
-                bool loadedSymbols;
-                try
+                moduleDefinition.ReadSymbols();
+                loadedSymbols = true;
+            }
+            catch
+            {
+                loadedSymbols = false;
+            }
+            logger.Info($"Loaded '{AssemblyFile}'");
+            AssemblyRewiteTaskContext context = new(moduleDefinition, assemblyResolver, assemblyResolver, logger);
+            if (WeaveAssembly(context))
+            {
+                logger.Info("Weaving complete - updating assembly");
+                var parameters = new WriterParameters
                 {
-                    ModuleDefinition.ReadSymbols();
-                    loadedSymbols = true;
-                }
-                catch
-                {
-                    loadedSymbols = false;
-                }
-                Logger.Info($"Loaded '{AssemblyFile}'");
-                if (WeaveAssembly())
-                {
-                    Logger.Info("Weaving complete - updating assembly");
-                    var parameters = new WriterParameters
-                    {
-                        WriteSymbols = loadedSymbols,
-                    };
+                    WriteSymbols = loadedSymbols,
+                };
 
-                    ModuleDefinition.Write(AssemblyFile, parameters);
-                }
-                else
-                {
-                    Logger.Info("Weaving complete - no update");
-                }
+                moduleDefinition.Write(AssemblyFile, parameters);
+            }
+            else
+            {
+                logger.Info("Weaving complete - no update");
             }
         }
 
         sw.Stop();
-        Logger.Info($"AutoDI Complete {sw.Elapsed}");
-        return !Logger.ErrorLogged;
+        logger.Info($"AutoDI Complete {sw.Elapsed}");
+        return !logger.ErrorLogged;
     }
 
     public virtual void Cancel()
@@ -113,5 +95,5 @@ public abstract class AssemblyRewriteTask : Task, ICancelableTask
         yield return "System.Collections";
     }
 
-    protected abstract bool WeaveAssembly();
+    protected abstract bool WeaveAssembly(AssemblyRewiteTaskContext context);
 }

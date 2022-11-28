@@ -20,12 +20,12 @@ internal class TaskLogger : ILogger
         _task = task ?? throw new ArgumentNullException(nameof(task));
     }
 
-    public void Error(string message, SequencePoint sequencePoint)
+    public void Error(string message, SequencePoint? sequencePoint)
     {
         BuildErrorEventArgs buildErrorEventArgs;
         ErrorLogged = true;
 
-        buildErrorEventArgs = sequencePoint == null
+        buildErrorEventArgs = sequencePoint is null
             ? new BuildErrorEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender)
             : new BuildErrorEventArgs("", "", sequencePoint.Document.Url, sequencePoint.StartLine, sequencePoint.StartColumn, sequencePoint.EndLine, sequencePoint.EndColumn, $"{MessageSender} {message}", "", MessageSender);
 
@@ -45,7 +45,7 @@ internal class TaskLogger : ILogger
         _task.BuildEngine.LogMessageEvent(new BuildMessageEventArgs($"{MessageSender} {message}", "", MessageSender, MessageImportance.Normal));
     }
 
-    public void Warning(string message, SequencePoint sequencePoint)
+    public void Warning(string message, SequencePoint? sequencePoint)
     {
         BuildWarningEventArgs buildWarningEventArgs = sequencePoint == null
             ? new BuildWarningEventArgs("", "", null, 0, 0, 0, 0, $"{MessageSender} {message}", "", MessageSender)

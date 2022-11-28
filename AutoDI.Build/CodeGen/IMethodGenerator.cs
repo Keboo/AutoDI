@@ -4,5 +4,5 @@ namespace AutoDI.Build.CodeGen;
 
 internal interface IMethodGenerator
 {
-    void Append(string code, Instruction instruction = null);
+    void Append(string code, Instruction? instruction = null);
 }

@@ -39,8 +39,8 @@ internal class Settings
             else if (attribute.AttributeType.IsType<MapAttribute>())
             {
                 Lifetime? lifetime = null;
-                string targetTypePattern = null;
-                string sourceTypePattern = null;
+                string? targetTypePattern = null;
+                string? sourceTypePattern = null;
                 bool force = false;
 
                 var ctorParameterNames = GetConstructorParameterNames();
@@ -109,7 +109,7 @@ internal class Settings
                     }
                 }
 
-                IList<string> GetConstructorParameterNames()
+                IList<string>? GetConstructorParameterNames()
                 {
                     switch (attribute.ConstructorArguments.Count)
                     {
@@ -187,13 +187,13 @@ internal class Settings
             }
             else if (attribute.AttributeType.IsType<IncludeAssemblyAttribute>())
             {
-                string assemblyPattern = attribute.ConstructorArguments.FirstOrDefault().Value as string;
+                string? assemblyPattern = attribute.ConstructorArguments.FirstOrDefault().Value as string;
 
                 if (string.IsNullOrWhiteSpace(assemblyPattern))
                 {
                     throw new SettingsParseException($"{nameof(IncludeAssemblyAttribute)} must specify an assembly to include");
                 }
-                settings.Assemblies.Add(new MatchAssembly(assemblyPattern));
+                settings.Assemblies.Add(new MatchAssembly(assemblyPattern!));
             }
         }
 

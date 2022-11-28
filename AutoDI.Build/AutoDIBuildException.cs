@@ -7,7 +7,8 @@ internal class AutoDIBuildException : Exception
 
     }
 
-    public AutoDIBuildException(string message) : base(message)
+    public AutoDIBuildException(string message) 
+        : base(message)
     {
 
     }

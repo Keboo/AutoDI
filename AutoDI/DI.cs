@@ -55,14 +55,14 @@ public static class DI
         Type autoDI = GetAutoDIType(assembly);
         FieldInfo field = autoDI.GetRuntimeFields().SingleOrDefault(f => f.Name == Constants.GlobalServiceProviderName) ??
                     throw new GlobalServiceProviderNotFoundException($"Could not find {Constants.GlobalServiceProviderName} field");
-        return (IServiceProvider)field.GetValue(null);
+        return (IServiceProvider)(field.GetValue(null) ?? throw new GlobalServiceProviderNotFoundException($"ServiceProvider was null"));
     }
 
     private static Type GetAutoDIType(Assembly? containerAssembly)
     {
         const string typeName = Constants.Namespace + "." + Constants.TypeName;
 
-        Type containerType = containerAssembly != null
+        Type? containerType = containerAssembly is not null
             ? containerAssembly.GetType(typeName)
             : Type.GetType(typeName);
 

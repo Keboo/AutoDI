@@ -11,21 +11,26 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class PropertyInjectionTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        private static bool _initialized;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
             DI.Init(_testAssembly);
+            _initialized = true;
         }
 
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         [TestMethod]
@@ -95,20 +100,36 @@ namespace AutoDI.Build.Tests
 
         public class SimpleProperty
         {
+            private string _foo = "Bar";
+
             [Dependency]
-            public IService Service { get; set; }
+            public IService Service { get; set; } = null!;
+
+            public string Foo
+            {
+                get
+                {
+                    return _foo;
+                }
+                set => _foo = value;
+            }
+
+            public SimpleProperty()
+            {
+                Foo = "Foo";
+            }
         }
 
         public class ReadOnlyProperty
         {
             [Dependency]
-            public IService Service { get; }
+            public IService Service { get; } = null!;
         }
 
         public class PrivateProperty
         {
             [Dependency]
-            private IService Service { get; }
+            private IService Service { get; } = null!;
 
             public IService GetService() => Service;
         }

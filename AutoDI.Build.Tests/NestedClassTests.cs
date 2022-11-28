@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 
 using AutoDI.AssemblyGenerator;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 //<assembly>
@@ -116,22 +117,27 @@ namespace AutoDI.Build.Tests
     [TestClass]
     public class NestedClassTests
     {
-        private static Assembly _testAssembly;
+        private static Assembly _testAssembly = null!;
+        private static bool _initialized;
 
         [ClassInitialize]
-        public static async Task Initialize(TestContext context)
+        public static async Task Initialize(TestContext _)
         {
             var gen = new Generator();
 
             _testAssembly = (await gen.Execute()).SingleAssembly();
 
             DI.Init(_testAssembly);
+            _initialized = true;
         }
 
         [ClassCleanup]
         public static void Cleanup()
         {
-            DI.Dispose(_testAssembly);
+            if (_initialized)
+            {
+                DI.Dispose(_testAssembly);
+            }
         }
 
         [TestMethod]
@@ -139,14 +145,14 @@ namespace AutoDI.Build.Tests
         public void PrivateNestedClassIsNotMapped()
         {
             var provider = DI.GetGlobalServiceProvider(_testAssembly);
-            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+            ContainerMap containerMap = (ContainerMap)provider.GetRequiredService<IContainer>();
 
-            foreach (var mappedType in containerMap
+            foreach (Type? mappedType in containerMap
                 .Select(m => m.TargetType)
-                .Where(t => t.FullName?.StartsWith(nameof(NestedClassesTestsNamespace)) == true &&
+                .Where(t => t?.FullName?.StartsWith(nameof(NestedClassesTestsNamespace)) == true &&
                             t.Name.Contains("Nested")))
             {
-                if (mappedType.Name.Contains("Private"))
+                if (mappedType!.Name.Contains("Private"))
                 {
                     Assert.Fail($"Should not have mapped private type '{mappedType.FullName}'");
                 }
@@ -162,10 +168,10 @@ namespace AutoDI.Build.Tests
         public void PublicNestedClassIsMapped()
         {
             var provider = DI.GetGlobalServiceProvider(_testAssembly);
-            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+            ContainerMap containerMap = (ContainerMap)provider.GetRequiredService<IContainer>(Array.Empty<object>());
 
             //1 for the first nested class, 3 for each of the accessible sub nested classes
-            Assert.AreEqual(4, containerMap.Count(m => m.TargetType.Name.StartsWith("PublicNested")));
+            Assert.AreEqual(4, containerMap.Count(m => m.TargetType?.Name.StartsWith("PublicNested") == true));
         }
 
         [TestMethod]
@@ -173,10 +179,10 @@ namespace AutoDI.Build.Tests
         public void ProtectedInternalNestedClassIsMapped()
         {
             var provider = DI.GetGlobalServiceProvider(_testAssembly);
-            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+            ContainerMap containerMap = (ContainerMap)provider.GetRequiredService<IContainer>(Array.Empty<object>());
 
             //1 for the first nested class, 3 for each of the accessible sub nested classes
-            Assert.AreEqual(4, containerMap.Count(m => m.TargetType.Name.StartsWith("ProtectedInternalNested")));
+            Assert.AreEqual(4, containerMap.Count(m => m.TargetType?.Name.StartsWith("ProtectedInternalNested") == true));
         }
 
         [TestMethod]
@@ -184,10 +190,10 @@ namespace AutoDI.Build.Tests
         public void InternalNestedClassIsMapped()
         {
             var provider = DI.GetGlobalServiceProvider(_testAssembly);
-            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+            ContainerMap containerMap = (ContainerMap)provider.GetRequiredService<IContainer>(Array.Empty<object>());
 
             //1 for the first nested class, 3 for each of the accessible sub nested classes
-            Assert.AreEqual(4, containerMap.Count(m => m.TargetType.Name.StartsWith("InternalNested")));
+            Assert.AreEqual(4, containerMap.Count(m => m.TargetType?.Name.StartsWith("InternalNested") == true));
         }
 
         [TestMethod]
@@ -195,10 +201,10 @@ namespace AutoDI.Build.Tests
         public void CanMapNestedTypeWithPlus()
         {
             var provider = DI.GetGlobalServiceProvider(_testAssembly);
-            ContainerMap containerMap = (ContainerMap)provider.GetService<IContainer>(Array.Empty<object>());
+            ContainerMap containerMap = (ContainerMap)provider.GetRequiredService<IContainer>(Array.Empty<object>());
 
             var mappings = containerMap.ToList();
-            Assert.IsTrue(mappings.Any(m => m.SourceType.Name == "IService1" && m.TargetType.Name == "MyService2"));
+            Assert.IsTrue(mappings.Any(m => m.SourceType.Name == "IService1" && m.TargetType?.Name == "MyService2"));
         }
     }
 }

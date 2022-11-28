@@ -7,17 +7,11 @@ internal class TypeResolver
 {
     private const string AutoDIAssemblyName = "AutoDI";
 
+    private AssemblyRewiteTaskContext Context { get; }
 
-    private readonly ModuleDefinition _module;
-    private readonly IAssemblyResolver _assemblyResolver;
-    private readonly ILogger _logger;
-
-    public TypeResolver(ModuleDefinition module, IAssemblyResolver assemblyResolver,
-        ILogger logger)
+    public TypeResolver(AssemblyRewiteTaskContext context)
     {
-        _module = module ?? throw new ArgumentNullException(nameof(module));
-        _assemblyResolver = assemblyResolver ?? throw new ArgumentNullException(nameof(assemblyResolver));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Context = context;
     }
 
     public ICollection<TypeDefinition> GetAllTypes(Settings settings)
@@ -28,9 +22,9 @@ internal class TypeResolver
 
         foreach (ModuleDefinition module in GetAllModules(settings))
         {
-            _logger.Debug($"Processing module for {module.FileName}", DebugLogLevel.Verbose);
-
-            _logger.Debug($"Including types from '{module.Assembly.FullName}' ({GetIncludeReason()})", DebugLogLevel.Default);
+            Context.Debug($"Processing module for {module.FileName}", DebugLogLevel.Verbose);
+            
+            Context.Debug($"Including types from '{module.Assembly.FullName}' ({GetIncludeReason()})", DebugLogLevel.Default);
             //Either references AutoDI, or was a config assembly match, include the types.
             foreach (TypeDefinition type in FilterTypes(module.GetAllTypes()))
             {
@@ -39,7 +33,7 @@ internal class TypeResolver
 
             string GetIncludeReason()
             {
-                bool isMainModule = ReferenceEquals(module, _module);
+                bool isMainModule = ReferenceEquals(module, Context.ModuleDefinition);
 
                 if (isMainModule) return "Main Module";
 
@@ -61,7 +55,7 @@ internal class TypeResolver
     {
         var seen = new HashSet<string>();
         var queue = new Queue<ModuleDefinition>();
-        queue.Enqueue(_module);
+        queue.Enqueue(Context.ModuleDefinition);
 
         while (queue.Count > 0)
         {
@@ -80,7 +74,7 @@ internal class TypeResolver
                 AssemblyDefinition assembly;
                 try
                 {
-                    assembly = _assemblyResolver.Resolve(assemblyReference);
+                    assembly = Context.AssemblyResolver.Resolve(assemblyReference);
 
                     if (assembly?.MainModule is null)
                     {

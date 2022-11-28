@@ -5,35 +5,35 @@ namespace AutoDI.Build;
 
 partial class ProcessAssemblyTask
 {
-    private void InjectInitCall(MethodReference initMethod)
+    private static void InjectInitCall(ModuleDefinition moduleDefinition, MethodReference initMethod, ILogger logger)
     {
-        if (ModuleDefinition.EntryPoint != null)
+        if (moduleDefinition.EntryPoint != null)
         {
-            Logger.Debug("Injecting AutoDI init call", DebugLogLevel.Verbose);
+            logger.Debug("Injecting AutoDI init call", DebugLogLevel.Verbose);
 
-            var injector = new Injector(ModuleDefinition.EntryPoint);
+            var injector = new Injector(moduleDefinition.EntryPoint);
             injector.Insert(OpCodes.Ldnull);
             injector.Insert(OpCodes.Call, initMethod);
         }
         else
         {
-            Logger.Debug($"No entry point in {ModuleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
+            logger.Debug($"No entry point in {moduleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
         }
     }
 
-    private void InjectModuleCctorInitCall(MethodReference initMethod)
+    private static void InjectModuleCctorInitCall(ModuleDefinition moduleDefinition, MethodReference initMethod, ILogger logger)
     {
-        var moduleClass = ModuleDefinition.Types.FirstOrDefault(t => t.Name == "<Module>");
+        var moduleClass = moduleDefinition.Types.FirstOrDefault(t => t.Name == "<Module>");
         if (moduleClass is null)
         {
-            Logger.Debug($"No module class in {ModuleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
+            logger.Debug($"No module class in {moduleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
             return;
         }
 
-        var cctor = FindOrCreateCctor(moduleClass);
-        if (cctor != null)
+        var cctor = FindOrCreateCctor(moduleDefinition, moduleClass);
+        if (cctor is not null)
         {
-            Logger.Debug("Injecting AutoDI .cctor init call", DebugLogLevel.Verbose);
+            logger.Debug("Injecting AutoDI .cctor init call", DebugLogLevel.Verbose);
 
             var injector = new Injector(cctor);
             injector.Insert(OpCodes.Ldnull);
@@ -41,12 +41,12 @@ partial class ProcessAssemblyTask
         }
         else
         {
-            Logger.Debug($"Couldn't find or create .cctor in {ModuleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
+            logger.Debug($"Couldn't find or create .cctor in {moduleDefinition.FileName}. Skipping container injection.", DebugLogLevel.Default);
         }
 
     }
 
-    private MethodDefinition FindOrCreateCctor(TypeDefinition moduleClass)
+    private static MethodDefinition FindOrCreateCctor(ModuleDefinition moduleDefinition, TypeDefinition moduleClass)
     {
         var cctor = moduleClass.Methods.FirstOrDefault(m => m.Name == ".cctor");
         if (cctor is null)
@@ -56,7 +56,7 @@ partial class ProcessAssemblyTask
                 | MethodAttributes.Static
                 | MethodAttributes.SpecialName
                 | MethodAttributes.RTSpecialName;
-            cctor = new MethodDefinition(".cctor", attributes, ModuleDefinition.ImportReference(typeof(void)));
+            cctor = new MethodDefinition(".cctor", attributes, moduleDefinition.ImportReference(typeof(void)));
             moduleClass.Methods.Add(cctor);
             cctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
         }
